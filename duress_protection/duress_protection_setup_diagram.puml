@@ -1,0 +1,129 @@
+@startuml duress_protection_setup_diagram
+skinparam sequenceMessageAlign left
+title Duress Protection Setup Sequence Diagram
+box "User Side" #AliceBlue
+actor User order 1 #LightCyan
+participant Iso order 2 #LightBlue
+participant Boomlet order 3 #LightPink
+participant ST order 4 #Violet
+participant Niso order 5 #LightGreen
+end box
+participant WTs order 98 #Red
+participant SARs order 99 #Yellow
+actor Peers order 100
+
+
+autonumber "<b>Message 00:"
+' Step 1
+autonumber stop
+Boomlet <-> ST: keeping                       the                              social                                                  distance
+Iso <-> User: keeping                       the                              social                                                  distance
+autonumber resume
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey
+hnote over Boomlet: Boomlet will share its `boomlet_0_identity_pubkey` with Iso
+Boomlet -> Iso: boomlet_0_identity_pubkey
+
+' Step 2
+note over Iso: **Iso**\n<i>_boomlet_0_identity_pubkey
+hnote over Iso: Iso will share `boomlet_0_identity_pubkey`via a qr code on its monitor
+Iso o-> ST: **QR**(`boomlet_0_identity_pubkey)
+hnote over ST: ST will receive the key and store it
+note over ST: **ST**\n<i>boomlet_0_identity_pubkey
+hnote over ST: ST will create a keypair consisting of `st_0_identity_privkey`\nand `st_0_identity_pubkey`.
+note over ST: **ST**\nboomlet_0_identity_pubkey\n<i>st_0_identity_privkey\n<i>st_0_identity_pubkey
+hnote over ST: ST will create a shared key:\nshared_boomlet_st_privkey := ECDH(boomlet_0_identity_pubkey, st_0_identity_privkey)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\n<i>shared_boomlet_st_privkey
+
+' Step 3
+hnote over ST: ST will share its `st_0_identity_pubkey` via a QR code\non its monitor with Iso
+ST o-> Iso: **QR**(st_0_identity_pubkey)
+note over Iso: **Iso**\n<i>_st_0_identity_pubkey
+
+
+' Step 4
+hnote over Iso: Iso will decode the QR code and send it to Boomlet
+Iso o-> Boomlet: st_0_identity_pubkey
+hnote over Boomlet: Boomlet will receive the key and store it
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\n<i>st_0_identity_pubkey
+hnote over Boomlet: Boomlet will create the shared key and store it permanently:\nshared_boomlet_st_privkey := ECDH(st_0_identity_pubkey, boomlet_0_identity_privkey)
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\n<i>shared_boomlet_st_privkey
+hnote over Boomlet: Boomlet will create a random array of numbers between 1 nad 198 inclusive:\nrandomly_sorted_duress_array:=rand_order([1..198])
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>randomly_sorted_duress_array
+hnote over Boomlet: Boomlet will encrypt `randomly_sorted_duress_array` with `shared_boomlet_st_key`:\nrandomly_sorted_duress_array_encrypted_by_shared_boomlet_st_privkey_for_st:=AES_encrypt(shared_boomlet_st_privkey,randomly_sorted_duress_array)
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nrandomly_sorted_duress_array\n<i>_randomly_sorted_duress_array_encrypted_by_shared_boomlet_st_privkey_for_st
+
+' Step 5
+Boomlet o-> Iso: randomly_sorted_duress_array_encrypted_by_shared_boomlet_st_privkey_for_st
+note over Iso: **Iso**\n<i>_randomly_sorted_duress_array_encrypted_by_shared_boomlet_st_privkey_for_st
+
+' Step 6
+Iso o-> ST: **QR**(randomly_sorted_duress_array_encrypted_by_shared_boomlet_st_privkey_for_st)
+hnote over ST: ST will decode and decrypt the received message:\nrandomly_sorted_duress_array:=AES_decrypt(shared_boomlet_st_privkey, randomly_sorted_duress_array_encrypted_by_shared_boomlet_st_privkey_for_st)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>randomly_sorted_duress_array
+hnote over ST: ST will assign a country to any of the numbers in the randomly sorted array\ncorresponding to its alphabetical rank and will show this array to the user for\nselecting 5 of them.
+
+' Step 7
+ST o-> User: **ST's Monitor**("Choose 5 countries that will constitute your consent set. The order does not matter.")
+hnote over User: User will select 5 countries via the ST's joystick. ST will record the index in the `randomly_sorted_duress_array`\nrandomly_sorted_duress_array_index_collection:=[index;5]\nUser is to memorize the name of 5 countries that they have selected in this stage
+note over User: **User**\n<i>name_of_5_consent_countries_in_brain_memory\n_<i>randomly_sorted_duress_array_index_collection
+
+' Step 8
+User o-> ST: **ST's Joystick**(randomly_sorted_duress_array_index_collection)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nrandomly_sorted_duress_array\n<i>randomly_sorted_duress_array_index_collection
+hnote over ST: ST will encrypt the newly received data and drop redundant data:\nrandomly_sorted_duress_array_index_collection_encrypted_by_st_for_boomlet:=AES_encrypt(shared_boomlet_st_privkey, randomly_sorted_duress_array)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>_randomly_sorted_duress_array_index_collection_encrypted_by_st_for_boomlet
+
+' Step 9
+ST o-> Iso: **QR**(randomly_sorted_duress_array_index_collection_encrypted_by_st_for_boomlet)
+note over Iso: **Iso**\n<i>_randomly_sorted_duress_array_index_collection_encrypted_by_st_for_boomlet
+
+' Step 10
+Iso o-> Boomlet: randomly_sorted_duress_array_index_collection_encrypted_by_st_for_boomlet
+hnote over Boomlet: Boomlet will decrypt the received message:\nrandomly_sorted_duress_array_index_collection:=AES_decrypt(shared_boomlet_st_privkey, randomly_sorted_duress_array_index_collection_encrypted_by_st_for_boomlet)
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nrandomly_sorted_duress_array\n<i>randomly_sorted_duress_array_index_collection
+hnote over Boomlet: Boomlet will search for the newly received indices in `randomly_sorted_duress_array`\nstore those numbers corresponding to aforementioned indices as `duress_consent_set`, and drop redundant data
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>duress_consent_set
+hnote over Boomlet: Boomlet will make sure the user has memorized `duress_consent_set`.\nFor this, boomlet will create 5 randomly ordered set of numbers\nbetween 1 and 198 inclusive and encrypt the container collection with\nits shared key with ST:\ntemp_test_duress_message_collection:=[rand_order[1..198]; 5]\ntemp_test_duress_message_collection_encrypted_by_boomlet_for_st:=AES_encrypt(shared_boomlet_st_privkey, temp_test_duress_message_collection)
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\n<i>temp_test_duress_message_collection\n<i>_temp_test_duress_message_collection_encrypted_by_boomlet_for_st
+
+
+' Step 11
+Boomlet -> Iso: test_duress_message_collection_encrypted_by_boomlet_for_st
+note over Iso: **Iso**\n<i>_test_duress_message_collection_encrypted_by_boomlet_for_st
+
+' Step 12
+Iso o-> ST: **QR**(test_duress_message_collection_encrypted_by_boomlet_for_st)
+hnote over ST: ST will decrypt the received message:\ntest_duress_message_collection:=AES_decrypt(shared_boomlet_st_privkey, test_duress_message_collection_encrypted_by_boomlet_for_st)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>_test_duress_message_collection
+hnote over ST: ST will assign a country to each of the 5 sets retrieved\nafter decryption in the previous manner and show 5 columns\nto the user on its monitor.
+
+' Step 13
+ST o-> User: **Monitor**(test_duress_message_collection)
+hnote over User: User will select 1 country from each column shown on the ST\nto replicate the `duress_consent_set`
+note over User: **User**\n<i>name_of_5_consent_countries_in_brain_memory\n<i>_test_duress_message_collection_index_collection
+
+' Step 14
+User o-> ST: **ST's Joystick**(test_duress_message_collection_index_collection)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>_test_duress_message_collection_index_collection
+hnote over ST: ST will encrypt `test_duress_message_collection_index_collection`\nwith `shared_boomlet_st_privkey`:\ntest_duress_message_collection_index_collection_encrypted_by_st_for_boomlet:=AES_encrypt(shared_boomlet_st_privkey, test_duress_message_collection_index_collection)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>_test_duress_message_collection_index_collection_encrypted_by_st_for_boomlet
+
+' Step 15
+ST o-> Iso: **QR**(test_duress_message_collection_index_collection_encrypted_by_st_for_boomlet)
+note over Iso: **Iso**\n<i>_test_duress_message_collection_index_collection_encrypted_by_st_for_boomlet
+
+' Step 16
+Iso o-> Boomlet: test_duress_message_collection_index_collection_encrypted_by_st_for_boomlet
+hnote over Boomlet: Boomlet will decrypt the received message:\ntest_duress_message_collection_index_collection:=AES_decrypt(shared_boomlet_st_privkey, test_duress_message_collection_index_collection_encrypted_by_st_for_boomlet)
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\ntemp_test_duress_message_collection\n<i>_test_duress_message_collection_index_collection
+hnote over Boomlet: Boomlet will search for the indices in `temp_test_duress_message_collection` and\nif the resulting 5 numbers corresponding to the aforementioned indices, constitute\nthe same set as the `duress_consent_set`, boomlet knows that the user has "memorized"\nthe consent set.\nIf not, there would be a retry from **Message 11**.\nIf that also fails, the duress setup process will start from **Message 04** onwards (after key exchange).\nIf all is good, Boomlet will drip the redundant data.
+note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set
+/ note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey
+/note over Iso: **Iso**\n
+/ note over User: **User**\nname_of_5_consent_countries_in_brain_memory
+
+
+' Step 17
+hnote over Boomlet #Red: DURESS SETUP DONE 
+
+@enduml

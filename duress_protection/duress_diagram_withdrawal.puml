@@ -1,0 +1,138 @@
+@startuml duress_protection_withdrawal_diagram
+skinparam sequenceMessageAlign left
+title Duress Protection Withdrawal Sequence Diagram
+box "User Side" #AliceBlue
+actor User order 1 #LightCyan
+participant Iso order 2 #LightBlue
+participant Boomlet order 3 #LightPink
+participant ST order 4 #Violet
+participant Niso order 5 #LightGreen
+end box
+participant WTs order 98 #Red
+participant SARs order 99 #Yellow
+actor Peers order 100
+
+
+autonumber "<b>Message 00:"
+
+autonumber stop
+User <-> Iso: keeping                       the                              social                                                  distance
+Iso <-> Boomlet: keeping                       the                              social                                                  distance
+Boomlet <-> ST: keeping                       the                              social                                                  distance
+ST <-> Niso: keeping                       the                              social                                                  distance
+Niso <-> WTs: keeping                       the                              social                                                  distance
+WTs <-> SARs: keeping                       the                              social                                                  distance
+SARs <-> Peers: keeping                       the                              social                                                  distance
+autonumber resume
+
+' Initiation
+note over Boomlet: **Boomlet**\n[...]\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set
+/ note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey
+/note over Iso: **Iso**\n
+/ note over User: **User**\nname_of_5_consent_countries_in_brain_memory
+
+hnote over Boomlet #Red: DURESS CHECK INITIATED VIA BOOMLET
+hnote over Boomlet: Boomlet will create 5 randomly ordered set of numbers\nbetween 1 and 198 inclusive and encrypt the container collection with\nits shared key with ST:\ntemp_duress_message_collection:=[rand_order[1..198]; 5]\n_duress_message_collection_encrypted_by_boomlet_for_st:=AES_encrypt(shared_boomlet_st_privkey, temp_duress_message_collection)
+note over Boomlet: **Boomlet**\n[...]\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\n--Duress Check--\n<i>temp_duress_message_collection\n<i>_duress_message_collection_encrypted_by_boomlet_for_st
+
+' Step 1
+Boomlet -> Niso: duress_message_collection_encrypted_by_boomlet_for_st
+hnote over Niso: Niso will encode the received encrypted message to a QR code\nand will display it on its monitor for ST to scan.
+note over Niso: **Niso**\n[...]\n--Duress Check--\n<i>_duress_message_collection_encrypted_by_boomlet_for_st
+
+' Step 2
+Niso o-> ST: **QR**(duress_message_collection_encrypted_by_boomlet_for_st)
+hnote over ST: ST will decrypt the received message:\nduress_message_collection:=AES_decrypt(shared_boomlet_st_privkey, duress_message_collection_encrypted_by_boomlet_for_st)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n--Duress Check--\n<i>_duress_message_collection
+hnote over ST: ST will assign a country to each of the 5 sets retrieved\nafter decryption in the previous manner and show 5 columns\nto the user on its monitor.
+
+' Step 3
+ST o-> User: **Monitor**(duress_message_collection)
+hnote over User: User will select 1 country from each column shown on the ST\nto signal their duress situation
+note over User: **User**\nname_of_5_consent_countries_in_brain_memory\n<i>_duress_message_collection_index_collection
+
+' Step 4
+User o-> ST: **ST's Joystick**(duress_message_collection_index_collection)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n--Duress Check--\n<i>_duress_message_collection_index_collection
+hnote over ST: ST will encrypt `duress_message_collection_index_collection`\nwith `shared_boomlet_st_privkey`:\nduress_message_collection_index_collection_encrypted_by_st_for_boomlet:=AES_encrypt(shared_boomlet_st_privkey, duress_message_collection_index_collection)
+note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n--Duress Check--\n<i>_duress_message_collection_index_collection_encrypted_by_st_for_boomlet
+
+' Step 5
+ST o-> Niso: **QR**(duress_message_collection_index_collection_encrypted_by_st_for_boomlet)
+note over Niso: **Niso**\n[...]\n--Duress Check--\n<i>_duress_message_collection_index_collection_encrypted_by_st_for_boomlet
+
+' Step 6
+Niso o-> Boomlet: duress_message_collection_index_collection_encrypted_by_st_for_boomlet
+hnote over Boomlet: Boomlet will decrypt the received message:\nduress_message_collection_index_collection:=AES_decrypt(shared_boomlet_st_privkey, duress_message_collection_index_collection_encrypted_by_st_for_boomlet)
+note over Boomlet: **Boomlet**\n[...]\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\n--Duress Check--\ntemp_duress_message_collection\n<i>_duress_message_collection_index_collection
+hnote over Boomlet: Boomlet will search for the indices in `temp_duress_message_collection` and\nif the resulting 5 numbers corresponding to the aforementioned indices, constitute\nthe same set as the `duress_consent_set`, boomlet knows that the user is not in duress.\nOtherwise the user is in duress.
+hnote over Boomlet: Boomlet will drop redundant data and indicate user's duress situation in\na variable based on the latest evaluation:\nuser_is_in_duress:=bool
+note over Boomlet: **Boomlet**\n[...]\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\n--Duress Check--\n<i>user_is_in_duress
+hnote over Boomlet: Boomlet in any duress check instance will need to send another message\nin withdrawal procedure. Lets name it **Withdrawal Message**
+hnote over Boomlet: Boomlet will create its usual WithdrawalMessage. Each WithdrawalMessage\nhas a `duress_bearing_payload`:\nWithdrawalMessage:=[...]+duress_bearing_payload\nIn case of duress, boomlet will fill the `duress_bearing_payload` with the doxing_password\nencrypted by the shared key between itself and the SAR. Otherwise, a random data with\nequal length to 'doxing_password' will be replaced with it.\nHere we need something from setup, so we show them in the state.
+note over Boomlet: **Boomlet**\n[...]\nshared_boomlet_sar_privkey\ndoxing_password\n[...]\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\n--Duress Check--\n<i>user_is_in_duress
+
+
+
+group User In Duress [user_in_duress = true]
+hnote over Boomlet: salted_doxing_password := "real" || doxing_password || rand_string(doxing_password.length())+4\nThe purpose of salting is for others not to be able to distinguish messages.
+hnote over Boomlet: duress_payload := AES_encrypt(shared_boomlet_sar_privkey, salted_doxing_password)
+hnote over Boomlet: WithdrawalMessage 01 := [...]+duress_payload
+end
+
+group User Not In Duress [user_in_duress = false]
+hnote over Boomlet: salted_decoy_doxing_password := "fake" || rand_string(doxing_password.length()) || rand_string(doxing_password.length()+4)\nThe purpose of salting is for others not to be able to distinguish messages.
+hnote over Boomlet: duress_payload := AES_encrypt(shared_boomlet_sar_privkey, salted_decoy_doxing_password)
+hnote over Boomlet: WithdrawalMessage 01 := [...]+duress_payload
+end
+
+autonumber "<b>WithdrawalMessage 00:"
+Boomlet -> Niso: [...] + duress_payload
+note over Niso: **Niso**\n[...]\n--Duress Check--\n<i>withdrawal_message_01
+
+' Step 7
+autonumber 7 "<b>Message [00]:"
+Niso o-> WTs: withdrawal_message_01
+hnote over WTs: WT will decompose the message into two parts. The first is the usual withdrawal\npart and the second is the `duress_payload`.\nWT will send the `duress_payload` to the pertinent SARs.\
+
+' Step 8
+WTs o-> SARs: duress_payload
+note over SARs: **SAR**\n[...]\nshared_boomlet_sar_privkey\n[...]\n--Duress Check--\n<i>temp_duress_payload
+hnote over SARs: SAR will decrypt the duress payload received.\nsupposedly_salted_doxing_password := AES_decrypt(shared_boomlet_sar_privkey, duress_payload)
+note over SARs: **SAR**\n[...]\nshared_boomlet_sar_privkey\n[...]\n--Duress Check--\ntemp_duress_payload\n<i>temp_supposedly_salted_doxing_password
+hnote over SARs: SAR will check the first 4 characters of the plain text.\ntemp_duress_tag := temp_supposedly_salted_doxing_password[0..4]\nIf it's "real" we are in duress.\nIf it's "fake" we are not in duress and SAR will not act.\nIf it's anything else, the message is malformed and SAR will act accordingly.
+
+
+group User In Duress [temp_duress_tag = "real"]
+
+hnote over SARs: doxing_password:= temp_supposedly_duress_password[5..(temp_supposedly_duress_password/2 + 1)]\nsar_service_identifier := SHA256(SHA256(doxing_password))
+hnote over SARs: SAR search for the `sar_service_identifier` in its database. If it finds a match, the `doxing_password` will\nbe used to decrypt dynamic and static doxing data and the search and rescue operation will start.\nIf a match is not found, the message will be deemed as malformed.
+end
+
+
+group User Not In Duress [temp_duress_tag = "fake"]
+hnote over SARs: SAR does nothing regarding the search and rescue operation.
+end
+
+
+group Malformed Message [temp_duress_tag = not["real" or "fake"]]
+hnote over SARs: SAR detects that something is wrong, either in Niso or in WT.\nThe SAR will keep a counter of this event and should it reach\na predefined limit, will deem the setup malfunctioning\nand stop responding to halt the procedure.
+end
+
+hnote over SARs: SAR will sign the received message, drop the redundant data and send the signed message to the WT.\nduress_payload_signed_by_sar := Sign(sar_identity_privkey, temp_duress_payload)
+
+' Step 9
+SARs o-> WTs: duress_payload_signed_by_sar
+
+hnote over WTs #Red: WT will include this signature in its reply to the participants\nand boomlet will check the inclusion and soundness of this\npayload to further the protocol.
+
+note over Boomlet: **Boomlet**\n[...]\nshared_boomlet_sar_privkey\ndoxing_password\n[..sar_identity_pubkey...]\n[...]\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\n--Duress Check--\nuser_is_in_duress
+/note over ST: **ST**\nboomlet_0_identity_pubkey\nst_0_identity_privkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey
+/note over Niso:**Niso**\n[...]
+/note over WTs: **WT**\n[...]
+/note over Iso: **Iso**\n[...]
+/note over User: **User**\n[...]\nname_of_5_consent_countries_in_brain_memory
+/note over SARs: **SAR**\n[...]\nshared_boomlet_sar_privkey\n[...]
+
+hnote over Boomlet: From now on, all messages bear the duress signal, regardless of user's input to the duress check.
+@enduml
