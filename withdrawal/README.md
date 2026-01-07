@@ -1,5 +1,7 @@
 # Boomerang withdrawal procedure
 
+For the message sequence diagram, please refer to the [initiator svg](initiator_withdrawal_diagram_without_states.svg) and [non-initiator svg](non_initiator_withdrawal_diagram_without_states.svg) files.
+
 1. Niso receives psbt from User. Niso checks that most_work_bitcoin_block_height has passed milestone_block_0 from boomerang_descriptor, derives tx_id from psbt and stores it. Niso also checks to see if psbt inputs are satisfiable. It sends the psbt alongside the latest block height to Boomlet.
 2. Boomlet receives {psbt, niso_0_event_block_height} from Niso and checks to see if the niso_0_event_block_height has passed milestone_block_0. Boomlet then derives tx_id from psbt, adds a nonce to it, encrypts it for st_0_identity_pubkey and sends it to Niso.
 3. Niso receives tx_id_with_nonce_encrypted_by_boomlet_0_for_st from Boomlet and forwards it to ST.
