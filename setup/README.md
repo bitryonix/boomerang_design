@@ -1,5 +1,7 @@
 # Boomerang Setup Procedure
 
+For the message sequence diagram, please refer to the [svg](setup_diagram_without_states.svg) file.
+
 1. Phone receives {doxing_password, sar_ids_collection, static_doxing_data} from User and saves doxing_key (SHA256 digest of doxing_password) to encrypt dynamic_doxing_data (e.g. location). It then sends doxing_data_identifier (SHA_256 digest of doxing_key) to SAR to initialize setup.
 2. SAR receives doxing_data_identifier from Phone and responds with a newly generated sar_service_fee_payment_info.
 3. Phone receives sar_service_fee_payment_info from SAR and forwards it to User.
