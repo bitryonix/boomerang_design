@@ -22,6 +22,7 @@ We need your feedbacks on idea and implementation in design to get a feel if we 
   - [Protocol overview](#protocol-overview)
     - [Entities](#entities)
     - [Descriptor](#descriptor)
+  - [Setup and withdrawal steps in code](#setup-and-withdrawal-steps-in-code)
     - [Setup overview](#setup-overview)
     - [Withdrawal overview](#withdrawal-overview)
     - [Design decisions](#design-decisions)
@@ -107,6 +108,10 @@ Unspendable key path
 Hence, the only essential requirement on the descriptor is that it contains scripts with probabilistic keys (boomerang scripts), that are executable before scripts with normal keys (normal scripts).
 
 We have chosen the script in boomerang regime to be a 5-of-5 to guarantee that the boomerang protocol is in effect, even if only the self is committed to the protocol.
+
+## Setup and withdrawal steps in code
+
+All steps are laid out clearly in [setup.rs](https://github.com/bitryonix/boomerang/blob/main/poc/src/setup.rs) and [withdrawal.rs](https://github.com/bitryonix/boomerang/blob/main/poc/src/withdrawal.rs) files, exactly following the design message diagrams of [setup](setup/setup_diagram_without_states.svg), [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) design files.  
 
 ### Setup overview
 
