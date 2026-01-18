@@ -13,13 +13,17 @@ end box
 participant WT order 98 #Red
 participant SARs order 99 #Yellow
 actor Peers order 100
-' newlines at columns 128+30=158, 256+30=286, 384+30=414, 512+30=542
+
 autonumber "<b>[00]"
 note over User:  **User** \n <i>milestone_block_collection: Collection<milestone_block> \n <i>wt_ids_collection: Collection<wt_id> [Identity of all agreed upon WT candidates, first is the one first attempted to activate] \n <i>sar_ids_collection: Collection<sar_id> [Identity of all privately selected SARs] \n <i>network \n <i>entropy_bytes \n <i>passphrase \n <i>static_doxing_data \n <i>doxing_password \n <i>rpc_client_url \n <i>rpc_client_auth
-/ note over WT:  **WT** \n <i>state: SetupReadyToRegisterService \n <i>wt_privkey \n <i>wt_id: {\n <i>    wt_tor_address,\n <i>    wt_pubkey \n}\n <i>most_work_bitcoin_block_height
-/ note over SARs:  **SAR** \n <i>state: SetupReadyToRegisterService \n <i>sar_privkey \n <i>sar_id: {\n <i>    sar_tor_address,\n <i>    sar_pubkey \n <i>}\n
-/ note over Phone:  **Phone** \n state: SetupReady \n <i>dynamic_doxing_data
-note over User, SARs:  <b>PARAMETERS \n #define MAX_TRIES_FOR_DIGGING_GAME_IN_BLOCKS milestone_block_1-milestone_block_0 \n #define MIN_TRIES_FOR_DIGGING_GAME_IN_BLOCKS
+/ note over WT:  **WT** \n <i>wt_privkey \n <i>wt_id: {\n <i>    wt_tor_address,\n <i>    wt_pubkey \n}\n <i>most_work_bitcoin_block_height
+/ note over SARs:  **SAR** \n <i>sar_privkey \n <i>sar_id: {\n <i>    sar_tor_address,\n <i>    sar_pubkey \n <i>}\n
+/ note over Phone:  **Phone** \n <i>dynamic_doxing_data
+note over User, SARs
+<b>PARAMETERS 
+# #define MAX_TRIES_FOR_DIGGING_GAME_IN_BLOCKS 
+# #define MIN_TRIES_FOR_DIGGING_GAME_IN_BLOCKS
+end note
 group SAR sign-up
 
 ' Step 1 
@@ -39,7 +43,7 @@ hnote over Phone #Pink:  Assert sar_service_fee_payment_info.sar_id == sar_ids_c
 
 ' Step 4
 Phone o-> User:  <b>SetupPhoneOutput1 \n sar_service_fee_payment_info
-hnote over User #LavenderBlush:  User receives sar_service_fee_payment_info from Phone, verifies and pays the invoice generating \n sar_service_fee_payment_receipts as a result. He then inputs sar_service_fee_payment_receipts back to phone.
+hnote over User #LavenderBlush:  User receives sar_service_fee_payment_info from Phone, verifies and pays the invoice generating \n sar_service_fee_payment_receipts as a result. He then inputs sar_service_fee_payment_receipts back to Phone.
 hnote over User #Lavender:  sar_service_fee_payment_receipts := pay(sar_service_fee_payment_info)
 
 ' Step 5
@@ -70,7 +74,7 @@ hnote over Iso #Lavender:  doxing_key := sha256(doxing_password)
 
 ' Step 10
 Iso o-> Boomlet:  <b>SetupIsoBoomletMessage1 \n normal_pubkey_0 \n doxing_key \n sar_ids_collection \n network
-hnote over Boomlet #LavenderBlush:  Boomlet receives {normal_pubkey_0, doxing_key, sar_ids_collection, network} from Iso during installation. \n Then independently generates boomlet_0_identity_privkey which it uses to encrypt, decrypt and sign \n messages. It also creates boomlet_0_boom_musig2_privkey_share and boomlet_0_boom_musig2_pubkey_share, \n that will together with normal_pubkey_0, generate the MuSig2 aggregated public key, named boom_pubkey_0, \n that is used in boomerang_descriptor. It then responds with boomlet_0_identity_pubkey.
+hnote over Boomlet #LavenderBlush:  Boomlet receives {normal_pubkey_0, doxing_key, sar_ids_collection, network} from Iso during installation. \n Then independently generates boomlet_0_identity_privkey which it uses to encrypt, decrypt and sign \n messages. It also creates boomlet_0_boom_musig2_privkey_share and boomlet_0_boom_musig2_pubkey_share, \n that will together with normal_pubkey_0, generate the MuSig2 aggregated public key, named boom_pubkey_0, \n that is used in boomerang_descriptor. After successful installation on an empty smart card, Boomlet \n responds to Iso with boomlet_0_identity_pubkey.
 hnote over Boomlet #Lavender:  boomlet_0_identity_privkey := generate_privkey() \n boomlet_0_boom_musig2_privkey_share := generate_privkey() \n boomlet_0_boom_musig2_pubkey_share := derive_pubkey(boomlet_0_identity_privkey) \n boomlet_0_identity_pubkey := derive_pubkey(boomlet_0_identity_privkey) \n boom_pubkey_0 := derive_musig2_pubkey(boomlet_0_boom_musig2_pubkey_share, normal_pubkey_0) \n peer_0_tor_secret_key := generate_privkey() \n peer_0_id := PeerId{ \n boom_pubkey: boom_pubkey_0, \n normal_pubkey: normal_pubkey_0, \n boomlet_identity_pubkey: boomlet_0_identity_pubkey \n}
 
 ' Step 11
@@ -88,8 +92,8 @@ hnote over Iso #LavenderBlush:  Iso receives st_0_identity_pubkey from SAR and f
 
 ' Step 14
 Iso o-> Boomlet:  <b>SetupIsoBoomletMessage2 \n st_0_identity_pubkey
-hnote over Boomlet #LavenderBlush:  Boomlet receives st_0_identity_pubkey from Iso. It then generates an array of 5 random integers between 1 \n and 198 named duress_check_space and encrypts it for st. This will be used to record the duress_consent_set input from user.
-hnote over Boomlet #Lavender:  duress_check_space := DuressCheckSpace{space: rand([1..198;5])} \n duress_check_space_with_nonce := MessageWithNonce{\n content: duress_check_space \n nonce: rand() [u8; 32] } \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st := AES_encrypt(private_key: ECDH(boomlet_0_identity_privkey, st_0_identity_pubkey), content: duress_check_space_with_nonce)
+hnote over Boomlet #LavenderBlush:  Boomlet receives st_0_identity_pubkey from Iso. It then generates an array of 5 random integers between 1 \n and 195 named duress_check_space and encrypts it for st. This will be used to record the duress_consent_set input from user.
+hnote over Boomlet #Lavender:  duress_check_space := DuressCheckSpace{space: rand([1..195;5])} \n duress_check_space_with_nonce := MessageWithNonce{\n content: duress_check_space \n nonce: rand() [u8; 32] } \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st := AES_encrypt(private_key: ECDH(boomlet_0_identity_privkey, st_0_identity_pubkey), content: duress_check_space_with_nonce)
 
 ' Step 15
 Boomlet o-> Iso:  <b>SetupBoomletIsoMessage2 \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st
@@ -120,7 +124,7 @@ hnote over Boomlet #LavenderBlush:  Boomlet receives duress_signal_index_with_no
 hnote over Boomlet #Lavender:  duress_signal_index_with_nonce := AES_decrypt(private_key: ECDH(boomlet_0_identity_privkey, st_0_identity_pubkey), content: duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0)
 hnote over Boomlet #Pink:  Assert duress_signal_index_with_nonce.nonce == duress_check_space_with_nonce.nonce
 hnote over Boomlet #Lavender:  duress_signal_index := duress_signal_index_with_nonce.content \n duress_consent_set := duress_check_space[duress_signal_index]
-hnote over Boomlet #Lavender:  duress_check_space := DuressCheckSpace{space: rand([1..198;5])} \n duress_check_space_with_nonce := MessageWithNonce{\n content: duress_check_space \n nonce: rand() [u8; 32] } \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st := AES_encrypt(private_key: ECDH(boomlet_0_identity_privkey, st_0_identity_pubkey), content: duress_check_space_with_nonce)
+hnote over Boomlet #Lavender:  duress_check_space := DuressCheckSpace{space: rand([1..195;5])} \n duress_check_space_with_nonce := MessageWithNonce{\n content: duress_check_space \n nonce: rand() [u8; 32] } \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st := AES_encrypt(private_key: ECDH(boomlet_0_identity_privkey, st_0_identity_pubkey), content: duress_check_space_with_nonce)
 
 ' Step 21
 Boomlet -> Iso:  <b>SetupBoomletIsoMessage3 \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st
@@ -146,7 +150,7 @@ hnote over Iso #LavenderBlush:  Iso receives duress_signal_index_with_nonce_encr
 
 ' Step 26
 Iso o-> Boomlet:  <b>SetupIsoBoomletMessage4 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0
-hnote over Boomlet #LavenderBlush:  Boomlet receives duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 from Iso. Boomlet will \n search for the indices in duress_check_space. If the resulting 5 numbers constitute the same set as the \n duress_consent_set, Boomlet knows that the user has "memorized" the consent set. If not, there would be \n a retry from **SetupBoomletIsoMessage3**. If that also fails, the duress setup process will start from \n **SetupBoomletIsoMessage2** onwards (after key exchange). If all is good, Boomlet will drop the redundant data.
+hnote over Boomlet #LavenderBlush:  Boomlet receives duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 from Iso. Boomlet will \n search for the indices in duress_check_space. If the resulting 5 numbers constitute the same set as the \n duress_consent_set, Boomlet knows that the user has "memorized" the consent set.
 hnote over Boomlet #Lavender:  duress_signal_index_with_nonce := AES_decrypt(private_key: ECDH(boomlet_0_identity_privkey, st_0_identity_pubkey), content: duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0)
 hnote over Boomlet #Pink:  Assert duress_signal_index_with_nonce.nonce == duress_check_space_with_nonce.nonce
 hnote over Boomlet #Lavender:  duress_signal_index := duress_signal_index_with_nonce.content
@@ -154,7 +158,7 @@ hnote over Boomlet #Pink:  Assert duress_check_space[duress_signal_index] == con
 
 ' Step 27
 Boomlet o-> Iso:  <b>SetupBoomletIsoMessage4 \n magic: "setup_duress_finished"
-hnote over Iso #LavenderBlush:  Iso receives {magic: "setup_duress_finished"} from Boomlet and knowing Boomlet can be disconnected \n returns mnemonic to User.
+hnote over Iso #LavenderBlush:  Iso receives {magic: "setup_duress_finished"} from Boomlet and knowing Boomlet can be disconnected, \n returns mnemonic to User.
 end group
 group boomerang_params setup
 
@@ -173,7 +177,7 @@ hnote over Boomlet #Lavender:  peer_0_tor_address := derive_tor_address(peer_0_t
 
 ' Step 31
 Boomlet o-> Niso:  <b>SetupBoomletNisoMessage1 \n peer_0_id \n peer_0_tor_secret_key \n peer_0_tor_address_signed_by_boomlet_0
-hnote over Niso #LavenderBlush:  Niso receives {peer_0_id, peer_0_tor_secret_key, peer_0_tor_address_signed_by_boomlet_0} from Boomlet. It \n verifies the signature on peer_0_tor_address_signed_by_boomlet_0 using boomlet_0_identity_pubkey that it got in \n peer_0_id. Niso then runs a tor circuit using peer_0_tor_secret_key and generates peer_0_tor_address in \n doing so. It checks the generated peer_0_tor_address to be equal with the signed one and forwards \n peer_0_id and peer_0_tor_address_signed_by_boomlet_0 to ST.
+hnote over Niso #LavenderBlush:  Niso receives {peer_0_id, peer_0_tor_secret_key, peer_0_tor_address_signed_by_boomlet_0} from Boomlet. It \n verifies the signature on peer_0_tor_address_signed_by_boomlet_0 using boomlet_0_identity_pubkey that it got in \n peer_0_id. Niso then runs a tor circuit using peer_0_tor_secret_key and generates peer_0_tor_address in \n doing so. It checks the generated peer_0_tor_address to be equal to the signed one and forwards \n peer_0_id and peer_0_tor_address_signed_by_boomlet_0 to ST.
 hnote over Niso #Pink:  Assert schnorr_verify(pubkey: peer_0_id.boomlet_0_identity_pubkey, content: peer_0_tor_address_signed_by_boomlet_0.signature) == True
 hnote over Niso #Lavender:  peer_0_tor_address := onion_service(privkey: peer_0_tor_secret_key). 
 hnote over Niso #Pink:  Niso checks if the peer_0_tor_address_signed_by_boomlet_0.content == peer_0_tor_address.
@@ -185,7 +189,7 @@ hnote over ST #Pink:  Assert peer_0_id.boomlet_0_identity_pubkey == boomlet_0_id
 
 ' Step 33
 ST o-> User:  <b>SetupStOutput3 \n peer_0_id \n peer_0_tor_address_signed_by_boomlet_0
-hnote over User #LavenderBlush:  User receives {peer_0_id, peer_0_tor_address_signed_by_boomlet_0} from ST and proceeds to share it with \n peers in an out-of-band channel. 
+hnote over User #LavenderBlush:  User receives {peer_0_id, peer_0_tor_address_signed_by_boomlet_0} from ST and proceeds to share it with \n peers in a secure out-of-band channel. 
 
 ' Step 34
 User <--> Peers:  <b>SetupUserPeersOutOfBandMessage1 \n peer_0_id \n peer_0_tor_address_signed_by_boomlet_0
@@ -194,14 +198,14 @@ hnote over User #Lavender:  peer_addresses_collection := Collection<peer_i_id, p
 
 ' Step 35
 User o-> Niso:  <b>SetupNisoInput2 \n peer_addresses_collection \n wt_ids_collection \n milestone_block_collection
-hnote over Niso #LavenderBlush:  Niso receives {peer_addresses_collection, wt_ids_collection, milestone_block_collection} from User. It checks \n the peer_i_id.boomlet_i_identity_pubkey's signature on every peer_i_tor_address_signed_by_boomlet_i and \n if successful attempts connecting to all of them. He then checks inclusion of \n <peer_0_id, peer_0_tor_address_signed_by_boomlet_0> in peer_addresses_collection and forwards the received \n values to Boomlet.
+hnote over Niso #LavenderBlush:  Niso receives {peer_addresses_collection, wt_ids_collection, milestone_block_collection} from User. It checks \n the correctness of peer_i_id.boomlet_i_identity_pubkey's signature on every peer_i_tor_address_signed_by_boomlet_i \n and if successful attempts connecting to all of them. He then checks inclusion of \n <peer_0_id, peer_0_tor_address_signed_by_boomlet_0> in peer_addresses_collection and forwards the received \n values to Boomlet.
 hnote over Niso #Pink:  Assert schnorr_verify(pubkey: peer_addresses_collection.peer_i_id.boomlet_i_identity_pubkey, content: peer_addresses_collection.peer_i_tor_address_signed_by_boomlet_i.signature) == True [0 <= i <= 4].
 hnote over Niso #Lavender:  Connect to peer_i_tor_address_signed_by_boomlet_i.content [1 <= i <= 4].
 hnote over Niso #Pink:  Niso checks <peer_0_id, peer_0_tor_address_signed_by_boomlet_0> inclusion in peer_addresses_collection.
 
 ' Step 36
 Niso o-> Boomlet:  <b>SetupNisoBoomletMessage2 \n peer_addresses_collection \n wt_ids_collection \n milestone_block_collection
-hnote over Boomlet #LavenderBlush:  Boomlet receives {peer_addresses_collection, wt_ids_collection, milestone_block_collection} from Niso. It \n checks the peer_i_id.boomlet_i_identity_pubkey's signature on every peer_i_tor_address_signed_by_boomlet_i, \n checks inclusion of <peer_0_id, peer_0_tor_address_signed_by_boomlet_0> in peer_addresses_collection. \n To verify boomerang_params_seed that includes peer_ids, wt_ids and milestone_block_collection with User \n it adds nonce to it to get boomerang_params_with_nonce, encrypts boomerang_params_with_nonce for ST and \n sends boomerang_params_seed_encrypted_by_boomlet_0_for_st to Niso.
+hnote over Boomlet #LavenderBlush:  Boomlet receives {peer_addresses_collection, wt_ids_collection, milestone_block_collection} from Niso. It \n checks the peer_i_id.boomlet_i_identity_pubkey's signature on every peer_i_tor_address_signed_by_boomlet_i, \n checks inclusion of <peer_0_id, peer_0_tor_address_signed_by_boomlet_0> in peer_addresses_collection. \n To verify boomerang_params_seed that includes peer_ids, wt_ids and milestone_block_collection with User \n it adds nonce to it to get boomerang_params_seed_with_nonce, encrypts boomerang_params_seed_with_nonce for ST and \n sends boomerang_params_seed_encrypted_by_boomlet_0_for_st to Niso.
 hnote over Boomlet #Pink:  Assert schnorr_verify(pubkey: peer_addresses_collection.peer_i_id.boomlet_i_identity_pubkey, content: peer_addresses_collection.peer_i_tor_address_signed_by_boomlet_i.signature) == True [0 <= i <= 4].
 hnote over Boomlet #Pink:  Boomlet checks <peer_0_id, peer_0_tor_address_signed_by_boomlet_0> inclusion in peer_addresses_collection.
 group St_check(boomerang_params_seed)
@@ -213,7 +217,7 @@ hnote over Niso #LavenderBlush:  Niso receives boomerang_params_seed_encrypted_b
 
 ' Step 38
 Niso o-> ST:  <b>SetupNisoStMessage2 \n boomerang_params_seed_encrypted_by_boomlet_0_for_st
-hnote over ST #LavenderBlush:  ST receives boomerang_params_seed_encrypted_by_boomlet_0_for_st from Niso and decrypts it to get \n boomerang_params_seed_with_nonce separates boomerang_params_seed_with_nonce.content to get \n boomerang_params_seed which it sends to User.
+hnote over ST #LavenderBlush:  ST receives boomerang_params_seed_encrypted_by_boomlet_0_for_st from Niso, decrypts it to get \n boomerang_params_seed_with_nonce and separates boomerang_params_seed_with_nonce.content to get \n boomerang_params_seed which it sends to User.
 hnote over ST #Lavender:  boomerang_params_seed_with_nonce := AES_decrypt(private_key: ECDH(boomlet_0_identity_pubkey, st_0_identity_privkey), content: boomerang_params_seed_encrypted_by_boomlet_0_for_st) \n boomerang_params_seed := boomerang_params_seed_with_nonce.content
 
 ' Step 39
@@ -254,7 +258,7 @@ hnote over Niso #Pink:  Assert schnorr_verify(pubkey: boomlet_i_identity_pubkey,
 
 ' Step 45 -3
 Niso o-> Boomlet:  <b>SetupNisoBoomletMessage4 \n boomerang_params_signed_by_all_peers: Collection<boomerang_params_signed_by_boomlet_i> [1 <= i <= 4]
-hnote over Boomlet #LavenderBlush:  Boomlet receives boomerang_params_signed_by_all_peers from Niso. It checks the content of each peer's \n boomerang_params_signed_by_boomlet_i to be equal to boomerang_params_signed_by_boomlet_0 and for the \n signatures to match peer_i.boomlet_i_identity_pubkey.  If the message checks out, Boomlet fixes the \n boomerang_params as an agreed upon value between peers, changing of which will be addressed in ancillary. \n It then informs Niso that boomerang_params is fixed.
+hnote over Boomlet #LavenderBlush:  Boomlet receives boomerang_params_signed_by_all_peers from Niso. It checks the content of each peer's \n boomerang_params_signed_by_boomlet_i to be equal to boomerang_params_signed_by_boomlet_0 and verifies each \n of the corresponding signatures by peer_i.boomlet_i_identity_pubkey.  If the message checks out, Boomlet fixes the \n boomerang_params as an agreed upon value between peers. \n It then informs Niso that boomerang_params is fixed.
 hnote over Boomlet #Pink:  Assert boomerang_params_signed_by_boomlet_i.content == boomerang_params [1 <= i <= 4].
 hnote over Boomlet #Pink:  Assert schnorr_verify(pubkey: boomlet_i_identity_pubkey, content: boomerang_params_signed_by_boomlet_i.signature) == True [1 <= i <= 4].
 end group
@@ -300,26 +304,28 @@ hnote over Niso #LavenderBlush:  Niso receives wt_service_fee_payment_receipt fr
 
 ' Step 53
 Niso o-> WT:  <b>SetupNisoWtMessage2 \n wt_service_fee_payment_receipt
-hnote over WT #LavenderBlush:  WT receives wt_service_fee_payment_receipt from Niso and verifies it. It then signs the previously received \n boomerang_params_fingerprint and returns boomerang_params_fingerprint_signed_by_wt to Niso. 
-hnote over WT #Lavender:  boomerang_params_fingerprint_signed_by_wt := SignatureOnMessage{ \n signature: schnorr_sign(wt_privkey, boomerang_params_fingerprint), \n content: boomerang_params_fingerprint \n }
+' hnote over WT #LavenderBlush:  WT receives wt_service_fee_payment_receipt from Niso and verifies it. It then signs the previously received \n boomerang_params_fingerprint and returns boomerang_params_fingerprint_signed_by_wt to Niso. 
+hnote over WT #Lavender:  boomerang_params_fingerprint_suffixed_by_wt := WtBoomerangParamsFingerprint{\n content: boomerang_params_fingerprint \n suffix: "setup_peers_registration_with_wt_completed" \n} \n boomerang_params_fingerprint_suffixed_by_wt_signed_by_wt := SignatureOnMessage{ \n signature: schnorr_sign(wt_privkey, boomerang_params_fingerprint_suffixed_by_wt), \n content: boomerang_params_fingerprint_suffixed_by_wt \n }
 
 ' Step 54 
-WT o-> Niso:  <b>SetupWtNisoMessage2 \n boomerang_params_fingerprint_signed_by_wt
-hnote over Niso #LavenderBlush:  Niso receives boomerang_params_fingerprint_signed_by_wt from WT. Niso verifies wt_pubkey's signature, \n checks that the content matches the boomerang_params_fingerprint_signed_by_boomlet_0 that was previously \n sent and forwards it to Boomlet.
-hnote over Niso #Pink:  Assert boomerang_params_fingerprint_signed_by_wt.content == boomerang_params_fingerprint_signed_by_boomlet_0.content
-hnote over Niso #Pink:  Assert schnorr_verify(pubkey: wt_pubkey, content: boomerang_params_fingerprint_signed_by_wt.signature) == True 
+WT o-> Niso:  <b>SetupWtNisoMessage2 \n boomerang_params_fingerprint_suffixed_by_wt_signed_by_wt
+' hnote over Niso #LavenderBlush:  Niso receives boomerang_params_fingerprint_suffixed_by_wt_signed_by_wt from WT. Niso verifies wt_pubkey's signature, \n checks that the content matches the boomerang_params_fingerprint_signed_by_boomlet_0 that was previously \n sent and forwards it to Boomlet.
+hnote over Niso #Pink:  Assert schnorr_verify(pubkey: wt_pubkey, content: boomerang_params_fingerprint_suffixed_by_wt_signed_by_wt.signature) == True 
+hnote over Niso #Pink:  Assert boomerang_params_fingerprint_suffixed_by_wt_signed_by_wt.suffix == "setup_peers_registration_with_wt_completed"
+hnote over Niso #Pink:  Assert boomerang_params_fingerprint_signed_by_wt.content.content == boomerang_params_fingerprint_signed_by_boomlet_0.content
 
 ' Step 55
-Niso o-> Boomlet:  <b>SetupNisoBoomletMessage6 \n boomerang_params_fingerprint_signed_by_wt
-hnote over Boomlet #LavenderBlush:  Boomlet receives boomerang_params_fingerprint_signed_by_wt from WT, checks the content to match what was \n previously sent and verifies the signature using wt_pubkey. It then hashes boomerang_params alongside \n {magic: "setup_wt_service_initialized"} to get shared_state_active_wt_fingerprint and signs it to get \n shared_state_active_wt_fingerprint_signed_by_boomlet_0, returning this to Niso to check if other peers have \n also finalized the same wt.
-hnote over Boomlet #Pink:  Assert boomerang_params_fingerprint_signed_by_wt.content == boomerang_params_fingerprint
-hnote over Boomlet #Pink:  Assert schnorr_verify(pubkey: wt_pubkey, content: boomerang_params_fingerprint_signed_by_wt.signature) == True 
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage6 \n boomerang_params_fingerprint_suffixed_by_wt_signed_by_wt
+' hnote over Boomlet #LavenderBlush:  Boomlet receives boomerang_params_fingerprint_signed_by_wt from Niso, checks the content to match what was \n previously sent and verifies the signature using wt_pubkey. It then hashes boomerang_params alongside \n {magic: "setup_wt_service_initialized"} to get shared_state_active_wt_fingerprint and signs it to get \n shared_state_active_wt_fingerprint_signed_by_boomlet_0, returning this to Niso to check if other peers have \n also finalized the same wt.
+hnote over Boomlet #Pink:  Assert schnorr_verify(pubkey: wt_pubkey, content: boomerang_params_fingerprint_suffixed_by_wt_signed_by_wt.signature) == True 
+hnote over Boomlet #Pink:  Assert boomerang_params_fingerprint_suffixed_by_wt_signed_by_wt.suffix == "setup_peers_registration_with_wt_completed"
+hnote over Boomlet #Pink:  Assert boomerang_params_fingerprint_signed_by_wt.content.content == boomerang_params_fingerprint
 group <Boomlet Shared State in Sync regarding the WT service being activated and all peers in the know of it>
-hnote over Boomlet #Lavender:  shared_state_active_wt := SharedStateBoomerangParams{ \n boomerang_params: boomerang_params \n magic: "setup_wt_service_initialized" \n} \n shared_state_active_wt_fingerprint := sha256(shared_state_active_wt) \n shared_state_active_wt_fingerprint_signed_by_boomlet_0 := SignatureOnMessage{ \n signature: schnorr_sign(boomlet_0_identity_privkey, shared_state_active_wt_fingerprint), \n content: shared_state_active_wt_fingerprint \n }
+hnote over Boomlet #Lavender:  shared_state_active_wt := SharedStateBoomerangParams{ \n boomerang_params: boomerang_params, \n magic: "setup_wt_service_initialized" \n} \n shared_state_active_wt_fingerprint := sha256(shared_state_active_wt) \n shared_state_active_wt_fingerprint_signed_by_boomlet_0 := SignatureOnMessage{ \n signature: schnorr_sign(boomlet_0_identity_privkey, shared_state_active_wt_fingerprint), \n content: shared_state_active_wt_fingerprint \n }
 
 ' Step 56 Step 1 
 Boomlet o-> Niso:  <b>SetupBoomletNisoMessage6 \n shared_state_active_wt_fingerprint_signed_by_boomlet_0
-hnote over Niso #LavenderBlush:  Niso receives shared_state_active_wt_fingerprint_signed_by_boomlet_0 and proceeds to share it with Peers.
+hnote over Niso #LavenderBlush:  Niso receives shared_state_active_wt_fingerprint_signed_by_boomlet_0 from Boomlet and proceeds to share it with Peers.
 
 ' Step 57 Step 2 
 Niso <-> Peers:  <b>SetupNisoPeerNisoMessage2 \n shared_state_active_wt_fingerprint_signed_by_boomlet_i [0 <= i <= 4]
@@ -329,7 +335,7 @@ hnote over Niso #Pink:  Assert shared_state_active_wt_fingerprint_signed_by_boom
 
 ' Step 58 Step 3
 Niso o-> Boomlet:  <b>SetupNisoBoomletMessage7 \n shared_state_active_wt_fingerprint_signed_by_all_peers: Collection<shared_state_active_wt_fingerprint_signed_by_boomlet_i> [1 <= i <= 4]
-hnote over Boomlet #LavenderBlush:  Boomlet receives shared_state_active_wt_fingerprint_signed_by_all_peers from Niso. It checks the content of \n each peer's shared_state_active_wt_fingerprint_signed_by_boomlet_i to be equal to \n shared_state_active_wt_fingerprint_signed_by_boomlet_0 and for the signatures to match peer_i.boomlet_i_identity_pubkey. \n It then informs Niso that wt is confirmed and active for all peers.
+hnote over Boomlet #LavenderBlush:  Boomlet receives shared_state_active_wt_fingerprint_signed_by_all_peers from Niso. It checks the content of \n each peer's shared_state_active_wt_fingerprint_signed_by_boomlet_i to be equal to \n shared_state_active_wt_fingerprint_signed_by_boomlet_0 and verifies each of the corresponding signatures by peer_i.boomlet_i_identity_pubkey. \n It then informs Niso that wt is confirmed and active for all peers.
 hnote over Boomlet #Pink:  Assert schnorr_verify(pubkey: boomlet_i_identity_pubkey, content: shared_state_active_wt_fingerprint_signed_by_boomlet_i.signature) == True [1 <= i <= 4].
 hnote over Boomlet #Pink:  Assert shared_state_active_wt_fingerprint_signed_by_boomlet_i.content == shared_state_active_wt_fingerprint [1 <= i <= 4]
 end
@@ -369,7 +375,7 @@ hnote over WT #Lavender:  sar_setup_response_signed_by_sar_encrypted_by_sar_for_
 
 ' Step 65
 WT o-> Niso:  <b>SetupWtNisoMessage3 \n sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt
-hnote over Niso #LavenderBlush:  Niso receives sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt, \n checks the signature using wt_pubkey and checks the suffix to match "setup_sar_acknowledgement_of_finalization_received". \n It then forwards the message to Boomlet.
+hnote over Niso #LavenderBlush:  Niso receives sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt from WT, \n checks the signature using wt_pubkey and checks the suffix to match "setup_sar_acknowledgement_of_finalization_received". \n It then forwards the message to Boomlet.
 hnote over Niso #Pink:  Assert schnorr_verify(pubkey: wt_pubkey, content: sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt.signature) == True.
 hnote over Niso #Pink:  sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt.suffix == "setup_sar_acknowledgement_of_finalization_received"
 
@@ -386,7 +392,7 @@ hnote over Boomlet #Lavender:  shared_state_active_sar := SharedStateSarFinaliza
 
 ' Step 67 - Step 1 
 Boomlet o-> Niso:  <b>SetupBoomletNisoMessage9 \n shared_state_active_sar_fingerprint_signed_by_boomlet_0
-hnote over Niso #LavenderBlush:  Niso receives shared_state_active_sar_fingerprint_signed_by_boomlet_0 and proceeds to share it with Peers.
+hnote over Niso #LavenderBlush:  Niso receives shared_state_active_sar_fingerprint_signed_by_boomlet_0 from Boomlet and proceeds to share it with Peers.
 
 ' Step 68 - Step 2
 Niso <-> Peers:  <b>SetupNisoPeerNisoMessage3 \n shared_state_active_sar_fingerprint_signed_by_boomlet_i [0 <= i <= 4]
@@ -396,7 +402,7 @@ hnote over Niso #Pink:  Assert shared_state_active_sar_fingerprint_signed_by_boo
 
 ' Step 69 -3 
 Niso o-> Boomlet:  <b>SetupNisoBoomletMessage10 \n shared_state_active_sar_fingerprint_signed_by_all_peers: Collection<shared_state_active_sar_fingerprint_signed_by_boomlet_i> [1 <= i <= 4]
-hnote over Boomlet #LavenderBlush:  Boomlet receives shared_state_active_sar_fingerprint_signed_by_all_peers from Niso. It checks the content \n of each peer's shared_state_active_sar_fingerprint_signed_by_boomlet_i to be equal to \n shared_state_active_sar_fingerprint_signed_by_boomlet_0 and for the signatures to match \n peer_i.boomlet_i_identity_pubkey. It then informs Niso that sar activation is confirmed and active for all peers.
+hnote over Boomlet #LavenderBlush:  Boomlet receives shared_state_active_sar_fingerprint_signed_by_all_peers from Niso. It checks the content \n of each peer's shared_state_active_sar_fingerprint_signed_by_boomlet_i to be equal to \n shared_state_active_sar_fingerprint_signed_by_boomlet_0 and verifies each of the corresponding signatures by \n peer_i.boomlet_i_identity_pubkey. It then informs Niso that sar activation is confirmed and active for all peers.
 hnote over Boomlet #Pink:  Assert schnorr_verify(pubkey: boomlet_i_identity_pubkey, content: shared_state_active_sar_fingerprint_signed_by_boomlet_i.signature) == True [1 <= i <= 4].
 hnote over Boomlet #Pink:  Assert shared_state_active_sar_fingerprint_signed_by_boomlet_i.content == shared_state_active_sar_fingerprint [1 <= i <= 4]
 end
@@ -426,11 +432,11 @@ Boomletwo o-> Iso:  <b>SetupBoomletwoIso1 \n boomletwo_Identity_pubkey
 hnote over Iso #LavenderBlush:  Iso receives boomletwo_Identity_pubkey from Boomletwo and proceeds to inform User to connect Boomlet.
 
 ' Step 75
-Iso o-> User:  <b>IsoOutput2 \n magic: "setup_boomletwo_identity_pubkey_received_connect_boomlet_to_iso"
+Iso o-> User:  <b>SetupIsoOutput2 \n magic: "setup_boomletwo_identity_pubkey_received_connect_boomlet_to_iso"
 hnote over User #LavenderBlush:  User receives {magic: "setup_boomletwo_identity_pubkey_received_connect_boomlet_to_iso"} from Iso and \n proceeds to connect Boomlet to Iso and Input the values necessary for backup and for verification of the \n received doxing_data_fingerprint.
 
 ' Step 76
-User o-> Iso:  <b>IsoInput3 \n milestone_block_collection \n network \n mnemonic \n passphrase \n static_doxing_data \n doxing_password
+User o-> Iso:  <b>SetupIsoInput3 \n milestone_block_collection \n network \n mnemonic \n passphrase \n static_doxing_data \n doxing_password
 hnote over Iso #LavenderBlush:  Iso receives {milestone_block_collection, network, mnemonic, passphrase, static_doxing_data, doxing_password} \n from User. It then generates backup_request which is composed of {"boomlet_backup_request", \n boomletwo_Identity_pubkey, normal_pubkey_0}, signs it using normal_privkey_0 and sends the signed value to Boomlet.
 hnote over Iso #Lavender:  backup_request := BoomletBackupRequest{\n magic: "boomlet_backup_request", \n backup_boomlet_pubkey: boomletwo_Identity_pubkey, \n backup_normal_pubkey: normal_pubkey_0 \n}\n backup_request_signed_by_normal_0 := SignatureOnMessage{ \n signature: schnorr_sign(normal_privkey_0, backup_request), \n content: backup_request \n }
 
@@ -453,11 +459,11 @@ hnote over Iso #Pink:  Assert sar_setup_response.doxing_data_identifier == doxin
 hnote over Iso #Pink:  Assert sar_setup_response.fingerprint_of_static_doxing_data_encrypted_by_doxing_key == sha256(AES_encrypt(private_key: doxing_key, content: static_doxing_data, iv: iv_of_static_doxing_data_encrypted_by_doxing_key))
 
 ' Step 79
-Iso o-> User:  <b>IsoOutput3 \n magic: "setup_boomlet_backup_data_received_connect_boomletwo_to_iso"
+Iso o-> User:  <b>SetupIsoOutput3 \n magic: "setup_boomlet_backup_data_received_connect_boomletwo_to_iso"
 hnote over User #LavenderBlush:  User receives {magic: "setup_boomlet_backup_data_received_connect_boomletwo_to_iso"} from Iso. User then \n proceeds to connect Boomletwo to Iso. 
 
 ' Step 80
-User o-> Iso:  <b>IsoInput4 \n magic: "setup_user_is_asked_to_connect_boomletwo_to_iso_boomletwo_connected_to_iso"
+User o-> Iso:  <b>SetupIsoInput4 \n magic: "setup_user_is_asked_to_connect_boomletwo_to_iso_boomletwo_connected_to_iso"
 hnote over Iso #LavenderBlush:  Iso receives {magic: "setup_user_is_asked_to_connect_boomletwo_to_iso_boomletwo_connected_to_iso"} from User \n and proceeds to give the backup file to Boomletwo. 
 
 ' Step 81
@@ -472,11 +478,11 @@ Boomletwo o-> Iso:  <b>SetupBoomletwoIso2 \n backup_done_signed_by_boomletwo
 hnote over Iso #LavenderBlush:  Iso receives {backup_done_signed_by_boomletwo} from Boomletwo. Iso proceeds to inform User to connect Boomlet.
 
 ' Step 83
-Iso o-> User:  <b>IsoOutput4 \n magic: "setup_boomlet_backup_done_connect_boomlet_to_iso"
+Iso o-> User:  <b>SetupIsoOutput4 \n magic: "setup_boomlet_backup_done_connect_boomlet_to_iso"
 hnote over User #LavenderBlush:  User receives {magic: "setup_boomlet_backup_done_connect_boomlet_to_iso"} from Iso and connects Boomlet to Iso.
 
 ' Step 84
-User o-> Iso:  <b>IsoInput5 \n magic: "setup_user_is_asked_to_connect_boomlet_to_iso_boomlet_connected_to_iso"
+User o-> Iso:  <b>SetupIsoInput5 \n magic: "setup_user_is_asked_to_connect_boomlet_to_iso_boomlet_connected_to_iso"
 hnote over Iso #LavenderBlush:  Iso receives {magic: "setup_user_is_asked_to_connect_boomlet_to_iso_boomlet_connected_to_iso"} from User \n and proceeds to forward backup_done_signed_by_boomletwo to Boomlet.
 
 ' Step 85
@@ -508,7 +514,7 @@ hnote over Boomlet #Lavender:  shared_state_active_backup := SharedStateBackupDo
 
 ' Step 90 - Step 1 
 Boomlet o-> Niso:  <b>SetupBoomletNisoMessage11 \n shared_state_active_backup_fingerprint_signed_by_boomlet_0
-hnote over Niso #LavenderBlush:  Niso receives shared_state_active_backup_fingerprint_signed_by_boomlet_0 and proceeds to share it with Peers.
+hnote over Niso #LavenderBlush:  Niso receives shared_state_active_backup_fingerprint_signed_by_boomlet_0 from Boomlet and proceeds to share it with Peers.
 
 ' Step 91 - Step 2
 Niso <-> Peers:  <b>SetupNisoPeerNisoMessage4 \n shared_state_active_backup_fingerprint_signed_by_boomlet_i [0 <= i <= 4]
@@ -518,7 +524,7 @@ hnote over Niso #Pink:  Assert shared_state_active_backup_fingerprint_signed_by_
 
 ' Step 92 - Step 3
 Niso o-> Boomlet:  <b>SetupNisoBoomletMessage12 \n shared_state_active_backup_fingerprint_signed_by_all_peers: Collection<shared_state_active_backup_fingerprint_signed_by_boomlet_i>
-hnote over Boomlet #LavenderBlush:  Boomlet receives shared_state_active_backup_fingerprint_signed_by_all_peers from Niso. It checks the content \n of each peer's shared_state_active_backup_fingerprint_signed_by_boomlet_i to be equal to shared_state_active_backup_fingerprint_signed_by_boomlet_0 \n and for the signatures to match peer_i.boomlet_i_identity_pubkey. It then informs Niso that the setup procedure \n is finished.
+hnote over Boomlet #LavenderBlush:  Boomlet receives shared_state_active_backup_fingerprint_signed_by_all_peers from Niso. It checks the content \n of each peer's shared_state_active_backup_fingerprint_signed_by_boomlet_i to be equal to shared_state_active_backup_fingerprint_signed_by_boomlet_0 \n and verifies each of the corresponding signatures by peer_i.boomlet_i_identity_pubkey. It then informs Niso \n that the setup procedure is finished.
 hnote over Boomlet #Pink:  Assert schnorr_verify(pubkey: boomlet_i_identity_pubkey, content: shared_state_active_backup_fingerprint_signed_by_boomlet_i.signature) == True [1 <= i <= 4].
 hnote over Boomlet #Pink:  Assert shared_state_active_backup_fingerprint_signed_by_boomlet_i.content == shared_state_active_backup_fingerprint [1 <= i <= 4]
 end

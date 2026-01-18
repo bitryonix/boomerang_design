@@ -47,7 +47,7 @@ hnote over Boomlet: Boomlet will receive the key and store it
 note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\n<i>st_0_identity_pubkey
 hnote over Boomlet: Boomlet will create the shared key and store it permanently:\nshared_boomlet_st_privkey := ECDH(st_0_identity_pubkey, boomlet_0_identity_privkey)
 note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\n<i>shared_boomlet_st_privkey
-hnote over Boomlet: Boomlet will create a random array of numbers between 1 nad 198 inclusive:\nrandomly_sorted_duress_array:=rand_order([1..198])
+hnote over Boomlet: Boomlet will create a random array of numbers between 1 nad 195 inclusive:\nrandomly_sorted_duress_array:=rand_order([1..195])
 note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>randomly_sorted_duress_array
 hnote over Boomlet: Boomlet will encrypt `randomly_sorted_duress_array` with `shared_boomlet_st_key`:\nrandomly_sorted_duress_array_encrypted_by_shared_boomlet_st_privkey_for_st:=AES_encrypt(shared_boomlet_st_privkey,randomly_sorted_duress_array)
 note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nrandomly_sorted_duress_array\n<i>_randomly_sorted_duress_array_encrypted_by_shared_boomlet_st_privkey_for_st
@@ -83,7 +83,7 @@ hnote over Boomlet: Boomlet will decrypt the received message:\nrandomly_sorted_
 note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nrandomly_sorted_duress_array\n<i>randomly_sorted_duress_array_index_collection
 hnote over Boomlet: Boomlet will search for the newly received indices in `randomly_sorted_duress_array`\nstore those numbers corresponding to aforementioned indices as `duress_consent_set`, and drop redundant data
 note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\n<i>duress_consent_set
-hnote over Boomlet: Boomlet will make sure the user has memorized `duress_consent_set`.\nFor this, boomlet will create 5 randomly ordered set of numbers\nbetween 1 and 198 inclusive and encrypt the container collection with\nits shared key with ST:\ntemp_test_duress_message_collection:=[rand_order[1..198]; 5]\ntemp_test_duress_message_collection_encrypted_by_boomlet_for_st:=AES_encrypt(shared_boomlet_st_privkey, temp_test_duress_message_collection)
+hnote over Boomlet: Boomlet will make sure the user has memorized `duress_consent_set`.\nFor this, boomlet will create 5 randomly ordered set of numbers\nbetween 1 and 195 inclusive and encrypt the container collection with\nits shared key with ST:\ntemp_test_duress_message_collection:=[rand_order[1..195]; 5]\ntemp_test_duress_message_collection_encrypted_by_boomlet_for_st:=AES_encrypt(shared_boomlet_st_privkey, temp_test_duress_message_collection)
 note over Boomlet: **Boomlet**\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\n<i>temp_test_duress_message_collection\n<i>_temp_test_duress_message_collection_encrypted_by_boomlet_for_st
 
 

@@ -1,6 +1,6 @@
 @startuml non_initiator_withdrawal_diagram_without_states
 skinparam sequenceMessageAlign left
-title Non-Initiator Withdrawal Sequence Diagram (Without Stated)
+title Non-Initiator Withdrawal Sequence Diagram (Without States)
 box "User Side" #AliceBlue
 actor User #LightCyan
 participant Iso #LightBlue
@@ -20,14 +20,13 @@ participant SARs order 102 #Yellow
 
 note over User, SARs
 <b>PARAMETERS 
-#define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_INITIATOR_PEER_TO_TX_APPROVAL_BY_WT 
-#define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_WT_TX_APPROVAL_BY_NON_INITIATOR_PEERS
-#define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_NON_INITIATOR_PEER_TO_RECEIVING_NON_INITIATOR_PEERS_TX_APPROVAL_BY_WT 
-#define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_NON_INITIATOR_PEERS_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS 
-#define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS 
-#define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_NON_INITIATOR_PEERS
-#define TOLERANCE_IN_BLOCKS_FROM_TX_COMMITMENT_BY_INITIATOR_PEER_TO_RECEIVING_INITIATOR_PEER_TX_COMMITMENT_BY_NON_INITIATOR_PEERS 
-#define TOLERANCE_IN_BLOCKS_FROM_TX_COMMITMENT_BY_NON_INITIATOR_PEER_TO_RECEIVING_NON_INITIATOR_PEERS_TX_COMMITMENT_BY_WT_HAVING_SAR_RESPONSE_BACK_TO_WT  
+# #define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_INITIATOR_PEER_TO_TX_APPROVAL_BY_WT 
+# #define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_WT_TX_APPROVAL_BY_NON_INITIATOR_PEERS
+# #define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_NON_INITIATOR_PEER_TO_RECEIVING_NON_INITIATOR_PEERS_TX_APPROVAL_BY_WT 
+# #define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_NON_INITIATOR_PEERS_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS 
+# #define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS 
+# #define TOLERANCE_IN_BLOCKS_FROM_TX_COMMITMENT_BY_INITIATOR_PEER_TO_RECEIVING_INITIATOR_PEER_TX_COMMITMENT_BY_NON_INITIATOR_PEERS 
+# #define TOLERANCE_IN_BLOCKS_FROM_TX_COMMITMENT_BY_NON_INITIATOR_PEER_TO_RECEIVING_NON_INITIATOR_PEERS_TX_COMMITMENT_BY_WT_HAVING_SAR_RESPONSE_BACK_TO_WT  
 end note
 
 autonumber 10 "<b>[00]"
@@ -44,6 +43,7 @@ autonumber 11 "<b>[00]"
 ' Step 11
 WT o-> Niso:  <b>WithdrawalWtNonInitiatorNisoMessage1 \n wt_tx_approval_signed_by_wt \n peer_0_tx_approval_signed_by_boomlet_0 \n psbt_encrypted_by_boomlet_0_for_boomlet_1
 hnote over Niso #LavenderBlush:  Non-initiator Niso receives {wt_tx_approval_signed_by_wt, peer_0_tx_approval_signed_by_boomlet_0, psbt_encrypted_by_boomlet_0_for_boomlet_1} \n from WT. Non-initiator Niso verifies wt_pubkey's signature on wt_tx_approval_signed_by_wt, finds out which peer is the initiator by looking at \n the initiator_id field of wt_tx_approval (We consider peer_0 as the initiator). It verifies that the boomlet_0_identity_pubkey derived \n from wt_tx_approval exists in the set of peer_ids_collection, It then verifies boomlet_0_identity_pubkey's signature on peer_0_tx_approval_signed_by_boomlet_0. \n Non-initiator Niso checks that the magic in peer_0_tx_approval and wt_tx_approval match "approved", the tx_id in both approvals is the \n same, peer_0_tx_approval is fresh according to wt_tx_approval and wt_tx_approval is fresh according to most_work_bitcoin_block_height. \n It then checks that most_work_bitcoin_block_height has passed milestone_block_0 from boomerang_descriptor and forwards the received message \n alongside niso_1_event_block_height to Non-initiator Boomlet.
+hnote over Niso #Lavender:  most_work_bitcoin_block_height := rpc_client.get_block_height()
 hnote over Niso #Pink:  Assert schnorr_verify(wt_pubkey, wt_tx_approval_signed_by_wt.signature) == True.
 hnote over Niso #Lavender:  regard wt_tx_approval_signed_by_wt.content.initiator_id as boomlet_0_identity_pubkey.
 hnote over Niso #Pink:  Check that boomlet_0_identity_pubkey exists in boomerang_params.peer_ids_collection.
@@ -52,7 +52,7 @@ hnote over Niso #Lavender:  peer_0_tx_approval := peer_0_tx_approval_signed_by_b
 hnote over Niso #Pink:  Assert peer_0_tx_approval.magic == "approved".
 hnote over Niso #Pink:  Assert wt_tx_approval.magic == "approved".
 hnote over Niso #Pink:  Assert peer_0_tx_approval.tx_id == wt_tx_approval.tx_id 
-hnote over Niso #Pink:  <b>Freshness check \n Assert wt_tx_approval.event_block_height >= max(peer_0_tx_approval.event_block_height, (niso_1_event_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_WT_TX_APPROVAL_BY_NON_INITIATOR_PEERS)) \n Assert wt_tx_approval.event_block_height <= min((peer_0_tx_approval.event_block_height + TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_INITIATOR_PEER_TO_TX_APPROVAL_BY_WT), niso_1_event_block_height)
+hnote over Niso #Pink:  <b>Freshness check \n Assert wt_tx_approval.event_block_height >= max(peer_0_tx_approval.event_block_height, (most_work_bitcoin_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_WT_TX_APPROVAL_BY_NON_INITIATOR_PEERS)) \n Assert wt_tx_approval.event_block_height <= min((peer_0_tx_approval.event_block_height + TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_INITIATOR_PEER_TO_TX_APPROVAL_BY_WT), most_work_bitcoin_block_height)
 hnote over Niso #Pink:  Assert most_work_bitcoin_block_height >= boomerang_params.boomerang_descriptor.milestone_block_0 .
 hnote over Niso #Lavender:  initiator_peer_id := peer_0_tx_approval.peer_id
 
@@ -113,6 +113,7 @@ hnote over ST #Lavender:  tx_id_with_nonce_signed_by_st := SignatureOnMessage{\n
 ' Step 21
 ST o-> Niso:  <b>WithdrawalNonInitiatorStNisoMessage1 \n tx_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_1
 hnote over Niso #LavenderBlush:  Non-initiator Niso receives tx_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_1 from non-initiator ST. Non-initiator Niso forwards \n tx_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_1 along with the updated niso_1_event_block_height to non-initiator Boomlet.
+hnote over Niso #Lavender:  most_work_bitcoin_block_height := rpc_client.get_block_height()
 hnote over Niso #Lavender:  niso_1_event_block_height := most_work_bitcoin_block_height.
 
 ' Step 22
@@ -131,6 +132,7 @@ hnote over Niso #LavenderBlush:  Non-initiator Niso receives peer_1_tx_approval_
 ' Step 24
 Niso o-> WT:  <b>WithdrawalNonInitiatorNisoWtMessage1 \n peer_1_tx_approval_signed_by_boomlet_1_encrypted_by_boomlet_1_for_wt
 hnote over WT #LavenderBlush:  WT receives peer_1_tx_approval_signed_by_boomlet_1_encrypted_by_boomlet_1_for_wt from non-initiator Niso, decrypts it using wt_privkey,\n verifies boomlet_1_identity_pubkey's signature on peer_1_tx_approval_signed_by_boomlet_1, checks that the magic matches "approved", \n tx_id match the expected value and message to be fresh according to the most_work_bitcoin_block_height and event_block_height of \n wt_tx_approval. It also receives peer_i_tx_approval_signed_by_boomlet_i_encrypted_by_boomlet_i_for_wt from non-initiator Peers and repeats \n the same validation process. WT then sends to each non-initiator peer a collection of all other peers' approvals except the initiator's and \n in a separate message sends a collection of all peers' approvals along with wt_tx_approval to the initiator peer.
+hnote over WT #Lavender:  most_work_bitcoin_block_height := rpc_client.get_block_height()
 hnote over WT #Lavender:  peer_1_tx_approval_signed_by_boomlet_1 := AES_decrypt(privkey: ECDH(boomlet_1_identity_pubkey, wt_privkey), content: peer_1_tx_approval_signed_by_boomlet_1_encrypted_by_boomlet_1_for_wt)
 hnote over WT #Pink:  Assert schnorr_verify(boomlet_1_identity_pubkey, peer_1_tx_approval_signed_by_boomlet_1.signature) == True
 hnote over WT #Lavender:  peer_1_tx_approval := peer_1_tx_approval_signed_by_boomlet_1.content
@@ -152,26 +154,27 @@ autonumber 26 "<b>[00]"
 ' Step 26 - b
 WT o-> Niso:  <b>WithdrawalWtNonInitiatorNisoMessage2 \n Collection<peer_i_tx_approval_signed_by_boomlet_i> [1 <= i <= 4]
 hnote over Niso #LavenderBlush:  Non-initiator Niso receives {Collection<peer_i_tx_approval_signed_by_boomlet_i> [1 <= i <= 4]} from WT. Non-initiator Niso updates niso_1_event_block_height \n with the latest most_work_bitcoin_block_height. For every non_initiator peer in peer_ids_collection, It verifies boomlet_i_identity_pubkey's \n signature on peer_i_tx_approval_signed_by_boomlet_i, checks that the magic matches "approved", tx_id to be the expected value, peer_i_tx_approval \n to be fresh according to niso_1_event_block_height and wt_tx_approval and checks that wt_tx_approval is still fresh. It forwards this \n Collection<peer_i_tx_approval_signed_by_boomlet_i> alongside niso_1_event_block_height to non-initiator Boomlet.
+hnote over Niso #Lavender:  most_work_bitcoin_block_height := rpc_client.get_block_height()
 hnote over Niso #Lavender:  niso_1_event_block_height := most_work_bitcoin_block_height 
 hnote over Niso #Pink:  Assert schnorr_verify(boomlet_i_identity_pubkey, peer_i_tx_approval_signed_by_boomlet_i.signature) == True [1 <= i <= 4]
 hnote over Niso #Lavender:  peer_i_tx_approval := peer_i_tx_approval_signed_by_boomlet_i.content [1 <= i <= 4]
 hnote over Niso #Lavender:  peer_i_tx_approval.magic == "approved" [1 <= i <= 4]
 hnote over Niso #Lavender:  peer_i_tx_approval.tx_id == tx_id [1 <= i <= 4]
-hnote over Niso #Pink:  <b>Freshness check \n Assert peer_i_tx_approval.event_block_height >= max(wt_tx_approval.event_block_height, (niso_1_event_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_NON_INITIATOR_PEERS_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS)) [1 <= i <= 4] \n  Assert  peer_i_tx_approval.event_block_height <= min(niso_1_event_block_height, (wt_tx_approval.event_block_height + TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS)) [1 <= i <= 4]
-hnote over Niso #Pink:  <b>Freshness check \n Assert wt_tx_approval.event_block_height >= (niso_1_event_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_NON_INITIATOR_PEERS)
+hnote over Niso #Pink:  <b>Freshness check \n Assert peer_i_tx_approval.event_block_height >= max(wt_tx_approval.event_block_height, (most_work_bitcoin_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_NON_INITIATOR_PEERS_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS)) [1 <= i <= 4] \n  Assert  peer_i_tx_approval.event_block_height <= min(most_work_bitcoin_block_height, (wt_tx_approval.event_block_height + TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS)) [1 <= i <= 4]
+hnote over Niso #Pink:  <b>Freshness check \n Assert wt_tx_approval.event_block_height >= (most_work_bitcoin_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS)
 autonumber 27 "<b>[00n]"
 
 ' Step 27n
 Niso o-> Boomlet:  <b>WithdrawalNonInitiatorNisoBoomletMessage4 \n Collection<peer_i_tx_approval_signed_by_boomlet_i>[1 <= i <= 4] \n niso_1_event_block_height
-hnote over Boomlet #LavenderBlush:  Non-initiator Boomlet receives {Collection<peer_i_tx_approval_signed_by_boomlet_i> [1 <= i <= 4], niso_1_event_block_height} from non-initiator \n Niso. After renewing niso_1_event_block_height, for every peer in peer_ids_collection except the initiator, non-initiator Boomlet verifies boomlet_i_identity_pubkey's \n signature on peer_i_tx_approval_signed_by_boomlet_i, checks that the magic matches "approved", tx_id to be the expected value, peer_i_tx_approval \n to be fresh according to niso_1_event_block_height and wt_tx_approval and checks that wt_tx_approval is still fresh. It then generates duress_check_space \n which is an array of 5 integers between 1 and 198, adds a nonce to it and encrypts it using. Then non-initiator Boomlet sends \n duress_check_space_with_nonce_encrypted_by_boomlet_1_for_st to non-initiator Niso.
+hnote over Boomlet #LavenderBlush:  Non-initiator Boomlet receives {Collection<peer_i_tx_approval_signed_by_boomlet_i> [1 <= i <= 4], niso_1_event_block_height} from non-initiator \n Niso. After renewing niso_1_event_block_height, for every peer in peer_ids_collection except the initiator, non-initiator Boomlet verifies boomlet_i_identity_pubkey's \n signature on peer_i_tx_approval_signed_by_boomlet_i, checks that the magic matches "approved", tx_id to be the expected value, peer_i_tx_approval \n to be fresh according to niso_1_event_block_height and wt_tx_approval and checks that wt_tx_approval is still fresh. It then generates duress_check_space \n which is an array of 5 integers between 1 and 195, adds a nonce to it and encrypts it using. Then non-initiator Boomlet sends \n duress_check_space_with_nonce_encrypted_by_boomlet_1_for_st to non-initiator Niso.
 hnote over Boomlet #Pink:  Assert schnorr_verify(boomlet_i_identity_pubkey, peer_i_tx_approval_signed_by_boomlet_i.signature) == True [1 <= i <= 4]
 hnote over Boomlet #Lavender:  peer_i_tx_approval := peer_i_tx_approval_signed_by_boomlet_i.content [1 <= i <= 4] \n update niso_1_event_block_height with received value. 
 hnote over Boomlet #Pink:  Assert peer_i_tx_approval.magic == "approved" [1 <= i <= 4]
 hnote over Boomlet #Pink:  Assert peer_i_tx_approval.tx_id == tx_id [1 <= i <= 4]
 hnote over Boomlet #Pink:  <b>Freshness check \n Assert peer_i_tx_approval.event_block_height >= max(wt_tx_approval.event_block_height, (niso_1_event_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_NON_INITIATOR_PEERS_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS)) [1 <= i <= 4] \n  Assert  peer_i_tx_approval.event_block_height <= min(niso_1_event_block_height, (wt_tx_approval.event_block_height + TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS))  [1 <= i <= 4]
-hnote over Boomlet #Pink:  <b>Freshness check \n Assert wt_tx_approval.event_block_height >= (niso_1_event_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_NON_INITIATOR_PEERS)
+hnote over Boomlet #Pink:  <b>Freshness check \n Assert wt_tx_approval.event_block_height >= (niso_1_event_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS)
 group duress_check
-hnote over Boomlet #Lavender:  duress_check_space := DuressCheckSpace{space: rand([1..198;5])} \n duress_check_space_with_nonce := MessageWithNonce{\n content: duress_check_space \n nonce: rand() [u8; 32] } \n duress_check_space_with_nonce_encrypted_by_boomlet_1_for_st := AES_encrypt(private_key: ECDH(boomlet_1_identity_privkey, st_1_identity_pubkey), content: duress_check_space_with_nonce)
+hnote over Boomlet #Lavender:  duress_check_space := DuressCheckSpace{space: rand([1..195;5])} \n duress_check_space_with_nonce := MessageWithNonce{\n content: duress_check_space \n nonce: rand() [u8; 32] } \n duress_check_space_with_nonce_encrypted_by_boomlet_1_for_st := AES_encrypt(private_key: ECDH(boomlet_1_identity_privkey, st_1_identity_pubkey), content: duress_check_space_with_nonce)
 
 ' Step 28n
 Boomlet o-> Niso:  <b>WithdrawalNonInitiatorBoomletNisoMessage4 \n duress_check_space_with_nonce_encrypted_by_boomlet_1_for_st
@@ -231,6 +234,7 @@ autonumber 38 "<b>[00]"
 ' Step 38
 WT o-> Niso:  <b>WithdrawalWtNonInitiatorNisoMessage3 \n peer_0_tx_commit_signed_by_boomlet_0_signed_by_wt
 hnote over Niso #LavenderBlush:  Non-initiator Niso receives peer_0_tx_commit_signed_by_boomlet_0_signed_by_wt from WT. Non-initiator Niso updates niso_1_event_block_height \n with the most_work_bitcoin_block_height, verifies wt_pubkey's signature on peer_0_tx_commit_signed_by_boomlet_0_signed_by_wt, \n boomlet_0_identity_pubkey's signature on peer_0_tx_commit_signed_by_boomlet_0, magic to match "commit", tx_id to be the expected value and \n event_block_height to be fresh according to most_work_bitcoin_block_height. Non-initiator Niso then forwards \n peer_0_tx_commit_signed_by_boomlet_0_signed_by_wt alongside niso_1_event_block_height to Non-initiator Boomlet.
+hnote over Niso #Lavender:  most_work_bitcoin_block_height := rpc_client.get_block_height()
 hnote over Niso #Lavender:  niso_1_event_block_height := most_work_bitcoin_block_height 
 hnote over Niso #Pink:  Assert schnorr_verify(wt_pubkey, peer_0_tx_commit_signed_by_boomlet_0_signed_by_wt.signature) == True
 hnote over Niso #Lavender:  peer_0_tx_commit_signed_by_boomlet_0 := peer_0_tx_commit_signed_by_boomlet_0_signed_by_wt.content
@@ -238,7 +242,7 @@ hnote over Niso #Pink:  Assert schnorr_verify(boomlet_0_identity_pubkey, peer_0_
 hnote over Niso #Lavender:  peer_0_tx_commit := peer_0_tx_commit_signed_by_boomlet_0.content
 hnote over Niso #Pink:  Assert peer_0_tx_commit.magic == "commit"
 hnote over Niso #Pink:  Assert peer_0_tx_commit.tx_id == tx_id
-hnote over Niso #Pink:  <b>Freshness check \n Assert peer_0_tx_commit.event_block_height >= (niso_1_event_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_COMMITMENT_BY_INITIATOR_PEER_TO_RECEIVING_INITIATOR_PEER_TX_COMMITMENT_BY_NON_INITIATOR_PEERS) \n Assert peer_0_tx_commit.event_block_height <= niso_1_event_block_height
+hnote over Niso #Pink:  <b>Freshness check \n Assert peer_0_tx_commit.event_block_height >= (most_work_bitcoin_block_height - TOLERANCE_IN_BLOCKS_FROM_TX_COMMITMENT_BY_INITIATOR_PEER_TO_RECEIVING_INITIATOR_PEER_TX_COMMITMENT_BY_NON_INITIATOR_PEERS) \n Assert peer_0_tx_commit.event_block_height <= most_work_bitcoin_block_height
 
 ' Step 39
 Niso o-> Boomlet:  <b>WithdrawalNonInitiatorNisoBoomletMessage6 \n peer_0_tx_commit_signed_by_boomlet_0_signed_by_wt \n niso_1_event_block_height
@@ -280,6 +284,7 @@ hnote over SARs #Lavender:  duress_placeholder_signed_by_sar := SignatureOnMessa
 ' Step 43
 SARs o-> WT:  <b>WithdrawalNonInitiatorSarsWtMessage1 \n duress_placeholder_signed_by_sar_encrypted_by_sar_for_boomlet_1
 hnote over WT #LavenderBlush:  WT receives duress_placeholder_signed_by_sar_encrypted_by_sar_for_boomlet_1 from SAR and continue processing peer_1_tx_commit_signed_by_boomlet_1. \n It verifies boomlet_1_identity_pubkey's signature on peer_1_tx_commit_signed_by_boomlet_1, checks the magic to match "commit", tx_id to be the one \n expected and for the event_block_height to be fresh. WT then signs peer_1_tx_commit_signed_by_boomlet_1 with wt_privkey. WT then sends the \n collection of peer_i_tx_commit_signed_by_boomlet_i_signed_by_wt [0 <= i <= 4] to Each Niso alongside it's respective \n duress_placeholder_signed_by_sar_encrypted_by_sar_for_boomlet_i.
+hnote over WT #Lavender:  most_work_bitcoin_block_height := rpc_client.get_block_height()
 hnote over WT #Pink:  Assert schnorr_verify(boomlet_1_identity_pubkey, peer_1_tx_commit_signed_by_boomlet_1.signature) == True
 hnote over WT #Lavender:  peer_1_tx_commit := peer_1_tx_commit_signed_by_boomlet_1.content
 hnote over WT #Pink:  Assert peer_1_tx_commit.magic == "commit"

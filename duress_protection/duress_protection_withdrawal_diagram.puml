@@ -32,7 +32,7 @@ note over Boomlet: **Boomlet**\n[...]\nboomlet_0_identity_privkey\nboomlet_0_ide
 / note over User: **User**\nname_of_5_consent_countries_in_brain_memory
 
 hnote over Boomlet #Red: DURESS CHECK INITIATED VIA BOOMLET
-hnote over Boomlet: Boomlet will create 5 randomly ordered set of numbers\nbetween 1 and 198 inclusive and encrypt the container collection with\nits shared key with ST:\ntemp_duress_message_collection:=[rand_order[1..198]; 5]\n_duress_message_collection_encrypted_by_boomlet_for_st:=AES_encrypt(shared_boomlet_st_privkey, temp_duress_message_collection)
+hnote over Boomlet: Boomlet will create 5 randomly ordered set of numbers\nbetween 1 and 195 inclusive and encrypt the container collection with\nits shared key with ST:\ntemp_duress_message_collection:=[rand_order[1..195]; 5]\n_duress_message_collection_encrypted_by_boomlet_for_st:=AES_encrypt(shared_boomlet_st_privkey, temp_duress_message_collection)
 note over Boomlet: **Boomlet**\n[...]\nboomlet_0_identity_privkey\nboomlet_0_identity_pubkey\nst_0_identity_pubkey\nshared_boomlet_st_privkey\nduress_consent_set\n--Duress Check--\n<i>temp_duress_message_collection\n<i>_duress_message_collection_encrypted_by_boomlet_for_st
 
 ' Step 1
@@ -75,51 +75,44 @@ note over Boomlet: **Boomlet**\n[...]\nshared_boomlet_sar_privkey\ndoxing_passwo
 
 
 group User In Duress [user_in_duress = true]
-hnote over Boomlet: salted_doxing_password := "real" || doxing_password || rand_string(doxing_password.length())+4\nThe purpose of salting is for others not to be able to distinguish messages.
-hnote over Boomlet: duress_payload := AES_encrypt(shared_boomlet_sar_privkey, salted_doxing_password)
-hnote over Boomlet: WithdrawalMessage 01 := [...]+duress_payload
+hnote over Boomlet: encrypted_duress_payload := AES_encrypt(shared_boomlet_sar_privkey, duress_key)
+hnote over Boomlet: WithdrawalMessage 01 := [...] + encrypted_duress_payload
 end
 
 group User Not In Duress [user_in_duress = false]
-hnote over Boomlet: salted_decoy_doxing_password := "fake" || rand_string(doxing_password.length()) || rand_string(doxing_password.length()+4)\nThe purpose of salting is for others not to be able to distinguish messages.
-hnote over Boomlet: duress_payload := AES_encrypt(shared_boomlet_sar_privkey, salted_decoy_doxing_password)
-hnote over Boomlet: WithdrawalMessage 01 := [...]+duress_payload
+hnote over Boomlet: encrypted_duress_payload := AES_encrypt(shared_boomlet_sar_privkey, [0; 32])
+hnote over Boomlet: WithdrawalMessage 01 := [...] + encrypted_duress_payload
 end
 
 autonumber "<b>WithdrawalMessage 00:"
-Boomlet -> Niso: [...] + duress_payload
+Boomlet -> Niso: [...] + encrypted_duress_payload
 note over Niso: **Niso**\n[...]\n--Duress Check--\n<i>withdrawal_message_01
 
 ' Step 7
 autonumber 7 "<b>Message [00]:"
 Niso o-> WTs: withdrawal_message_01
-hnote over WTs: WT will decompose the message into two parts. The first is the usual withdrawal\npart and the second is the `duress_payload`.\nWT will send the `duress_payload` to the pertinent SARs.\
+hnote over WTs: WT will decompose the message into two parts. The first is the usual withdrawal\npart and the second is the `encrypted_duress_payload`.\nWT will send the `encrypted_duress_payload` to the pertinent SARs.\
 
 ' Step 8
-WTs o-> SARs: duress_payload
-note over SARs: **SAR**\n[...]\nshared_boomlet_sar_privkey\n[...]\n--Duress Check--\n<i>temp_duress_payload
-hnote over SARs: SAR will decrypt the duress payload received.\nsupposedly_salted_doxing_password := AES_decrypt(shared_boomlet_sar_privkey, duress_payload)
-note over SARs: **SAR**\n[...]\nshared_boomlet_sar_privkey\n[...]\n--Duress Check--\ntemp_duress_payload\n<i>temp_supposedly_salted_doxing_password
-hnote over SARs: SAR will check the first 4 characters of the plain text.\ntemp_duress_tag := temp_supposedly_salted_doxing_password[0..4]\nIf it's "real" we are in duress.\nIf it's "fake" we are not in duress and SAR will not act.\nIf it's anything else, the message is malformed and SAR will act accordingly.
+WTs o-> SARs: encrypted_duress_payload
+note over SARs: **SAR**\n[...]\nshared_boomlet_sar_privkey\n[...]\n--Duress Check--\n<i>encrypted_duress_payload
+hnote over SARs: SAR will decrypt the duress payload received.\nduress_payload := AES_decrypt(shared_boomlet_sar_privkey, encrypted_duress_payload)
+note over SARs: **SAR**\n[...]\nshared_boomlet_sar_privkey\n[...]\n--Duress Check--\nencrypted_duress_payload\n<i>duress_payload
+hnote over SARs: SAR will check the now decrypted duress_payload.\nIf it's all zeros we are not in duress.\nIf it's not all zeros, SAR will hash it to get the identifier.\ndoxing_identifier := SHA256(duress_payload) \nSAR will search for the same identifier in its database. If found, the user is in duress.\nIf not, the message is malformed and SAR will act accordingly.
 
-
-group User In Duress [temp_duress_tag = "real"]
-
-hnote over SARs: doxing_password:= temp_supposedly_duress_password[5..(temp_supposedly_duress_password/2 + 1)]\nsar_service_identifier := SHA256(SHA256(doxing_password))
-hnote over SARs: SAR search for the `sar_service_identifier` in its database. If it finds a match, the `doxing_password` will\nbe used to decrypt dynamic and static doxing data and the search and rescue operation will start.\nIf a match is not found, the message will be deemed as malformed.
-end
-
-
-group User Not In Duress [temp_duress_tag = "fake"]
+group User Not In Duress [duress_payload is all zeroes]
 hnote over SARs: SAR does nothing regarding the search and rescue operation.
 end
 
+group User In Duress [doxing_identifier is found in database]
+hnote over SARs: The `doxing_key` will be used to decrypt dynamic and static doxing data and the search\nand rescue operation will start. If a match is not found, the message will be deemed as malformed.
+end
 
-group Malformed Message [temp_duress_tag = not["real" or "fake"]]
+group Malformed Message [doxing_identifier is not found in database]
 hnote over SARs: SAR detects that something is wrong, either in Niso or in WT.\nThe SAR will keep a counter of this event and should it reach\na predefined limit, will deem the setup malfunctioning\nand stop responding to halt the procedure.
 end
 
-hnote over SARs: SAR will sign the received message, drop the redundant data and send the signed message to the WT.\nduress_payload_signed_by_sar := Sign(sar_identity_privkey, temp_duress_payload)
+hnote over SARs: SAR will sign the received message, drop the redundant data and send the signed message to the WT.\nduress_payload_signed_by_sar := Sign(sar_identity_privkey, encrypted_duress_payload)
 
 ' Step 9
 SARs o-> WTs: duress_payload_signed_by_sar
@@ -134,5 +127,5 @@ note over Boomlet: **Boomlet**\n[...]\nshared_boomlet_sar_privkey\ndoxing_passwo
 /note over User: **User**\n[...]\nname_of_5_consent_countries_in_brain_memory
 /note over SARs: **SAR**\n[...]\nshared_boomlet_sar_privkey\n[...]
 
-hnote over Boomlet: From now on, all messages bear the duress signal, regardless of user's input to the duress check.
+hnote over Boomlet: When one duress check is positive, all messages afterwards bear the duress signal, regardless of user's input to the duress check.
 @enduml
