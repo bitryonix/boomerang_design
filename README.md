@@ -8,6 +8,8 @@ The key idea is that **neither the user nor an attacker can exactly or within an
 
 Apart from its performance in case of duress, we want **Boomerang** to act as a deterrent as well, to prevent an attack in the first place.
 
+**Naming**: The protocol is named after the Boomerang Nebula. The coldest place in the known universe. Has nothing to do with boomerang the throwing object.
+
 ## Table of Contents
 
 - [Boomerang: Bitcoin Cold Storage Meets Integrated Duress Protection](#boomerang-bitcoin-cold-storage-meets-integrated-duress-protection)
