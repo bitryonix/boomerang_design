@@ -1,18 +1,18 @@
-# Boomerang: Bitcoin Cold Storage Meets Integrated Duress Protection
+# Boomerang: Bitcoin Cold Storage With Built-in Coercion Resistance
 
-**Boomerang** is a Bitcoin cold-storage protocol that introduces strong duress protection without requiring any changes to Bitcoin consensus. It uses a deliberately non-deterministic withdrawal ceremony enforced by secure hardware to create an unpredictable signing process with embedded, plausibly deniable duress signaling and optional search-and-rescue escalation.
+**Boomerang** is a Bitcoin cold-storage protocol that introduces strong coercion resistance without requiring any changes to Bitcoin consensus. It uses a deliberately non-deterministic withdrawal ceremony enforced by secure hardware to create an unpredictable signing process with embedded, plausibly deniable duress signaling and search-and-rescue escalation.
 
 The key idea is that **neither the user nor an attacker can exactly or within an operationally significant range, know in advance how long withdrawal will take**, and that duress signaling is both unavoidable (checks recur) and plausibly deniable.
 
 **Boomerang** is suitable for enterprises and individuals with large sums of bitcoin in treasury mode or as a secure fallback for deleted key covenant structures like [Ajolote](https://arxiv.org/abs/2310.11911) or [Revault](https://wizardsardine.com/revault/).
 
-Apart from its performance in case of duress, we want **Boomerang** to act as a deterrent as well, to prevent an attack in the first place.
+Apart from its performance in case of coercion, we want **Boomerang** to act as a deterrent as well, to prevent an attack in the first place.
 
 **Naming**: The protocol is named after the Boomerang Nebula. The coldest place in the known universe. Has nothing to do with boomerang the throwing object.
 
 ## Table of Contents
 
-- [Boomerang: Bitcoin Cold Storage Meets Integrated Duress Protection](#boomerang-bitcoin-cold-storage-meets-integrated-duress-protection)
+- [Boomerang: Bitcoin Cold Storage With Built-in Coercion Resistance](#boomerang-bitcoin-cold-storage-with-built-in-coercion-resistance)
   - [Table of Contents](#table-of-contents)
   - [Motivation](#motivation)
   - [Our solution](#our-solution)
@@ -50,7 +50,7 @@ Apart from its performance in case of duress, we want **Boomerang** to act as a 
 
 Bitcoin provides strong cryptographic guarantees for sovereign ownership, but those guarantees largely end at the private key. Once a key holder is identified and physically coerced, most existing custody schemes fail in predictable ways.
 
-Today’s best practices like hardware wallets, multisig, air, gapped signing, and timelocks, are primarily designed to defend against remote attackers. Under duress, these systems typically assume a cooperative signer who is free to act, and they offer little resistance when that assumption breaks.
+Today’s best practices like hardware wallets, multisig, air, gapped signing, and timelocks, are primarily designed to defend against remote attackers. Under coercion, these systems typically assume a cooperative signer who is free to act, and they offer little resistance when that assumption breaks.
 
 Physical attacks against Bitcoiners are not hypothetical. They are [documented](https://github.com/jlopp/physical-bitcoin-attacks), increasing, and economically rational. Addressing this class of threats requires treating *human coercion* as a first-class part of the threat model rather than an out-of-scope exception.
 
@@ -86,7 +86,7 @@ The protocol is designed so that:
 
 ### Solution description
 
-How can one be truly protected in a duress situation? By partially, yet effectively, abandoning what an attacker comes for in the first place. Total control over the asset.
+How can one be truly protected in a coercion situation? By partially, yet effectively, abandoning what an attacker comes for in the first place. Total control over the asset.
 
 An average attacker assumes predictability of the withdrawal procedure. They also assume the ability of the victim to run the aforementioned procedure and expect it to be concluded in a rather bounded time period. Being sure of such deterministic factors, the attacker will be able to plan for resources and intensify pressure to expedite the withdrawal process for a prompt escape.
 
@@ -191,7 +191,7 @@ All steps are laid out clearly in [setup.rs](https://github.com/bitryonix/boomer
 
 ### Overview of the Boomerang setup procedure
 
-The setup procedure for **Boomerang**, as depicted in the [PlantUML sequence diagram](setup/setup_diagram_without_states.puml) and its [SVG render](setup/setup_diagram_without_states.svg), involves multiple entities (User, Phone, SARs, Iso, Boomlet, ST, Niso, Peers, WT, and Boomletwo) coordinating to establish a secure cold storage with duress protection. It is divided into logical groups for clarity, following the diagram's structure. Each step includes key actions, data exchanges, and assertions/verifications. The process ensures key generation, parameter agreement, duress setup, registrations, synchronizations, and backups, culminating in a shared state across peers.
+The setup procedure for **Boomerang**, as depicted in the [PlantUML sequence diagram](setup/setup_diagram_without_states.puml) and its [SVG render](setup/setup_diagram_without_states.svg), involves multiple entities (User, Phone, SARs, Iso, Boomlet, ST, Niso, Peers, WT, and Boomletwo) coordinating to establish a secure cold storage with coercion resistance. It is divided into logical groups for clarity, following the diagram's structure. Each step includes key actions, data exchanges, and assertions/verifications. The process ensures key generation, parameter agreement, duress setup, registrations, synchronizations, and backups, culminating in a shared state across peers.
 
 **Group 1: SAR Sign-Up (Steps 1-8: User registers with Search and Rescue via Phone)**
 
