@@ -7,9 +7,10 @@
 >The threat it addresses is simple: attackers don’t always break encryption; sometimes they pressure people into authorizing withdrawals. Most wallets can’t tell the difference; a forced signature still works.
 >
 >Boomerang redesigns how withdrawals happen. Instead of a single signing action, moving funds requires a structured, multi-step process across independent devices and timed checks. As part of that process, users explicitly complete a duress challenge. If they indicate distress, the system recognizes coercion and triggers protective responses, while maintaining a controlled withdrawal flow.
-><div style="border-left: 5px solid #F2A900; padding: 10px; background: #ffee8d;">
-><em>In short:</em><strong> Boomerang turns bitcoin custody into a coordinated safety protocol that resists forced authorization; protecting against human threats, not just technical ones.</strong>
-></div>
+>
+><em><u>In short:</u></em>
+>
+><strong> Boomerang turns bitcoin custody into a coordinated safety protocol that resists forced authorization; protecting against human threats, not just technical ones.</strong>
 >
 >For high-value holders and organizations, this fills a major gap in existing custody solutions, creating a new class of security focused on operational resilience as much as cryptography.
 
