@@ -1,16 +1,17 @@
 # Boomerang: Bitcoin Cold Storage With Built-in Coercion Resistance
 
->#### TL;DR
+>#### TL;DR  - What is Boomerang?
 >
->**Boomerang** is a next-generation Bitcoin cold-storage protocol built to protect high-value holdings against the hardest class of attacks: **real-world coercion**.
+>Boomerang is a high-security Bitcoin cold-storage system designed to protect funds not just from hackers, but from real-world coercion.
 >
->Traditional custody solutions focus on digital security. **Boomerang** adds a coordinated, multi-device withdrawal process with built-in coercion detection, making it extremely difficult for attackers to force or rush a transaction, while allowing the system to silently signal distress.
+>The threat it addresses is simple: attackers don’t always break encryption; sometimes they pressure people into authorizing withdrawals. Most wallets can’t tell the difference; a forced signature still works.
 >
->This positions **Boomerang as infrastructure** for high-net-worth individuals, funds, and enterprises that need protection beyond conventional multisig wallets. It addresses a growing custody risk that existing products largely ignore: **human-level attack vectors**.
+>Boomerang redesigns how withdrawals happen. Instead of a single signing action, moving funds requires a structured, multi-step process across independent devices and timed checks. As part of that process, users explicitly complete a duress challenge. If they indicate distress, the system recognizes coercion and triggers protective responses, while maintaining a controlled withdrawal flow.
+><div style="border-left: 5px solid #F2A900; padding: 10px; background: #ffee8d;">
+><em>In short:</em><strong> Boomerang turns bitcoin custody into a coordinated safety protocol that resists forced authorization; protecting against human threats, not just technical ones.</strong>
+></div>
 >
->**Boomerang expands Bitcoin custody from cyber security to human security; creating a differentiated, high-trust layer for institutional-grade storage.**
->
->It’s built for people or organizations holding significant amounts of bitcoin who want protection not only from technical attacks, but also from real-world threats.
+>For high-value holders and organizations, this fills a major gap in existing custody solutions, creating a new class of security focused on operational resilience as much as cryptography.
 
 **Boomerang** is a Bitcoin cold-storage protocol that introduces strong coercion resistance without requiring any changes to Bitcoin consensus. It uses a deliberately non-deterministic withdrawal ceremony enforced by secure hardware to create an unpredictable signing process with embedded, plausibly deniable duress signaling and search-and-rescue escalation.
 
