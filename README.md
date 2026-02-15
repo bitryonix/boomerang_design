@@ -53,6 +53,123 @@ We have designed the protocol and the full message sequence diagrams for [setup]
 
 If you like to see the SVG files of the message sequence diagrams, here they are for the [setup](setup/setup_diagram_without_states.svg), [initiator peer's withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator peer's withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) ceremonies.
 
+### Boomerang in action
+
+Here we demonstrate what happens when you want to withdraw from Boomerang while under the non-deterministic regime. Please note that this is a simplified version of the protocol and the detailed design can be found in [setup](setup) and [withdrawal](withdrawal) folders with pertinent detailed message sequence diagrams as mentioned before.
+
+```mermaid
+sequenceDiagram
+    box Initiator Peer's Side
+    participant IP as Initiator Peer
+    participant IB as Boomlet<br>(A smart card)
+    participant IST as ST<br>(A secure device<br>for input and display)
+    participant IN as Niso<br>(A non-isolated computer)
+    end
+    participant WT as WT
+    participant SARs as SARs
+    participant NIPS as Non-Initiator Peers' Side
+
+    autonumber
+
+    rect rgb(240, 240, 255)
+    note over IP, NIPS: Initiation (Initiator Starts Withdrawal)
+    IP->>IN: Provide PSBT
+    note over IN: Examines the PSBT
+    IN->>IB: Forward PSBT
+    note over IB: Checks the PSBT and if OK,<br>encrypts the txid by the shared key with ST<br>to show to Peer to check with PSBT's txid
+    IB->>IST: Encrypted tx_id via Niso<br>then Niso's monitor into<br>ST's camera (abbreviated here)
+    IST->>IP: Show tx_id to initiator peer
+    note over IP: Checks the txid with<br>the one from the PSBT
+    IP->>IST: Approve
+    note over IST: Signs user approval<br>and encrypts the result for Boomlet
+    IST->>IB: Signed and encrypted approval<br>(again through Niso but abbreviated here)
+    note over IB: Verifies peer's approval
+    IB->>WT: Send approval & encrypted PSBTs via Niso to WT
+    note over WT: Verifies & prepares for distribution
+    end
+
+    rect rgb(230, 255, 230)
+    note over IP, NIPS: Approval (Non-Initiators Review & Approve)
+    WT->>NIPS: WT/Initiator peer's approvals & encrypted PSBT
+    note over NIPS: All non-initiator peers check and approve the PSBT
+    NIPS->>WT: Send non-initiator peers' approvals to WT via pertinent Nisos
+    note over WT: Collects all approvals
+    WT->>IB: All approvals via Niso
+    note over IB: Check and verify all approvals
+    WT->>NIPS: All approvals via pertinent Nisos
+    note over NIPS: Check and verify all approvals
+    end
+
+    rect rgb(255, 230, 230)
+    note over IP, SARs: Commitment (Duress Check & Commit)
+    par Duress Check (All Peers)
+    note over IB: Creates a duress check space to<br>present to user for duress check via the ST
+    IB->>IST: Encrypted duress check via Niso
+    note over IST: Decrypts the duress check for user to see
+    IST->>IP: Show duress check space
+    note over IP: If in duress, the peer chooses<br>any combination of countries other<br>than the consent set. If not,<br>the peer chooses the<br>consent set countries. 
+    IP->>IST: Duress signal (5 countries)
+    IST->>IB: Encrypted signal
+    note over IB: Boomlet evaluates the signal and<br>creates a duress placeholder based on<br>the signal. If the signal is positive<br>and the peer is in duress,<br>Boomlet will put the key for SAR to decrypt<br>peer's data and start the rescue operation.<br>If not, just puts a bunch of zeros there<br>and encrypts the placeholder for SAR.
+    and
+    note over NIPS: Same duress check procedure occurs in every other peer
+    end
+    note over IB: Boomlet creates a commitment to the<br>transaction and appends the duress placeholder
+    IB->>WT: Encrypted commitment and duress placeholder via Niso
+    note over WT: WT decrypts and checks the message.<br>Then sends the encrypted duress placeholder to the SAR.
+    WT->>SARs: Encrypted duress placeholder
+    note over SARs: Checks the duress placeholder.<br>If the signal is positive, decrypts peer's<br>data and start the rescue operation.<br>If the signal is negative,<br>does nothing. Then regardless of the signal,<br>signs the encrypted duress placeholder and<br>sends it back to the WT.
+    SARs->>WT: Signed encrypted duress placeholder
+    note over WT: Verifies the initiator's commitment
+    WT->>NIPS: Initiator's commitment
+    note over NIPS: All non-initiator peers verify initiator's<br>commitment and go through duress check<br>themselves and at last commit to the transaction.
+    NIPS ->> WT: All non-initiator commitments.
+    note over WT: Collect all commits
+    WT->>IB: All commitments via Niso
+    note over IB: Boomlet checks all commitments
+    WT->>NIPS: All commitments via pertinent Nisos
+    note over NIPS: All non-initiator Boomlets check<br>all the commitments as well
+    end
+
+    rect rgb(230, 230, 255)
+    note over IP, NIPS: Ping-Pong (the non-deterministic part that takes time and nobody knows exactly how long)
+    loop Until All Reach Mystery Threshold
+    par All Peers
+    note over IB: Boomlet draws a random number, and<br>based on the result, decides if it wants<br>a duress check like before or wants to<br>create a Ping.
+    note over IB: If Boomlet decides duress check, something like step 12 repeats.
+    note over IB: If Boomlet decides it wants to do the Ping,<br>it creates a Ping data structure<br>with its best known (most work) bitcoin<br>block height as per its Niso and signs it.
+    note over IB: No matter what, the duress placeholder will<br>be attached to the Ping and sent to SAR.
+    IB->>WT: Ping with duress placeholder via Niso
+    note over NIPS: The same goes for every other peer.
+    NIPS->>WT: Ping with duress placeholder via pertinent Nisos
+    end
+  
+    note over WT: WT receives all pongs, checks them for recency,<br>verifies all signatures, and sends the encrypted<br>duress placeholders to pertinent SARs for each peer.
+    WT->>SARs: Encrypted duress placeholder
+    note over SARs: Checks the duress placeholder.<br>If the signal is positive, decrypts peer's<br>data and start the rescue operation.<br>If the signal is negative,<br>does nothing. Then regardless of the signal,<br>signs the encrypted duress placeholder and<br>sends it back to the WT.
+    SARs->>WT: Signed encrypted duress placeholder
+    
+    note over WT: Creates a Pong data structure with all the pings<br>received and the signed encrypted duress placeholder<br>and sends it to all peers
+    WT->> IB: Pong
+    note over IB: Verifies the Pong and checks it for recency.<br>If all is OK, increases the counter by 1.<br>If the counter has reached the mystery amount,<br>Boomlet will activate the reached flag and informs the WT of its status.<br>Nevertheless, it will continue as usual.
+    WT->>NIPS: Pong
+    note over NIPS: Same goes for all other peers
+    end
+    end
+
+    rect rgb(255, 255, 230)
+    note over IP, NIPS: Finalization (Sign & Relay TX)
+    note over WT: When all peers inform WT of their reaching their own mystery, WT informs all, of the situation and the signing begins.
+    WT->>IB: Reached signing stage via Niso
+    note over IB: Peer signs the PSBT via their isolated computer and Boomlet.
+    WT->>NIPS: Reached signing stage via pertinent Nios
+    note over NIPS: All other peers signs the PSBT via<br>their isolated computer and Boomlet.
+    IB->>WT: Signed PSBT via Niso
+    NIPS->>WT: Signed PSBT via Niso
+    note over WT: Aggregate Signatures Relay TX to Network
+    end
+```
+
 ### Online discussions and mentions
 
 #### Posts
