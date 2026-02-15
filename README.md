@@ -1,5 +1,7 @@
 # Boomerang: Bitcoin Cold Storage With Built-in Coercion Resistance
 
+> **NOTE:** This is a simplified overview. For a more comprehensive review, please visit [DEEPDIVE.md](DEEPDIVE.md).
+
 ### What is Boomerang?
 
 Imagine you have a lot of bitcoins - maybe for a company or personal savings - and you're worried not just about hackers, but about real-world threats like someone kidnapping you or threatening you to hand over the money. Regular "cold storage" (like keeping your keys offline on a hardware wallet) is great against online thieves, but it doesn't help if an attacker forces you to sign a transaction right away. That's where Boomerang comes in: it's a system designed to make stealing bitcoins through force way harder and riskier for bad guys.
@@ -51,6 +53,19 @@ We have designed the protocol and the full message sequence diagrams for [setup]
 
 If you like to see the SVG files of the message sequence diagrams, here they are for the [setup](setup/setup_diagram_without_states.svg), [initiator peer's withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator peer's withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) ceremonies.
 
-### More info
+### Online discussions and mentions
 
-You can find a deep dive in our [DEEPDIVE.md](DEEPDIVE.md) file.
+#### Posts
+
+1. Post on [bitcointalk.org](https://bitcointalk.org/index.php?topic=5572779.0).
+2. Post on [stacker.news](https://stacker.news/items/1429719).
+3. Post on [delvingbitcoin.org](https://delvingbitcoin.org/t/boomerang-bitcoin-cold-storage-with-built-in-coercion-resistance/2239).
+4. Post on [X](https://x.com/bitryonix/status/2020757517387895247?s=20).
+5. Post on [Reddit](https://www.reddit.com/r/Bitcoin/comments/1qz5t5e/cold_storage_with_duress_protection/).
+
+#### Mentions
+
+1. [Stacker News Live post](https://stacker.news/items/1433540).
+2. [Stacker New Live video on youtube](https://www.youtube.com/live/jV-FSCFfBd4?si=3dHA0OGQIoa0VsCp&t=1320).
+3. [SN Saturday Newsletter 2/14/26](https://stacker.news/items/1434008).
+4. [Bitcoin Breakdown issue #468](https://www.btcbreakdown.com/p/issue-468) and their post on [X](https://x.com/BTCBreakdown/status/2022044778083283095?s=20).
