@@ -1,188 +1,299 @@
-# Boomerang: Bitcoin Cold Storage With Built-in Coercion Resistance
+# Boomerang: Bitcoin Cold Storage with Built-in Coercion Resistance
 
-> **NOTE:** This is a simplified overview. For a more comprehensive review, please visit [DEEPDIVE.md](DEEPDIVE.md).
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-### What is Boomerang?
+> **Note:** This is a simplified overview. For a comprehensive technical deep dive, refer to [DEEPDIVE.md](DEEPDIVE.md).
 
-Imagine you have a lot of bitcoins - maybe for a company or personal savings - and you're worried not just about hackers, but about real-world threats like someone kidnapping you or threatening you to hand over the money. Regular "cold storage" (like keeping your keys offline on a hardware wallet) is great against online thieves, but it doesn't help if an attacker forces you to sign a transaction right away. That's where Boomerang comes in: it's a system designed to make stealing bitcoins through force way harder and riskier for bad guys.
+![Cryptography alone does not save you and your bitcoins. There is always a $5 wrench out there ready to break your assumptions.](https://imgs.xkcd.com/comics/security.png)
 
-### Why Does Boomerang Exist?
+credit: <https://xkcd.com/538/>
 
-- **The Problem**: Big bitcoin holders (like businesses with millions in bitcoin) often have a few key people who control the ultimate access. Hackers can't easily get in, but a **"wrench attack"** - basically, physically forcing those people to transfer the money - works because normal systems let you send funds quickly and reliably.
-- **The Goal**: Boomerang flips the script. It turns the withdrawal process into something unpredictable in timing during a certain period, with built-in ways to securely signal duress. Attackers can't count on getting the money in a set timeframe (or without risks), so they're less likely to try. Importantly, you can always withdraw eventually if everything's legit. It's just not instant or predictable at first, and becomes straightforward after a set time.
+## Table of Contents
 
-It's like hiding your treasure in a vault that takes a random, unknown, but within a wide range (selected by you privately), amount of time to open, and you can secretly hit a panic button without the attacker detecting if you have done such thing during the process. After a milestone (like 2 years), the vault can be opened normally and deterministically.
+- [Boomerang: Bitcoin Cold Storage with Built-in Coercion Resistance](#boomerang-bitcoin-cold-storage-with-built-in-coercion-resistance)
+  - [Table of Contents](#table-of-contents)
+  - [What is Boomerang?](#what-is-boomerang)
+  - [Why Boomerang?](#why-boomerang)
+    - [The Problem](#the-problem)
+    - [The Solution](#the-solution)
+  - [How It Works](#how-it-works)
+    - [Key Components](#key-components)
+    - [Setup](#setup)
+    - [Withdrawal Process](#withdrawal-process)
+    - [Duress Protection](#duress-protection)
+  - [Target Users](#target-users)
+  - [Threat Model](#threat-model)
+  - [Core Design Goals](#core-design-goals)
+  - [Boomerang in Action](#boomerang-in-action)
+    - [Sequence Diagram](#sequence-diagram)
+  - [Progress So Far](#progress-so-far)
+  - [Contributing](#contributing)
+  - [License](#license)
 
-### How Does It Work?
+## What is Boomerang?
 
-Boomerang isn't for everyday spending. It's for long-term storage where you rarely need to touch the funds. Here's the basics:
+Boomerang is a Bitcoin cold storage protocol designed to protect against both digital and physical threats. While traditional cold storage (e.g., hardware wallets) secures funds from online hackers, it offers little defense against real-world coercion, such as "wrench attacks" where attackers physically force you to transfer funds.
 
-1. **Setup Basics**:
-   - You split control among a small group (e.g., 5 trusted people or "peers").
-   - Each person uses special hardware devices (like secure cards or apps) to hold parts of the keys.
-   - You also connect to neutral "watchtowers" (services that help coordinate) and "search and rescue services" (that can alert help if things go wrong).
-   - You provide encrypted personal info (like your location) to the rescue service, locked with a secret password only you know.
-   - Each peer privately sets their own range for how many "steps" (rounds of checks) their part of the process might take; say, a minimum and maximum number, like 6 months to 1 year worth of steps (tied to Bitcoin's blockchain timing). The group doesn't share these ranges; each person's device (Boomlet) randomly picks a number within their own private range when needed.
-   - The group agrees on a future "milestone block 1" (a specific point on the Bitcoin blockchain, e.g., in 2 years) after which withdrawals become fast and predictable; no more randomness.
-   - Prior to the milestone, the withdrawal is non-deterministic and the duress protection is in place. After that milestone, it is just a plain normal spending condition in a taproot address.
+Boomerang introduces **coercion resistance** by making withdrawals unpredictable and risky for attackers during what we call the "boomerang regime." It incorporates randomized delays and discrete duress signals, deterring forced transfers. After a predefined milestone (e.g., 2 years) the "normal regime" begins, in which transactions can be made in a standard, deterministic manner for long-term reliability.
 
-2. **Withdrawing Money**:
-   - To move bitcoins, everyone in the group has to approve through a back-and-forth process.
-   - In the boomerang period (before the milestone mentioned earlier, like the first 2 years), it involves multiple rounds of checks (the "digging game"). The exact number of steps for each peer's part is randomly picked by their Boomlet within their own private min-max range. No one (not even the group) knows the others' ranges or picks upfront, creating overall uncertainty in total time - so neither do attackers. This makes it hard for bad guys to plan around the timing, giving potential victims time (e.g., months) to be rescued if coerced.
-   - During approvals, you can secretly signal "I'm under duress" (e.g., by choosing certain options in a quiz-like interface on a device). This looks normal to attackers but triggers the rescue service.
-   - If anything seems off (like missed duress checks or messed up responses), the process just... stops. No money moves. But if all's good, it completes - you just don't know exactly how long it'll take ahead of time.
-   - After the milestone block (e.g., 2 years in), you enter a "normal era" where everything is quick and deterministic, like regular cold storage.
+Think of it as a time-locked vault with a secret alarm: the opening time is randomized within user-defined ranges, and you can discreetly trigger help without alerting the attacker.
 
-3. **Duress Protection**:
-   - The "secret signal" is easy: You memorize a set of 5 countries during setup as the consent set. Later, the system shows lists of countries, and your choices either confirm "all good" by entering the consent set or scream "help!" by entering any other combination of countries without obvious signs or stopping the ceremony. You signal the duress but the attacker observe no change compared to the non-duress situation.
-   - If duress is signaled, the rescue service gets your info and can start a "search and rescue" - like contacting authorities or trusted contacts.
+## Why Boomerang?
 
-The whole thing uses encryption and anonymous networks (like Tor) to keep communications hidden. It's not foolproof against everything, but it makes coercion a bad bet for attackers: too uncertain in duration and too risky.
+### The Problem
 
-### Who Is It For?
+Large Bitcoin holders—such as companies or high-net-worth individuals—often rely on a small group of trusted custodians. These setups are resilient to cyberattacks but vulnerable to physical coercion. Attackers can force immediate transfers because standard Bitcoin transactions are fast and irrevocable.
 
-- **Big Holders**: Companies or wealthy individuals with bitcoin they don't need to access often (e.g., long-term reserves).
-- **High-Risk Situations**: Places where physical threats are real, like in unstable regions.
-- **Not For**: Casual users or quick trades; it's too slow and complicated for that.
+### The Solution
 
-In short, Boomerang is like a bitcoin safe with a randomized time-delay lock and a hidden alarm during the boomerang phase, switching to normal access after a milestone. It prioritizes ultimate protection over convenience, making it tougher for anyone to force you out of your bitcoin. If you're curious about setting it up or the costs, it involves hardware, fees for services, and coordinating with others.
+Boomerang makes coercion a poor strategy for attackers:
 
-### What have we done so far?
+- **Unpredictable Timing:** Withdrawals involve randomized "steps" tied to Bitcoin's blockchain, creating uncertainty (e.g., months to years) that gives victims time for rescue.
+- **Discrete and Unavoidable Duress Signals:** Users can secretly indicate distress during the process, triggering automated alerts to rescue services without detectable changes.
+- **Eventual Determinism:** After a milestone block height, access becomes quick and predictable, like regular multisig cold storage.
+- **Risk for Attackers:** The process will halt if anomalies are detected, and duress signals can initiate search-and-rescue operations.
 
-We have designed the protocol and the full message sequence diagrams for [setup](setup) and [withdrawal](withdrawal). We have also made a [proof-of-concept implementation](https://github.com/bitryonix/boomerang) in Rust.
+This shifts the risk-reward balance, making physical attacks less appealing while ensuring legitimate users can always access funds eventually.
 
-If you like to see the SVG files of the message sequence diagrams, here they are for the [setup](setup/setup_diagram_without_states.svg), [initiator peer's withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator peer's withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) ceremonies.
+## How It Works
 
-### Boomerang in action
+Boomerang is optimized for long-term holdings, not frequent transactions. It leverages multisig, encryption, and external services for coordination and security.
 
-Here we demonstrate what happens when you want to withdraw from Boomerang while under the non-deterministic regime. Please note that this is a simplified version of the protocol and the detailed design can be found in [setup](setup) and [withdrawal](withdrawal) folders with pertinent detailed message sequence diagrams as mentioned before.
+### Key Components
+
+- **Peers:** A small group (e.g., 5 trusted individuals) who share control via hardware devices.
+- **Boomlet:** A secure smart card or app holding key shares and handling randomness/duress logic.
+- **Niso:** A non-isolated computer for network interactions.
+- **Iso:** An isolated computer for signing and some sensitive cryptographic operations.
+- **ST (Secure Terminal):** A device for secure input/output, preventing tampering.
+- **Watchtower (WT):** A neutral service coordinating peer communications.
+- **Search and Rescue (SAR) Services:** Handle duress alerts, decrypting pre-encrypted personal info (e.g., location) to initiate rescues.
+- **Tor/Encryption:** Ensures anonymous, secure communications.
+
+### Setup
+
+1. Peers generate and split keys using a multisig taproot descriptor.
+2. Each peer privately sets a min-max range for "digging steps" (randomized rounds, e.g., equivalent to 6 months–2 years).
+3. Encrypt personal "doxing" data (e.g., contacts, location) for SAR, unlocked only on duress.
+4. Define a milestone block height (e.g., ~2 years out) for transitioning to normal regime.
+5. Memorialize a "consent set" (e.g., 5 countries) for duress signaling.
+
+The funds are locked in a Taproot address with Boomerang spending conditions.
+
+### Withdrawal Process
+
+- **Initiation:** Create and verify a PSBT (Partially Signed Bitcoin Transaction).
+- **Approval Phase:** All peers review and approve via Boomlets.
+- **Commitment Phase:** Includes duress checks; commitments are exchanged via WT.
+- **Digging Game (Boomerang Phase):** Randomized rounds of "ping-pong" messages synced to Bitcoin blocks. Each peer's Boomlet draws a secret "mystery" number from their range. Rounds continue until all reach their mystery, introducing unpredictable delays.
+  - Random duress checks will occur mid-game.
+- **Signing and Broadcast:** Once all are ready, sign and finalize the PSBT.
+- **Post-Milestone:** Bypasses randomness for instant, deterministic multisig.
+
+### Duress Protection
+
+- During checks, the system presents randomized lists of countries.
+- Selecting your memorized consent set signals "all clear."
+- Any other combination signals duress, encrypting a key for SAR to access your data and start rescue (e.g., alert authorities).
+- The interface looks identical regardless, hiding the signal from attackers.
+- SAR processes placeholders silently, signing responses to maintain flow.
+
+If duress is detected or peers go offline, the process halts without transferring funds.
+
+## Target Users
+
+- **Enterprise/High-Value Holders:** Businesses with Bitcoin reserves (e.g., treasuries).
+- **High-Risk Environments:** Individuals in regions prone to physical threats or kidnappings.
+- **Not Suitable For:** Day traders, casual users, or frequent access needs—it's deliberately slow during the boomerang phase.
+
+Costs include hardware (Boomlets), service fees (WT/SAR), and Bitcoin transaction fees.
+
+## Threat Model
+
+Boomerang assumes:
+
+* Large Bitcoin holdings controlled by a small set of trusted operators
+* Attackers capable of physical coercion
+* Attackers expecting deterministic transaction execution
+* Participants who may need silent distress signaling
+
+Boomerang does **not** attempt to:
+
+* prevent device theft alone
+* replace general wallet security practices
+* eliminate all human risk
+
+Instead, it targets the gap between cryptographic safety and real-world coercion.
+
+## Core Design Goals
+
+* **Coercion resistance** — make forced withdrawal unpredictable and risky
+* **Silent distress signaling** — participants can signal duress invisibly
+* **Eventual liveness** — legitimate withdrawals always complete
+* **Coordination transparency** — all peers verify system state
+* **Hardware isolation** — signing logic remains physically separated
+* **Operational plausibility** — all duress actions appear normal
+
+## Boomerang in Action
+
+Below is a simplified walkthrough of a withdrawal under the non-deterministic (boomerang) regime. For full details, see the [setup](setup) and [withdrawal](withdrawal) folders.
+
+1. **Initiation**
+   One peer (the *initiator*) constructs an unsigned PSBT representing the intended withdrawal transaction.
+
+2. **PSBT Transfer to Boomlet**
+   The initiator sends the PSBT to their Niso. Niso performs structural validation and forwards the PSBT to the Boomlet via the smart-card interface.
+
+3. **Boomlet Verification**
+   The Boomlet verifies that the PSBT spends from the Boomerang descriptor. It extracts the transaction ID (txid), encrypts it using its shared key with the Secure Terminal (ST), and returns the encrypted payload to Niso for display.
+
+4. **Human Confirmation via ST**
+   The ST scans the encrypted txid from Niso, decrypts it, and displays the txid to the initiator for verification. If approved, the ST signs the confirmation and returns it to the Boomlet via Niso.
+
+5. **Initiator Approval Submission**
+   After validating the ST’s signed approval, the Boomlet issues its approval. Niso forwards both the approval and the PSBT to the Watchtower (WT).
+
+6. **Distribution to Peers**
+   The WT validates the initiator’s approval and distributes the PSBT and approval to all other peers.
+
+7. **Peer Verification**
+   Each peer independently validates the PSBT and approval using their Boomlet and human verification flow. Approved peers submit their approvals to the WT.
+
+8. **Consensus Confirmation**
+   The WT aggregates approvals and broadcasts the full approval set to all peers, confirming group consensus.
+
+**Duress Check Phase**
+
+9. **Duress Challenge Generation**
+   Each Boomlet initiates a duress check by generating five randomized country lists, encrypting them for the ST, and transmitting them via Niso.
+
+10.  **Peer Duress Input**
+    The ST decrypts and displays the lists. The peer selects one country from each list.
+
+* If selections match the preconfigured consent set → no duress
+* Any other combination → duress signaled
+
+The ST encrypts the selections and returns them to the Boomlet.
+
+11. **Duress Placeholder Creation**
+    The Boomlet evaluates the response:
+
+* No duress → encrypts a zero placeholder for SAR
+* Duress → encrypts a rescue key enabling SAR to access protected peer data
+
+The Boomlet appends the placeholder to a commitment message, encrypts it, and sends it to the WT via Niso.
+
+12. **WT Processing**
+    The WT verifies the commitment message and forwards the duress placeholder to SAR.
+
+13. **SAR Evaluation**
+    SAR decrypts the placeholder:
+
+* Rescue key present → decrypt peer data and initiate rescue
+* Otherwise → no action
+
+SAR signs the encrypted placeholder and returns it to the WT.
+
+14. **Peer Commitments**
+    All other peers perform the duress check and commitment process. The WT handles each commitment identically.
+
+15. **Commitment Synchronization**
+    Once all commitments are received, the WT distributes them to all peers for verification.
+
+**Digging Game (Non-Deterministic Phase)**
+
+16.  **Initialization**
+    Each Boomlet has a private "mystery" threshold which was drawn randomly by the Boomlet at setup phase, from a range selected by each pertinent user. Now, at this stage of the withdrawal, every Boomlet initializes a counter at zero. Signing becomes available only after the counter reaches this threshold.
+
+17.  **Ping Creation**
+    Each Boomlet constructs a signed Ping containing its latest observed Bitcoin block height (As reported by its Niso). A duress placeholder is attached, and the message is encrypted for the WT and transmitted via Niso.
+
+18.  **WT Ping Processing**
+    The WT validates incoming Pings and their recency, forwards placeholders to SAR, and SAR processes them as in step 13.
+
+19.  **Pong Broadcast**
+    The WT aggregates all Pings into a Pong message, includes SAR signatures and the latest WT block height, and distributes it to all peers.
+
+20.  **Synchronization Check**
+    Each Boomlet verifies the Pong. If valid, it increments its counter and prepares the next Ping.
+
+21.  **Random Duress Rechecks**
+    At random intervals, a Boomlet may pause Ping creation to repeat the duress check procedure. The resulting placeholder is attached to the next Ping.
+
+22.  **Completion and Signing**
+    The loop continues until all Boomlets reach their mystery thresholds and signal readiness. The WT announces the signing phase. Peers sign the PSBT using their Boomlet and isolated computer (Iso), finalize the transaction, and broadcast it.
+
+### Sequence Diagram
 
 ```mermaid
 sequenceDiagram
-    box Initiator Peer's Side
-    participant IP as Initiator Peer
-    participant IB as Boomlet<br>(A smart card)
-    participant IST as ST<br>(A secure device<br>for input and display)
-    participant IN as Niso<br>(A non-isolated computer)
-    end
-    participant WT as WT
-    participant SARs as SARs
-    participant NIPS as Non-Initiator Peers' Side
+    participant Initiator as Initiator Peer Side
+    participant WT as Watchtower
+    participant SAR as SAR Services
+    participant Others as Other Peers
 
     autonumber
 
     rect rgb(240, 240, 255)
-    note over IP, NIPS: Initiation (Initiator Starts Withdrawal)
-    IP->>IN: Provide PSBT
-    note over IN: Examines the PSBT
-    IN->>IB: Forward PSBT
-    note over IB: Checks the PSBT and if OK,<br>encrypts the txid by the shared key with ST<br>to show to Peer to check with PSBT's txid
-    IB->>IST: Encrypted tx_id via Niso<br>then Niso's monitor into<br>ST's camera (abbreviated here)
-    IST->>IP: Show tx_id to initiator peer
-    note over IP: Checks the txid with<br>the one from the PSBT
-    IP->>IST: Approve
-    note over IST: Signs user approval<br>and encrypts the result for Boomlet
-    IST->>IB: Signed and encrypted approval<br>(again through Niso but abbreviated here)
-    note over IB: Verifies peer's approval
-    IB->>WT: Send approval & encrypted PSBTs via Niso to WT
-    note over WT: Verifies & prepares for distribution
+    note over Initiator, Others: Initiation
+    Initiator->>WT: Send PSBT & Approval
     end
 
     rect rgb(230, 255, 230)
-    note over IP, NIPS: Approval (Non-Initiators Review & Approve)
-    WT->>NIPS: WT/Initiator peer's approvals & encrypted PSBT
-    note over NIPS: All non-initiator peers check and approve the PSBT
-    NIPS->>WT: Send non-initiator peers' approvals to WT via pertinent Nisos
-    note over WT: Collects all approvals
-    WT->>IB: All approvals via Niso
-    note over IB: Check and verify all approvals
-    WT->>NIPS: All approvals via pertinent Nisos
-    note over NIPS: Check and verify all approvals
+    note over Initiator, Others: Approval
+    WT->>Others: Distribute PSBT
+    Others->>WT: Send Approvals
+    WT->>Initiator: All Approvals
+    WT->>Others: All Approvals
     end
 
     rect rgb(255, 230, 230)
-    note over IP, SARs: Commitment (Duress Check & Commit)
-    par Duress Check (All Peers)
-    note over IB: Creates a duress check space to<br>present to user for duress check via the ST
-    IB->>IST: Encrypted duress check via Niso
-    note over IST: Decrypts the duress check for user to see
-    IST->>IP: Show duress check space
-    note over IP: If in duress, the peer chooses<br>any combination of countries other<br>than the consent set. If not,<br>the peer chooses the<br>consent set countries. 
-    IP->>IST: Duress signal (5 countries)
-    IST->>IB: Encrypted signal
-    note over IB: Boomlet evaluates the signal and<br>creates a duress placeholder based on<br>the signal. If the signal is positive<br>and the peer is in duress,<br>Boomlet will put the key for SAR to decrypt<br>peer's data and start the rescue operation.<br>If not, just puts a bunch of zeros there<br>and encrypts the placeholder for SAR.
-    and
-    note over NIPS: Same duress check procedure occurs in every other peer
+    note over Initiator, Others: Commitment & Duress Check
+    par All Peers Duress Check
+    Initiator->>SAR: Duress Placeholder (via WT)
+    Others->>SAR: Duress Placeholder (via WT)
     end
-    note over IB: Boomlet creates a commitment to the<br>transaction and appends the duress placeholder
-    IB->>WT: Encrypted commitment and duress placeholder via Niso
-    note over WT: WT decrypts and checks the message.<br>Then sends the encrypted duress placeholder to the SAR.
-    WT->>SARs: Encrypted duress placeholder
-    note over SARs: Checks the duress placeholder.<br>If the signal is positive, decrypts peer's<br>data and start the rescue operation.<br>If the signal is negative,<br>does nothing. Then regardless of the signal,<br>signs the encrypted duress placeholder and<br>sends it back to the WT.
-    SARs->>WT: Signed encrypted duress placeholder
-    note over WT: Verifies the initiator's commitment
-    WT->>NIPS: Initiator's commitment
-    note over NIPS: All non-initiator peers verify initiator's<br>commitment and go through duress check<br>themselves and at last commit to the transaction.
-    NIPS ->> WT: All non-initiator commitments.
-    note over WT: Collect all commits
-    WT->>IB: All commitments via Niso
-    note over IB: Boomlet checks all commitments
-    WT->>NIPS: All commitments via pertinent Nisos
-    note over NIPS: All non-initiator Boomlets check<br>all the commitments as well
+    SAR->>WT: Signed Responses
+    Initiator->>WT: Commitment
+    Others->>WT: Commitments
+    WT->>Initiator: All Commitments
+    WT->>Others: All Commitments
     end
 
     rect rgb(230, 230, 255)
-    note over IP, NIPS: Ping-Pong (the non-deterministic part that takes time and nobody knows exactly how long)
-    loop Until All Reach Mystery Threshold
+    note over Initiator, Others: Digging Game (Ping-Pong)
+    loop Until All Ready
     par All Peers
-    note over IB: Boomlet draws a random number, and<br>based on the result, decides if it wants<br>a duress check like before or wants to<br>create a Ping.
-    note over IB: If Boomlet decides duress check, something like step 12 repeats.
-    note over IB: If Boomlet decides it wants to do the Ping,<br>it creates a Ping data structure<br>with its best known (most work) bitcoin<br>block height as per its Niso and signs it.
-    note over IB: No matter what, the duress placeholder will<br>be attached to the Ping and sent to SAR.
-    IB->>WT: Ping with duress placeholder via Niso
-    note over NIPS: The same goes for every other peer.
-    NIPS->>WT: Ping with duress placeholder via pertinent Nisos
+    Initiator->>WT: Ping (with Duress if needed)
+    Others->>WT: Pings (with Duress if needed)
     end
-  
-    note over WT: WT receives all pongs, checks them for recency,<br>verifies all signatures, and sends the encrypted<br>duress placeholders to pertinent SARs for each peer.
-    WT->>SARs: Encrypted duress placeholder
-    note over SARs: Checks the duress placeholder.<br>If the signal is positive, decrypts peer's<br>data and start the rescue operation.<br>If the signal is negative,<br>does nothing. Then regardless of the signal,<br>signs the encrypted duress placeholder and<br>sends it back to the WT.
-    SARs->>WT: Signed encrypted duress placeholder
-    
-    note over WT: Creates a Pong data structure with all the pings<br>received and the signed encrypted duress placeholder<br>and sends it to all peers
-    WT->> IB: Pong
-    note over IB: Verifies the Pong and checks it for recency.<br>If all is OK, increases the counter by 1.<br>If the counter has reached the mystery amount,<br>Boomlet will activate the reached flag and informs the WT of its status.<br>Nevertheless, it will continue as usual.
-    WT->>NIPS: Pong
-    note over NIPS: Same goes for all other peers
+    WT->>SAR: Duress Placeholders
+    SAR->>WT: Signed Responses
+    WT->>Initiator: Pong
+    WT->>Others: Pong
     end
     end
 
     rect rgb(255, 255, 230)
-    note over IP, NIPS: Finalization (Sign & Relay TX)
-    note over WT: When all peers inform WT of their reaching their own mystery, WT informs all, of the situation and the signing begins.
-    WT->>IB: Reached signing stage via Niso
-    note over IB: Peer signs the PSBT via their isolated computer and Boomlet.
-    WT->>NIPS: Reached signing stage via pertinent Nios
-    note over NIPS: All other peers signs the PSBT via<br>their isolated computer and Boomlet.
-    IB->>WT: Signed PSBT via Niso
-    NIPS->>WT: Signed PSBT via Niso
-    note over WT: Aggregate Signatures Relay TX to Network
+    note over Initiator, Others: Finalization
+    WT->>Initiator: Ready to Sign
+    WT->>Others: Ready to Sign
+    Initiator->>WT: Signed PSBT
+    Others->>WT: Signed PSBTs
+    note over WT: Broadcast Transaction
     end
 ```
 
-### Online discussions and mentions
+## Progress So Far
 
-#### Posts
+- **Protocol Design:** Full specifications, including message sequence diagrams for [setup](setup) and [withdrawal](withdrawal).
+- **SVGs:** View diagrams for [setup](setup/setup_diagram_without_states.svg), [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg), and [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg).
+- **Proof-of-Concept:** Rust implementation available at [github.com/bitryonix/boomerang](https://github.com/bitryonix/boomerang).
 
-1. Post on [bitcointalk.org](https://bitcointalk.org/index.php?topic=5572779.0).
-2. Post on [stacker.news](https://stacker.news/items/1429719).
-3. Post on [delvingbitcoin.org](https://delvingbitcoin.org/t/boomerang-bitcoin-cold-storage-with-built-in-coercion-resistance/2239).
-4. Post on [X](https://x.com/bitryonix/status/2020757517387895247?s=20).
-5. Post on [Reddit](https://www.reddit.com/r/Bitcoin/comments/1qz5t5e/cold_storage_with_duress_protection/).
+## Contributing
 
-#### Mentions
+We welcome contributions! Open issues for bugs, features, or discussions.
 
-1. [Stacker News Live post](https://stacker.news/items/1433540).
-2. [Stacker New Live video on youtube](https://www.youtube.com/live/jV-FSCFfBd4?si=3dHA0OGQIoa0VsCp&t=1320).
-3. [SN Saturday Newsletter 2/14/26](https://stacker.news/items/1434008).
-4. [Bitcoin Breakdown issue #468](https://www.btcbreakdown.com/p/issue-468) and their post on [X](https://x.com/BTCBreakdown/status/2022044778083283095?s=20).
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
