@@ -29,36 +29,47 @@ Apart from its performance in case of coercion, we want **Boomerang** to act as 
 - [Boomerang: Bitcoin Cold Storage With Built-in Coercion Resistance](#boomerang-bitcoin-cold-storage-with-built-in-coercion-resistance)
   - [Table of Contents](#table-of-contents)
   - [Motivation](#motivation)
-  - [Our solution](#our-solution)
-    - [Predictability as an attack vector](#predictability-as-an-attack-vector)
-    - [Design goal](#design-goal)
-    - [Solution description](#solution-description)
-    - [Scope and positioning](#scope-and-positioning)
-  - [Protocol overview](#protocol-overview)
+  - [Our Solution](#our-solution)
+    - [Predictability As An Attack Vector](#predictability-as-an-attack-vector)
+    - [Design Goals](#design-goals)
+    - [Solution Description](#solution-description)
+    - [Scope And Positioning](#scope-and-positioning)
+  - [Protocol Overview](#protocol-overview)
     - [Entities](#entities)
     - [Descriptor](#descriptor)
-    - [Overarching overview of the protocol](#overarching-overview-of-the-protocol)
-    - [Setup and withdrawal steps in code](#setup-and-withdrawal-steps-in-code)
-    - [Overview of the Boomerang setup procedure](#overview-of-the-boomerang-setup-procedure)
-    - [Overview of the Boomerang withdrawal procedure](#overview-of-the-boomerang-withdrawal-procedure)
-    - [Design decisions](#design-decisions)
-  - [Duress protection mechanism](#duress-protection-mechanism)
-  - [Security model](#security-model)
+    - [Overarching Overview Of The Protocol](#overarching-overview-of-the-protocol)
+    - [Setup And Withdrawal Steps In Code](#setup-and-withdrawal-steps-in-code)
+    - [Overview Of The Boomerang Setup Procedure](#overview-of-the-boomerang-setup-procedure)
+    - [Overview Of The Boomerang Withdrawal Procedure](#overview-of-the-boomerang-withdrawal-procedure)
+    - [Design Decisions](#design-decisions)
+  - [Duress Protection Mechanism](#duress-protection-mechanism)
+  - [Economics Of Coercion](#economics-of-coercion)
+    - [A Simple Game-Theoretic Model](#a-simple-game-theoretic-model)
+    - [How Boomerang Shifts Incentives](#how-boomerang-shifts-incentives)
+    - [Parameter Knobs As Economic Levers](#parameter-knobs-as-economic-levers)
+  - [Game-Theoretic Threat Analysis Under Realistic Cost Assumptions](#game-theoretic-threat-analysis-under-realistic-cost-assumptions)
+    - [Expected Withdrawal Duration Under Boomerang](#expected-withdrawal-duration-under-boomerang)
+    - [Realistic Cost of Sustained Coercion](#realistic-cost-of-sustained-coercion)
+    - [Escalation Probability Under Weekly Duress Checks](#escalation-probability-under-weekly-duress-checks)
+    - [Two Escalation Regimes](#two-escalation-regimes)
+    - [Attacker Decision Dynamics](#attacker-decision-dynamics)
+    - [Deterrence Threshold](#deterrence-threshold)
+    - [Core Insight](#core-insight)
+    - [Practical Implication](#practical-implication)
+    - [Final Assessment](#final-assessment)
+  - [Security Model](#security-model)
   - [Ancillaries](#ancillaries)
   - [Concerns](#concerns)
   - [Why Boomerang Matters](#why-boomerang-matters)
-    - [Current designs secures keys. They do not secure people](#current-designs-secures-keys-they-do-not-secure-people)
-    - [The core insight: predictability is the attacker’s advantage](#the-core-insight-predictability-is-the-attackers-advantage)
-    - [What Boomerang does differently](#what-boomerang-does-differently)
-    - [Why this matters even if you never use Boomerang](#why-this-matters-even-if-you-never-use-boomerang)
-    - [What Boomerang is *not*](#what-boomerang-is-not)
-    - [The question Boomerang asks](#the-question-boomerang-asks)
-  - [Proof-of-concept](#proof-of-concept)
+    - [Current Designs Secures Keys. They Do Not Secure People](#current-designs-secures-keys-they-do-not-secure-people)
+    - [The Core Insight: Predictability Is The Attacker’s Advantage](#the-core-insight-predictability-is-the-attackers-advantage)
+    - [What Boomerang Does Differently](#what-boomerang-does-differently)
+    - [Why This Matters Even If You Never Use Boomerang](#why-this-matters-even-if-you-never-use-boomerang)
+    - [What Boomerang Is *Not*](#what-boomerang-is-not)
+    - [The Question Boomerang Asks](#the-question-boomerang-asks)
+  - [Proof-Of-Concept](#proof-of-concept)
   - [Roadmap](#roadmap)
-  - [Who are we](#who-are-we)
-  - [Call for collaboration](#call-for-collaboration)
-  - [Financial support](#financial-support)
-  - [Updates](#updates)
+  - [Who Are We](#who-are-we)
 
 ## Motivation
 
@@ -70,9 +81,9 @@ Physical attacks against Bitcoiners are not hypothetical. They are [documented](
 
 **Boomerang** is an attempt to address this gap **without changing Bitcoin consensus**.
 
-## Our solution
+## Our Solution
 
-### Predictability as an attack vector
+### Predictability As An Attack Vector
 
 Most custody designs are highly deterministic:
 
@@ -84,7 +95,7 @@ This predictability enables attackers to plan pressure, escalation, and logistic
 
 **Boomerang** is motivated by the observation that **time determinism itself is an attack surface**.
 
-### Design goal
+### Design Goals
 
 **Boomerang** aims to reduce the effectiveness of physical coercion by introducing **protocol-enforced uncertainty** into the withdrawal process, while remaining fully compatible with Bitcoin consensus.
 
@@ -98,7 +109,7 @@ The protocol is designed so that:
 
 **Boomerang** does not claim to eliminate coercion risk. Its goal is to materially increase attacker uncertainty and operational cost, and to create a reaction window for external intervention when duress occurs.
 
-### Solution description
+### Solution Description
 
 How can one be truly protected in a coercion situation? By partially, yet effectively, abandoning what an attacker comes for in the first place. Total control over the asset.
 
@@ -108,7 +119,7 @@ The core idea of our solution is to create a taproot with 2 regimes of spending.
 
 That lengthy withdrawal ceremony is put there to guarantee a degree of unpredictability, as well as a suitable reaction window to the duress signal. In withdrawal ceremony, duress checks happen at initial transaction commitment and later at random intervals. Nevertheless, an encrypted payload is part and parcel of every message in the ceremony after initial transaction approval. Those payloads then get directed to an entity named SAR (Search And Rescue). SAR can unpack that payload and should it contain a positive duress check, use that same signal to decrypt the doxing data shared by user and go ahead with the search and rescue operation.
 
-### Scope and positioning
+### Scope And Positioning
 
 **Boomerang**, at this current stage of design, is not intended to replace simple cold storage or multisig setups for general use. It targets extreme threat models involving high-value holdings, personal safety risks, or adversaries capable of physical coercion.
 
@@ -120,7 +131,7 @@ More broadly, the protocol serves as an exploration of:
 
 We hope even if **Boomerang** itself is not widely adopted, the problems it addresses and the techniques it explores, be relevant to the ongoing evolution of Bitcoin custody and protocol design.
 
-## Protocol overview
+## Protocol Overview
 
 ### Entities
 
@@ -176,7 +187,7 @@ Hence, the only essential requirement on the descriptor is that it contains scri
 
 We have chosen the script in **Boomerang** regime to be a 5-of-5 to guarantee that the **Boomerang** protocol is in effect, even if only one user is committed to the protocol.
 
-### Overarching overview of the protocol
+### Overarching Overview Of The Protocol
 
 **Boomerang** is designed to address a threat that conventional cold storage largely ignores: **physical coercion of key holders**. Instead of trying to make keys impossible to steal, **Boomerang** makes *control over time* and *predictability of withdrawal* the scarce resource.
 
@@ -199,11 +210,11 @@ At a high level:
   - Search-and-Rescue entities (SARs) for duress response.
   - A **personalized duress-consent pattern** memorized by each user and known only to their boomlet.
 
-### Setup and withdrawal steps in code
+### Setup And Withdrawal Steps In Code
 
 All steps are laid out clearly in [setup.rs](https://github.com/bitryonix/boomerang/blob/main/poc/src/setup.rs) and [withdrawal.rs](https://github.com/bitryonix/boomerang/blob/main/poc/src/withdrawal.rs) files, exactly following the design message diagrams of [setup](setup/setup_diagram_without_states.svg), [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) design files.  
 
-### Overview of the Boomerang setup procedure
+### Overview Of The Boomerang Setup Procedure
 
 The setup procedure for **Boomerang**, as depicted in the [PlantUML sequence diagram](setup/setup_diagram_without_states.puml) and its [SVG render](setup/setup_diagram_without_states.svg), involves multiple entities (User, Phone, SARs, Iso, Boomlet, ST, Niso, Peers, WT, and Boomletwo) coordinating to establish a secure cold storage with coercion resistance. It is divided into logical groups for clarity, following the diagram's structure. Each step includes key actions, data exchanges, and assertions/verifications. The process ensures key generation, parameter agreement, duress setup, registrations, synchronizations, and backups, culminating in a shared state across peers.
 
@@ -294,7 +305,7 @@ The setup procedure for **Boomerang**, as depicted in the [PlantUML sequence dia
 
 93-94. **Boomlet notifies completion**: Sends done magic to Niso; Niso informs User.
 
-### Overview of the Boomerang withdrawal procedure
+### Overview Of The Boomerang Withdrawal Procedure
 
 The withdrawal procedure in **Boomerang**, as depicted in the PlantUML sequence diagram for [initiator peer](withdrawal/initiator_withdrawal_diagram_without_states.puml) and [non-initiator peers](withdrawal/non_initiator_withdrawal_diagram_without_states.puml) and their pertinent [SVG render for initiator](withdrawal/initiator_withdrawal_diagram_without_states.svg) anf [SVG render for non-initiators](withdrawal/non_initiator_withdrawal_diagram_without_states.svg), allows peers to collaboratively spend from the cold storage UTXO using a PSBT (Partially Signed Bitcoin Transaction). It is divided into phases: initiation, approval, commitment (with initial duress check), a non-deterministic "digging game" (ping-pong loop with random duress checks), and finalization. The process inherits state from setup (e.g., keys, params, mysteries).
 
@@ -396,7 +407,7 @@ This loop runs until all Boomlets reach their mystery (counter ≥ mystery). All
 
 73-74. **All send to WT**: Niso forwards signed PSBT to WT; WT aggregates all 5; derives/relays final signed transaction to Bitcoin network.
 
-### Design decisions
+### Design Decisions
 
 These decisions are not permanent and can be changed to modify the dynamic behavior of the system or strengthen protocol's security.
 
@@ -405,7 +416,7 @@ These decisions are not permanent and can be changed to modify the dynamic behav
 3. Withdrawal will not start before `milestone_block_0` in the current design. Although it could technically, since the digging game's end could well be after the aforementioned block.
 4. All checks that are done in Boomlet that can be done on Niso as well, are taking place in both entities.
 
-## Duress protection mechanism
+## Duress Protection Mechanism
 
 The core idea for our duress protection mechanism is as follows. A more detailed description can be found in [duress protection folder](duress_protection).
 
@@ -417,7 +428,303 @@ The core idea for our duress protection mechanism is as follows. A more detailed
 6. If the user is tortured, any combination of countries can be confessed to as the consent signal.
 7. If the attacker is to choose a country at random, it has a chance of `(1/195 * 1/194 * 1/193 * 1/192 * 1/191 = 1/267,749,239,680 = 3.73e-12` to hit the consent countries.
 
-## Security model
+## Economics Of Coercion
+
+Boomerang is designed not only to function under coercion, but also to be a **deterrent** by increasing attacker uncertainty and cost.
+
+### A Simple Game-Theoretic Model
+
+Model a coercion attempt as a sequential decision problem:
+
+**Players**
+
+* Defender (D): Boomerang user(s)
+* Attacker (A): coercive adversary
+
+**Parameters**
+
+* (V): value attacker can steal
+* (T): time attacker must maintain control until funds are safely exfiltrated
+* (c): attacker’s per-unit-time operational cost (guards, logistics, safehouse, coordination)
+* (q(T)): probability attacker is disrupted before completion (increasing with time)
+* (L): attacker loss if disrupted (legal exposure, retaliation, sunk costs)
+
+A simple attacker expected utility:
+
+$$
+U_A = (1-q(T))\cdot V - c\cdot T - q(T)\cdot L
+$$
+
+Attacker proceeds if (U_A > 0).
+
+### How Boomerang Shifts Incentives
+
+Boomerang changes the attacker’s payoff by changing the *distribution* of (T) and increasing (q(T)):
+
+1. **Increases expected completion time (E[T])**
+   The secure element will not sign until its secret mystery threshold is reached.
+
+2. **Increases variance of (T)**
+   Uncertainty forces the attacker to plan for worst-case duration, increasing cost and risk.
+
+3. **Reduces “compressibility” of time via coercion**
+   Torture/pressure often aims to reduce (T). Boomerang makes (T) less compressible because the victim cannot force Boomlet to sign early.
+
+4. **Creates a reaction window**
+   Duress checks happen at commitment and then again at random intervals during the digging game. Longer duration means more chances for duress signaling and SAR response, effectively raising (q(T)).
+
+The objective is not “coercion-proof custody.” The objective is to push (U_A) negative for a meaningful range of attackers by raising time, uncertainty, and disruption probability.
+
+### Parameter Knobs As Economic Levers
+
+Several design parameters are best understood as deterrence levers:
+
+* **Mystery min/max range:** increases (E[T]) and variance.
+* **Duress check interval:** increases duress opportunities (higher chance of successful signaling) at the cost of greater ceremony burden.
+* **Milestone schedule:** defines when forced determinism becomes available (and what an attacker might “wait out”).
+* **WT redundancy / censorship resistance:** affects whether an attacker can DoS coordination and force fallback behavior.
+* **SAR selection and jurisdiction:** affects the real-world meaning of (q(T)).
+
+## Game-Theoretic Threat Analysis Under Realistic Cost Assumptions
+
+Boomerang’s security claims are not based on making coercion impossible.
+They are based on altering the *economics* of coercion.
+
+To evaluate whether Boomerang deters real attacks, we must examine:
+
+1. The realistic cost of sustaining coercion.
+2. The statistical duration of withdrawal under Boomerang.
+3. The probability and consequence of escalation (SAR activation).
+4. The rational behavior of an attacker facing uncertainty.
+
+This section aggregates those elements into a coherent game-theoretic assessment.
+
+### Expected Withdrawal Duration Under Boomerang
+
+In a typical high-security configuration:
+
+* 5 peers
+* Withdrawal window: 6–9 months
+* Each peer samples a hidden threshold independently
+
+Because completion depends on the **maximum** of all peers’ hidden values, the effective withdrawal duration clusters near the upper bound.
+
+Empirically:
+
+* Most withdrawals complete close to 9 months.
+* Early completion is rare.
+* The delay is bounded but statistically concentrated near the maximum.
+
+For an attacker, this implies:
+
+> Coercion must likely be sustained for close to the full configured window.
+
+This is not a short hostage scenario. It is a multi-month operation.
+
+### Realistic Cost of Sustained Coercion
+
+A coercive detention lasting months requires:
+
+* Continuous staffing (multiple shifts)
+* Secure holding location(s)
+* Logistics and transport
+* Surveillance countermeasures
+* Operational risk mitigation
+
+Even modestly organized operations imply substantial daily costs.
+
+Conservative estimates:
+
+* **Low-end (aggressive underestimation):** ~$5,000 per day
+* **Professional sustained operation:** $20,000–$30,000 per day
+
+Over a 6–9 month window, even at the low estimate:
+
+* 180 days × $5,000 ≈ $900,000
+* 270 days × $5,000 ≈ $1,350,000
+
+At more realistic professional levels:
+
+* $4.5M–$8M in coercion cost alone
+
+This cost exists before considering escalation risk.
+
+### Escalation Probability Under Weekly Duress Checks
+
+Boomerang embeds recurring duress opportunities.
+
+If:
+
+* Duress checks occur weekly,
+* The victim successfully signals with probability π per check,
+* SAR responds (bites) with probability ρ given a signal,
+
+Then over 6–9 months (approximately 26–39 checks):
+
+The probability that *at least one escalation occurs* becomes extremely high unless π or ρ is near zero.
+
+For example:
+
+* If π is high (e.g., 90%)
+* And ρ is moderate (e.g., 50%)
+
+Then escalation is overwhelmingly likely long before withdrawal completion.
+
+In that case, the relevant question becomes:
+
+> What does escalation mean for the attacker?
+
+### Two Escalation Regimes
+
+The deterrence strength of Boomerang depends critically on the real-world consequence of escalation.
+
+#### Regime A: Escalation Leads to Detention and Prosecution<!-- omit from toc -->
+
+If SAR activation plausibly results in:
+
+* Arrest
+* Prosecution
+* Asset seizure
+* Severe criminal penalties
+
+Then escalation represents catastrophic loss.
+
+Under such conditions:
+
+* Expected attacker loss dominates potential gain.
+* Even low daily coercion costs do not salvage profitability.
+* The attacker’s optimal strategy becomes “do not attempt.”
+
+In simulations using:
+
+* $10M target
+* 6–9 month window
+* Weekly duress checks
+* High victim signaling reliability
+* Moderate SAR effectiveness
+* Significant legal consequences
+
+No break-even point was observed even at very high target values.
+
+In this regime:
+
+> Boomerang produces strong economic deterrence.
+
+#### Regime B: Escalation Has Minimal Consequence<!-- omit from toc -->
+
+If SAR activation:
+
+* Does not meaningfully disrupt the operation,
+* Does not create significant prosecution risk,
+* Imposes only minor operational cost,
+
+Then escalation becomes a nuisance rather than a deterrent.
+
+Under such assumptions:
+
+* Attackers may absorb the escalation loss.
+* The primary cost driver becomes the time delay.
+* For sufficiently large target values, coercion may remain economically viable.
+
+In simulations where:
+
+* Escalation loss was small (e.g., $100k),
+* Daily coercion cost was minimized ($5k/day),
+
+Break-even attack values dropped significantly (around a few million dollars).
+
+In this regime:
+
+> Boomerang provides delay and detection but weaker deterrence.
+
+### Attacker Decision Dynamics
+
+Boomerang converts coercion into a sequential decision problem.
+
+At each passing week:
+
+* Withdrawal has not completed → suggests a high hidden threshold.
+* The expected remaining time remains substantial.
+* The probability that escalation has already occurred increases.
+* The attacker’s expected payoff declines.
+
+The attacker must continuously decide:
+
+* Continue coercion?
+* Abort?
+
+Under strong escalation consequences, the optimal strategy converges toward early abandonment.
+
+Under weak escalation consequences, the attacker may rationally continue.
+
+### Deterrence Threshold
+
+The attack becomes economically rational only if:
+
+> Target value > (expected coercion cost + expected escalation loss)
+
+With a 6–9 month window:
+
+* Coercion cost alone may approach $1M–$8M.
+* If escalation carries multi-million-dollar legal risk, total expected downside exceeds many typical custody sizes.
+
+Thus:
+
+* For $10M-class holders in jurisdictions with credible enforcement,
+* With properly configured withdrawal windows,
+* And reliable duress signaling,
+
+Boomerang materially alters attacker incentives.
+
+### Core Insight
+
+Boomerang’s security is not purely cryptographic.
+
+It is economic.
+
+It leverages:
+
+* Time uncertainty,
+* Extended duration,
+* Recurring hidden escalation opportunities,
+* Legal consequence compounding.
+
+Delay alone does not deter coercion.
+
+Delay combined with credible escalation does.
+
+### Practical Implication
+
+Boomerang is strongest when:
+
+* Legal enforcement is credible.
+* SAR capability is real.
+* Duress signaling reliability is high.
+* Withdrawal window is sufficiently long relative to target value.
+
+Boomerang is weaker when:
+
+* Escalation has no real consequence.
+* Jurisdictional enforcement is absent.
+* Duress signaling is unreliable.
+
+In other words:
+
+> Boomerang’s deterrence strength scales with the real-world enforceability behind it.
+
+### Final Assessment
+
+Under realistic multi-month withdrawal windows:
+
+* Coercion becomes a prolonged, high-cost operation.
+* Escalation risk compounds with time.
+* Attacker success becomes uncertain and unstable.
+
+Boomerang does not claim to eliminate coercion.
+
+It reframes coercion from a predictable extraction into a high-variance, escalation-prone endurance gamble whose rationality depends on real-world enforcement.
+
+## Security Model
 
 During the design evolution of **Boomerang**, we faced multiple threats. Some of which blocked via design, and some of them remained to be addressed by usage instructions. Here we list some of the more important of those threats.
 
@@ -503,7 +810,7 @@ There are situations in which an entity must be changed or an interruption occur
 
 ## Why Boomerang Matters
 
-### Current designs secures keys. They do not secure people
+### Current Designs Secures Keys. They Do Not Secure People
 
 Bitcoin’s cryptographic guarantees end at the private key. Once a key holder is identified and physically coerced, conventional cold storage offers no meaningful protection. Multisig, hardware wallets, and timelocks all assume a cooperative signer acting freely. Under duress, they fail in predictable ways.
 
@@ -511,7 +818,7 @@ Physical attacks against Bitcoiners are no longer theoretical. They are document
 
 **Boomerang** is an attempt to address this gap **without changing Bitcoin consensus**.
 
-### The core insight: predictability is the attacker’s advantage
+### The Core Insight: Predictability Is The Attacker’s Advantage
 
 Most custody schemes fail under duress because they are **deterministic**:
 
@@ -523,7 +830,7 @@ That knowledge lets attackers plan pressure, escalation, and logistics.
 
 **Boomerang** removes one of those pillars: **time determinism**.
 
-### What Boomerang does differently
+### What Boomerang Does Differently
 
 **Boomerang** introduces a withdrawal process that is:
 
@@ -541,7 +848,7 @@ That knowledge lets attackers plan pressure, escalation, and logistics.
 
 The result is not “perfect safety,” but a **material increase in attacker uncertainty and cost**.
 
-### Why this matters even if you never use Boomerang
+### Why This Matters Even If You Never Use Boomerang
 
 **Boomerang** is not claiming to be a universal custody solution. Its value lies elsewhere:
 
@@ -554,7 +861,7 @@ The result is not “perfect safety,” but a **material increase in attacker un
 3. **It informs future protocol design**
    Even if **Boomerang** itself is not widely adopted, its ideas are relevant to vaults, covenants, and next-generation custody schemes.
 
-### What Boomerang is *not*
+### What Boomerang Is *Not*
 
 - It is not a claim of “duress-proof Bitcoin.”
 - It is not a replacement for simple cold storage.
@@ -563,7 +870,7 @@ The result is not “perfect safety,” but a **material increase in attacker un
 
 Its guarantees are explicit, bounded, and openly discussed.
 
-### The question Boomerang asks
+### The Question Boomerang Asks
 
 Bitcoin has spent 17 years hardening keys against math, networks, and software bugs.
 
@@ -571,7 +878,7 @@ Bitcoin has spent 17 years hardening keys against math, networks, and software b
 
 **Boomerang** may be one possible answer. Even if it is not the final one, the question itself seems overdue.
 
-## Proof-of-concept
+## Proof-Of-Concept
 
 We have coded a proof-of-concept implementation in rust that can be reached at [boomerang repo](https://github.com/bitryonix/boomerang).
 
@@ -593,33 +900,10 @@ We have coded a proof-of-concept implementation in rust that can be reached at [
 - [ ] Designing multiple WTs voting.
 - [ ] Integrating **Boomerang** in project ***Helium***.
 
-## Who are we
+## Who Are We
 
 We prefer to remain anonymous for the time being.
 
 Our vision does not stop with **Boomerang**. This is just a part of a bigger picture we hope to draw. Currently we have other ideas that we are working on in parallel, and we hope to open source them soon as well.
 
 Our main focus is on designing and implementing a coherent semantic and procedural spectrum that makes bitcoin and the system emerging from it, more accessible to everyone.
-
-## Call for collaboration
-
-We welcome any comments or contributions on design of the protocol and its implementation.
-
-If you, as a anonymous, private or legal entity want to contribute to this protocol, you are welcome. We need the following expertise:
-
-1. Red team hackers to attack the protocol.
-2. Java card programmers to code the boomlet.
-3. Embedded programmers to code the ST software.
-4. Rust programmers to code the entities on production level.
-5. UI/UX designer to streamline the human interaction.
-6. Those who do formal proofs to create one on the protocol.
-
-## Financial support
-
-We need financial support to expand our team to further the design. We are planning to apply for grants, should the idea worth it's dime.
-
-If you want to support us on any fronts, please email us at <bitryonix@proton.me> to discuss the matter.
-
-## Updates
-
-None for now.

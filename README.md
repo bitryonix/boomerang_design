@@ -23,7 +23,7 @@ Boomerang explores a different primitive:
   - [Table of Contents](#table-of-contents)
   - [Motivation](#motivation)
   - [Core Idea](#core-idea)
-  - [What Boomerang Is and Is Not](#what-boomerang-is-and-is-not)
+  - [What Boomerang Is And Is Not](#what-boomerang-is-and-is-not)
   - [Architecture Overview](#architecture-overview)
   - [System Topology](#system-topology)
   - [How Withdrawal Works](#how-withdrawal-works)
@@ -32,10 +32,13 @@ Boomerang explores a different primitive:
   - [Duress Signaling](#duress-signaling)
   - [Security Model](#security-model)
   - [Trade-offs](#trade-offs)
-  - [Limitations and Open Problems](#limitations-and-open-problems)
+  - [Limitations And Open Problems](#limitations-and-open-problems)
   - [Progress So Far](#progress-so-far)
   - [Repository Map](#repository-map)
+  - [Call For Collaboration](#call-for-collaboration)
+  - [Financial Support](#financial-support)
   - [Closing Thought](#closing-thought)
+  - [Updates](#updates)
 
 ----
 
@@ -84,7 +87,7 @@ Boomerang introduces uncertainty; the normal regime guarantees recoverability.
 
 ----
 
-## What Boomerang Is and Is Not
+## What Boomerang Is And Is Not
 
 #### Boomerang is:<!-- omit from toc -->
 - A **research protocol** for coercion-aware custody.
@@ -333,7 +336,7 @@ Boomerang is optimized for long-term holdings, not frequent spending.
 
 ----
 
-## Limitations and Open Problems
+## Limitations And Open Problems
 
 Boomerang is research-stage; several issues are explicitly open:
 
@@ -395,6 +398,29 @@ For the full protocol, always treat the PlantUML sequence diagrams and DEEPDIVE 
 
 ----
 
+## Call For Collaboration
+
+We welcome any comments or contributions on design of the protocol and its implementation.
+
+If you, as a anonymous, private or legal entity want to contribute to this protocol, you are welcome. We need the following expertise:
+
+1. Red team hackers to attack the protocol.
+2. Java card programmers to code the boomlet.
+3. Embedded programmers to code the ST software.
+4. Rust programmers to code the entities on production level.
+5. UI/UX designer to streamline the human interaction.
+6. Those who do formal proofs to create one on the protocol.
+
+----
+
+## Financial Support
+
+We need financial support to expand our team to further the design. We are planning to apply for grants, should the idea worth it's dime.
+
+If you want to support us on any fronts, please email us at <bitryonix@proton.me> to discuss the matter.
+
+----
+
 ## Closing Thought
 
 Bitcoin has spent years hardening keys against math, networks, and software.
@@ -404,3 +430,9 @@ Boomerang asks:
 > What does it look like to harden Bitcoin custody against humans with guns — by making **time** uncertain?
 
 This repository is an exploration of that question. It is intentionally adversarial, intentionally strict, and intentionally unfinished.
+
+----
+
+## Updates
+
+None for now.
