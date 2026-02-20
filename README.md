@@ -6,9 +6,11 @@
 > **Status:** Research-stage protocol design. Not production ready.  
 > This repository contains the **design/specification** (message diagrams + docs). A separate repo contains a Rust PoC.
 
+**TL;DR:** Boomerang is a coercion-aware Bitcoin cold-storage protocol that enforces a **bounded but unpredictable withdrawal time** in hardware and embeds **plausibly deniable duress signaling** into the normal withdrawal flow — **without changing Bitcoin consensus**.
+
 ![Cryptography alone does not save you and your bitcoins. There is always a $5 wrench out there ready to break your assumptions.](https://imgs.xkcd.com/comics/security.png)
 
-credit: <https://xkcd.com/538/>
+Credit: [xkcd #538](https://xkcd.com/538/)
 
 Boomerang is a Bitcoin cold-storage protocol designed to protect not only against digital compromise, but also against **real-world coercion**. Conventional custody systems are largely **deterministic**: attackers can learn who must sign, what steps must occur, and approximately how long it will take. Under physical coercion, that predictability becomes the attacker’s advantage.
 
@@ -28,7 +30,7 @@ Boomerang explores a different primitive:
   - [System Topology](#system-topology)
   - [How Withdrawal Works](#how-withdrawal-works)
       - [Conceptual Withdrawal Flow](#conceptual-withdrawal-flow)
-      - [What Makes It Non-Deterministic(But Bounded)](#what-makes-it-non-deterministicbut-bounded)
+      - [What Makes It Non-Deterministic (But Bounded)](#what-makes-it-non-deterministic-but-bounded)
   - [Duress Signaling](#duress-signaling)
   - [Security Model](#security-model)
   - [Trade-offs](#trade-offs)
@@ -246,7 +248,7 @@ sequenceDiagram
 
     Note over Initiator,Peers: Non-deterministic Digging Game
     loop Until all mystery thresholds reached
-        Peers->>WT: Ping (with optional duress)
+        Peers->>WT: Ping (with random duress checks)
         WT->>SAR: Forward placeholder
         SAR-->>WT: Signed response
         WT->>Peers: Pong
@@ -256,7 +258,7 @@ sequenceDiagram
     WT->>Bitcoin Network: Broadcast transaction
 ```
 
-#### What Makes It Non-Deterministic(But Bounded)
+#### What Makes It Non-Deterministic (But Bounded)
 
 Each Boomlet draws a secret integer (“mystery”) during setup.
 
@@ -400,16 +402,16 @@ For the full protocol, always treat the PlantUML sequence diagrams and DEEPDIVE 
 
 ## Call For Collaboration
 
-We welcome any comments or contributions on design of the protocol and its implementation.
+We welcome comments and contributions on the protocol design and its implementation.
 
-If you, as a anonymous, private or legal entity want to contribute to this protocol, you are welcome. We need the following expertise:
+If you want to contribute — as an anonymous individual, a private entity, or a legal entity — the following expertise would be especially valuable:
 
-1. Red team hackers to attack the protocol.
-2. Java card programmers to code the boomlet.
-3. Embedded programmers to code the ST software.
-4. Rust programmers to code the entities on production level.
-5. UI/UX designer to streamline the human interaction.
-6. Those who do formal proofs to create one on the protocol.
+1. Red-team security researchers to attack the design and implementation.
+2. JavaCard developers to implement Boomlet applets.
+3. Embedded developers to build ST firmware/software.
+4. Rust developers to implement production-grade components.
+5. UI/UX designers to streamline the human ceremony and reduce error rates.
+6. Formal methods researchers to prove security properties and identify gaps.
 
 ----
 
