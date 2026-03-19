@@ -31,7 +31,7 @@ Doxing data consists of two parts:
     }
     ```
 
-2. **Dynamic doxing data**: This a live feed of choice that helps indicating user's last known state. Like a location feed provided by user's mobile phone.
+2. **Dynamic doxing data**: a live feed of choice that helps indicating user's last known state. Like a location feed provided by user's mobile phone.
 
 All doxing data are encrypted by `doxing_key` which is the SHA256 digest of the `doxing_password`. Static doxing data is indicated at setup stage and sent to SAR by user as part of the registration process with the SAR. Dynamic doxing data is encrypted at source by the `doxing_key` and continuously sent to SAR via the originating device.
 
@@ -52,7 +52,7 @@ Duress mechanism does not cover setup stage.
 
 ## Expectations and evaluation criteria
 
-1. The duress payload should be easily producible within the confines of the java card, like a 256bit number.
+1. The duress payload should be easily producible within the confines of the java card, like a 256-bit number.
 2. The duress payload must lend itself to a particular pattern that we name duress pattern (plausibly deniable).
 3. The duress signal/pattern should be easily remembered.
 4. Given any pattern, it is required that in any duress check instance, the user can signal being in duress.
@@ -60,7 +60,7 @@ Duress mechanism does not cover setup stage.
 6. The duress check must be resistant to replay attacks.
 7. The duress check must be resistant to typos or miscalculations by the user.
 8. If the attacker is to guess at random, let's say it has a chance of `P(ag)` to pass the duress check successfully.
-9. If the attacker is to torture the user, ideally, the attacker must know that the user has a big enough set to choose from and every choice will be consistent with user's  and system's behavior in non-duress condition, in a way that adhering to those may cause duress signal with a probability of `P(ac)`. This should be high enough to prevent the attacker from initiating an attack under our assumptions.
+9. If the attacker is to torture the user, ideally, the attacker must know that the user has a big enough set to choose from and every choice will be consistent with user's and system's behavior in non-duress condition, in a way that adhering to those may cause duress signal with a probability of `P(ac)`. This should be high enough to prevent the attacker from initiating an attack under our assumptions.
 
 ## Attacker characteristics
 
@@ -85,7 +85,7 @@ After emitting duress signal the following happens:
 
 ### Assumptions
 
-1. Duress checks are shown on a secure device with a qr code scanner, a small monitor for establishing visual channel with user and showing a qr code and a joystick for input.The monitor is sufficiently small for user to see and be able to protect its content in a non-isolated environment easily. We call this ***ST*** for Secure Terminal.
+1. Duress checks are shown on a secure device with a qr code scanner, a small monitor for establishing visual channel with user and showing a qr code and a joystick for input. The monitor is sufficiently small for user to see and be able to protect its content in a non-isolated environment easily. We call this ***ST*** for Secure Terminal.
 2. The attacker cannot observe user's hand when using the device (ST) or cannot confer meaningful information without seeing the hand and the monitor at the same time.
 
 ### Proposal
@@ -93,8 +93,8 @@ After emitting duress signal the following happens:
 #### Core
 
 1. Boomlet has the set of all countries in memory.
-2. At setup user selects 5 countries (without order and without repetition) that signals their consent. All other combinations of countries are interpreted as duress. (5-dictionary model of *Jeremy Clark and Urs Hengartner. 2008. Panic passwords: authenticating under duress. In Proceedings of the 3rd conference on Hot topics in security (HOTSEC'08). USENIX Association, USA, Article 8, 1–6.*)
-3. At duress check instances boomlet generates 5 random combination of numbers from 1 to 195. Those sets are exported to the ST. The ST will assign to each number, a country in a way that the number corresponds to the ascending alphabetical order of the country.
+2. At setup user selects 5 countries (without order and without repetition) that signal their consent. All other combinations of countries are interpreted as duress. (5-dictionary model of *Jeremy Clark and Urs Hengartner. 2008. Panic passwords: authenticating under duress. In Proceedings of the 3rd conference on Hot topics in security (HOTSEC'08). USENIX Association, USA, Article 8, 1–6.*)
+3. At duress check instances boomlet generates 5 random combinations of numbers from 1 to 195. Those sets are exported to the ST. The ST will assign to each number, a country in a way that the number corresponds to the ascending alphabetical order of the country.
 4. If the user is not in duress, they will search each list and find the consent countries in no particular order.
 5. If the user is in duress, they will choose any other countries.
 6. If the user is tortured, any combination of countries can be confessed to as the consent signal.
@@ -114,7 +114,7 @@ We chose the PRNG inside the boomlet for duress check intervals. Users will choo
 
 ##### Setup
 
-1. Boomlet and the ST will perform a key exchange via Iso and QR code in the setup. Hence, the boomlet will know the ST and vise versa.
+1. Boomlet and the ST will perform a key exchange via Iso and QR code in the setup. Hence, the boomlet will know the ST and vice versa.
 
     We may have one or more of these devices (ST) introduced to boomlet for backup purposes. For now we assume 1 ST.
 
@@ -123,13 +123,13 @@ We chose the PRNG inside the boomlet for duress check intervals. Users will choo
 4. User will choose 5 countries at will. Order is not important and repetition is not allowed.
 5. ST will record the selection and encrypt the 5 word byte array with its shared key with boomlet.
 6. The ST will show the resulting encrypted data in QR code format on its monitor.
-7. Iso will scan the QR code and send it too boomlet.
+7. Iso will scan the QR code and send it to boomlet.
 8. Boomlet will decode and decrypt the QR code and record the set of numbers as `duress_consent_set`.
 
 ##### Withdrawal
 
 1. Duress check is initiated by the boomlet, either at commitment to the withdrawal PSBT or at a random interval.
-2. Boomlet will create 5 random combination of numbers of the complete `[1:195]` set. That is 5 sets consisting of numbers between 1 and 195 (inclusive) that are ordered randomly. Boomlet will save these sets in its memory.
+2. Boomlet will create 5 random combinations of numbers of the complete `[1:195]` set. That is 5 sets consisting of numbers between 1 and 195 (inclusive) that are ordered randomly. Boomlet will save these sets in its memory.
 3. Boomlet encrypts the set of these sets with the shared key with ST.
 4. Boomlet will export this encrypted data to niso via QR code.
 5. Niso will encode it into a QR code and displays it on its monitor, prompting the user to scan the QR code with ST.
@@ -146,7 +146,7 @@ We chose the PRNG inside the boomlet for duress check intervals. Users will choo
 16. Boomlet will check if the extracted numbers form a set equal to the `duress_consent_set`.
 17. If:
 
-    ##### 17.1 the user has entered a duress signal by entering any set other that `duress_consent_set`
+    ##### 17.1 the user has entered a duress signal by entering any set other than `duress_consent_set`
 
     17.1.1. Boomlet will encrypt `doxing_key` with SAR keys.
     17.1.2. Boomlet will put the encrypted result in the duress bearing part of the next message.
@@ -158,7 +158,7 @@ We chose the PRNG inside the boomlet for duress check intervals. Users will choo
 
     ##### 17.2. the user has not input a duress
 
-    17.2.1. Boomlet encrypts an all zeros data with with SAR keys (there is iv, hence the result will not be the same at each instance).
+    17.2.1. Boomlet encrypts an all zeros data with SAR keys (there is iv, hence the result will not be the same at each instance).
     17.2.2. Boomlet will put the encrypted result in the duress bearing part of the next message.
     17.2.3. Boomlet will send the message to WTs via Niso.
     17.2.4. WTs will decompose the message and send a message to SARs containing the duress bearing part of the message.

@@ -417,7 +417,7 @@ If you want to contribute — as an anonymous individual, a private entity, or a
 
 ## Financial Support
 
-We need financial support to expand our team to further the design. We are planning to apply for grants, should the idea worth it's dime.
+We need financial support to expand our team to further the design. We are planning to apply for grants, should the idea worth its dime.
 
 If you want to support us on any fronts, please email us at <bitryonix@proton.me> to discuss the matter.
 
