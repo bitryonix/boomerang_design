@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+- [Summary](#summary)
 - [Scope & assumptions](#scope-assumptions)
 - [Attacker personas](#attacker-personas)
 - [Trust boundaries + Trust Boundary Diagram](#trust-boundaries)
@@ -16,6 +17,37 @@
 - [Appendix C: CCSS mapping & roadmap](#appendix-ccss)
 
 ---
+<a id="summary"></a>
+## Summary
+[Back to Table of Contents](#table-of-contents)
+
+Boomerang materially improves coercion resistance over plain multisig by combining two-layer signing, protocol-enforced unpredictability, and plausibly deniable duress signaling. It does **not** eliminate theft or coercion risk; it mainly tries to raise attacker cost, preserve user safety time, and fail more safely than conventional cold-storage workflows.
+
+### Executive summary
+
+- **Security value proposition:** the Boomerang regime requires both the mnemonic-backed normal key and the Boomlet-held non-exportable share for each peer, while the digging game and duress checks aim to make a forced withdrawal slower, less predictable, and more visible to SAR.
+- **Most important trust assumptions:** Boomlet secure-element security, ST integrity, correct cryptographic design/implementation, honest-peer availability, correct Bitcoin timelock behavior, and sustained WT/SAR availability.
+- **Top risk themes:**  
+  1. **Niso compromise and message / PSBT tampering** (`R-08`, `R-11`)  
+  2. **Operator error, governance, and rollover discipline** (`R-15`, `R-04`)  
+  3. **Secure-element / ST compromise and cryptographic implementation correctness** (`R-01`, `R-02`, `R-14`)  
+  4. **Forced determinism and late-stage waterfall risks** (`R-03`, `R-04`)  
+  5. **Safety-critical dependencies and deanonymization around WT / SAR / Tor / payment flows** (`R-05`, `R-06`, `R-16`, `R-23`)
+- **Production-readiness blockers:** cryptographic details are still underspecified; reorg handling is not finalized; WT/SAR redundancy is unresolved; Boomletwo activation/recovery remains under design; software supply-chain and monitoring/incident-response processes are not yet sufficiently specified.
+- **Immediate priorities:**  
+  - specify AEAD/KDF/transcript-binding/serialization details and publish test vectors;  
+  - replace password-hash doxing key derivation with a memory-hard KDF and tighten SAR privacy posture;  
+  - preserve a simple ST trust boundary while requiring independent PSBT verification on dedicated operator hardware;  
+  - define and rehearse key-compromise, coercion, outage, and rollover procedures.
+- **Control target:** given the custody value, coercion risk, and service dependencies, the current design should be assessed against **CCSS Level III** expectations.
+
+### Bottom line
+
+Boomerang has a credible **coercion-resistance story** only if three things hold simultaneously:
+
+1. **The human / physical operating model is strong**, because coercion, travel risk, device theft, and observation are first-class threats.  
+2. **The protocol state machine is specified and validated rigorously**, because freshness, replay, counter, and tolerance-window bugs can collapse the non-determinism guarantees.  
+3. **Operational dependencies are hardened and diversified**, because WT, SAR, Tor, node-RPC, logging, and payment metadata can still undermine either safety or privacy even if the core cryptography is sound.
 
 <a id="scope-assumptions"></a>
 ## Scope & assumptions
