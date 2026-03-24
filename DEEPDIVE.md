@@ -61,7 +61,7 @@ Apart from its performance in case of coercion, we want **Boomerang** to act as 
   - [Ancillaries](#ancillaries)
   - [Concerns](#concerns)
   - [Why Boomerang Matters](#why-boomerang-matters)
-    - [Current Designs Secures Keys. They Do Not Secure People](#current-designs-secures-keys-they-do-not-secure-people)
+    - [Current Designs Secure Keys. They Do Not Secure People](#current-designs-secure-keys-they-do-not-secure-people)
     - [The Core Insight: Predictability Is The Attacker’s Advantage](#the-core-insight-predictability-is-the-attackers-advantage)
     - [What Boomerang Does Differently](#what-boomerang-does-differently)
     - [Why This Matters Even If You Never Use Boomerang](#why-this-matters-even-if-you-never-use-boomerang)
@@ -212,7 +212,7 @@ At a high level:
 
 ### Setup And Withdrawal Steps In Code
 
-All steps are laid out clearly in [setup.rs](https://github.com/bitryonix/boomerang/blob/main/poc/src/setup.rs) and [withdrawal.rs](https://github.com/bitryonix/boomerang/blob/main/poc/src/withdrawal.rs) files, exactly following the design message diagrams of [setup](setup/setup_diagram_without_states.svg), [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) design files.  
+All steps are laid out clearly in [setup.rs](https://github.com/bitryonix/boomerang/blob/main/poc/poc-steps/src/setup.rs) and [withdrawal.rs](https://github.com/bitryonix/boomerang/blob/main/poc/poc-steps/src/withdrawal.rs) files, exactly following the design message diagrams of [setup](setup/setup_diagram_without_states.svg), [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) design files.  
 
 ### Overview Of The Boomerang Setup Procedure
 
