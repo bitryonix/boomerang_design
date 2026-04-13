@@ -38,7 +38,7 @@ Boomerang explores a different primitive:
   - [Progress So Far](#progress-so-far)
   - [Repository Map](#repository-map)
   - [Call For Collaboration](#call-for-collaboration)
-  - [Contact](#contact)
+  - [Financial Support](#financial-support)
   - [Closing Thought](#closing-thought)
   - [Updates](#updates)
 
@@ -382,6 +382,7 @@ The protocol is a distributed state machine with many checks. Complexity increas
 
 This repository contains the design artifacts and specs:
 
+* [SPEC.md](SPEC.md) — RFC-style protocol specification and canonical protocol narrative
 * [DEEPDIVE.md](DEEPDIVE.md) — comprehensive technical deep dive (recommended for experts)
 * [setup/](setup)
 
@@ -396,7 +397,7 @@ This repository contains the design artifacts and specs:
 * [secure_terminal/](secure_terminal) — ST design requirements and threat assumptions
 * [security_models/](security_models) — threat analyses including forced determinism discussions
 
-For the full protocol, always treat the PlantUML sequence diagrams and DEEPDIVE as the source of truth.
+For the full protocol, start with [SPEC.md](SPEC.md). The sequence diagrams, DEEPDIVE, and subsystem folders remain companion references and should be kept aligned with the spec.
 
 ----
 
@@ -415,9 +416,11 @@ If you want to contribute — as an anonymous individual, a private entity, or a
 
 ----
 
-## Contact
+## Financial Support
 
-You can reach us at <bitryonix@proton.me>
+We need financial support to expand our team to further the design. We are planning to apply for grants, should the idea worth its dime.
+
+If you want to support us on any fronts, please email us at <bitryonix@proton.me> to discuss the matter.
 
 ----
 
