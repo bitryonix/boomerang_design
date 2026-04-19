@@ -4,7 +4,31 @@ Status: Research draft, not production ready.
 
 Where the existing repository prose uses multiple names for the same concept, this document prefers the terminology already used in the Rust PoC repository at `bitryonix/boomerang`, especially names such as `boomerang_params`, `most_work_bitcoin_block_height`, `duress_placeholder`, and `reached_mystery_flag`.
 
+## Table of Contents
+
+- [1. Status Of This Document](#status-of-this-document)
+- [2. Conventions](#conventions)
+- [3. Goals And Non-Goals](#goals-and-non-goals)
+- [4. System Model](#system-model)
+- [5. Security And Timing Model](#security-and-timing-model)
+- [6. Actors And State](#actors-and-state)
+- [7. Cryptographic Objects](#cryptographic-objects)
+- [8. Descriptor](#descriptor)
+- [9. Setup Protocol](#setup-protocol)
+- [10. Withdrawal Protocol](#withdrawal-protocol)
+- [11. Duress Signaling](#duress-signaling)
+- [12. Freshness, Replay Resistance, And Binding](#freshness-replay-resistance-and-binding)
+- [13. Failure Behavior](#failure-behavior)
+- [14. Security Considerations](#security-considerations)
+- [15. Canonicality And Companion Documents](#canonicality-and-companion-documents)
+- [16. TODO For A Complete RFC-Style Specification](#todo-for-a-complete-rfc-style-specification)
+
+---
+
+<a id="status-of-this-document"></a>
 ## 1. Status Of This Document
+
+[Back to Table of Contents](#table-of-contents)
 
 Boomerang is a research-stage Bitcoin cold-storage protocol. This document specifies the intended protocol behavior, but it does not claim that all security assumptions have been validated or that all implementation details are final.
 
@@ -18,7 +42,10 @@ Several parts of the design remain intentionally open:
 
 Open items are called out inline as `OPEN ISSUE`.
 
+<a id="conventions"></a>
 ## 2. Conventions
+
+[Back to Table of Contents](#table-of-contents)
 
 The key words `MUST`, `MUST NOT`, `REQUIRED`, `SHOULD`, `SHOULD NOT`, and `MAY` in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
@@ -37,7 +64,10 @@ This document uses:
 
 The current design profile assumes 5 peers and a 5-of-5 Boomerang regime. Generalization to other thresholds is possible in principle, but is not defined here.
 
+<a id="goals-and-non-goals"></a>
 ## 3. Goals And Non-Goals
+
+[Back to Table of Contents](#table-of-contents)
 
 ### 3.1 Goals
 
@@ -57,7 +87,10 @@ Boomerang does not attempt to:
 - provide production-ready hardware or operational guidance today;
 - fully specify SAR real-world rescue procedures.
 
+<a id="system-model"></a>
 ## 4. System Model
+
+[Back to Table of Contents](#table-of-contents)
 
 Each peer controls the following local components:
 
@@ -84,7 +117,10 @@ The protocol trust model assumes:
 - cryptographic primitives hold;
 - WT and SAR are available for the duration of relevant ceremonies.
 
+<a id="security-and-timing-model"></a>
 ## 5. Security And Timing Model
+
+[Back to Table of Contents](#table-of-contents)
 
 Boomerang treats time predictability as an attack surface.
 
@@ -97,7 +133,10 @@ The Boomerang regime provides bounded unpredictability. The fallback regime prov
 
 `OPEN ISSUE`: the exact timing constants, tolerated delays, and reorg policy are not yet final.
 
+<a id="actors-and-state"></a>
 ## 6. Actors And State
+
+[Back to Table of Contents](#table-of-contents)
 
 ### 6.1 Per-Peer Long-Lived State
 
@@ -125,7 +164,10 @@ All peers are expected to converge on the same:
 
 Any peer that detects divergence in these shared values MUST fail closed for the relevant ceremony.
 
+<a id="cryptographic-objects"></a>
 ## 7. Cryptographic Objects
+
+[Back to Table of Contents](#table-of-contents)
 
 ### 7.1 Key Classes
 
@@ -154,7 +196,10 @@ All encrypted protocol messages MUST provide confidentiality and integrity. All 
 
 `OPEN ISSUE`: the exact AEAD mode, KDF transcript structure, and canonical wire encoding remain to be fixed.
 
+<a id="descriptor"></a>
 ## 8. Descriptor
+
+[Back to Table of Contents](#table-of-contents)
 
 ### 8.1 Overview
 
@@ -193,7 +238,10 @@ The descriptor MUST satisfy the following:
 
 Any implementation that constructs a different descriptor shape MUST treat that as a different protocol profile, not a silent variant of this one.
 
+<a id="setup-protocol"></a>
 ## 9. Setup Protocol
+
+[Back to Table of Contents](#table-of-contents)
 
 Setup establishes keys, shared parameters, duress state, SAR registration, and the Boomlet backup.
 
@@ -310,7 +358,10 @@ Setup completes only when all of the following hold:
 - the consent set has been enrolled and confirmed;
 - Boomlet backup completion has been acknowledged across all peers.
 
+<a id="withdrawal-protocol"></a>
 ## 10. Withdrawal Protocol
+
+[Back to Table of Contents](#table-of-contents)
 
 Withdrawal is a coordinated, multi-phase ceremony.
 
@@ -455,7 +506,10 @@ WT collects the signed PSBT fragments from every peer, aggregates them into a fu
 
 The broadcast transaction MUST correspond to the originally committed `tx_id`.
 
+<a id="duress-signaling"></a>
 ## 11. Duress Signaling
+
+[Back to Table of Contents](#table-of-contents)
 
 ### 11.1 Scope
 
@@ -511,7 +565,10 @@ On receiving a forwarded `duress_placeholder`, SAR:
 
 Boomlet SHOULD require the SAR acknowledgement before considering the placeholder delivered.
 
+<a id="freshness-replay-resistance-and-binding"></a>
 ## 12. Freshness, Replay Resistance, And Binding
+
+[Back to Table of Contents](#table-of-contents)
 
 The following invariants apply across the protocol:
 
@@ -525,7 +582,10 @@ The following invariants apply across the protocol:
 
 `OPEN ISSUE`: setup-instance uniqueness and transcript-wide binding are not fully closed yet. Future revisions should add explicit setup IDs and stronger transcript hashes.
 
+<a id="failure-behavior"></a>
 ## 13. Failure Behavior
+
+[Back to Table of Contents](#table-of-contents)
 
 Unless a more specific recovery path is defined, peers MUST fail closed in the Boomerang regime when they observe:
 
@@ -542,7 +602,10 @@ Fail-closed behavior in this context means refusing to advance the current cerem
 
 `OPEN ISSUE`: timeout, blame, and service-failover procedures remain ancillary work.
 
+<a id="security-considerations"></a>
 ## 14. Security Considerations
+
+[Back to Table of Contents](#table-of-contents)
 
 Boomerang's security depends on several strong assumptions:
 
@@ -560,7 +623,10 @@ Known design risks include:
 - unspecified Boomletwo activation semantics;
 - hardware trust assumptions that exceed what a prototype device automatically guarantees.
 
+<a id="canonicality-and-companion-documents"></a>
 ## 15. Canonicality And Companion Documents
+
+[Back to Table of Contents](#table-of-contents)
 
 This document is intended to be the repository's canonical protocol narrative.
 
@@ -575,7 +641,10 @@ The following companion documents remain important:
 
 If a companion document conflicts with this specification on intended protocol behavior, this specification SHOULD win and the companion document SHOULD be updated.
 
+<a id="todo-for-a-complete-rfc-style-specification"></a>
 ## 16. TODO For A Complete RFC-Style Specification
+
+[Back to Table of Contents](#table-of-contents)
 
 The following work remains before this document can be considered a complete RFC-style protocol specification:
 
