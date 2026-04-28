@@ -2,6 +2,22 @@
 
 Duress checks and signaling initiates and takes place in the boomlet as the trusted hardware component in our protocol. User interface to boomlet is the Secure Terminal or ST that is designed to minimize side channel attacks surface against the duress mechanism in a non-isolated environment.
 
+## Table of Contents
+
+- [Duress actors](#duress-actors)
+- [Doxing Data](#doxing-data)
+- [Duress coverage](#duress-coverage)
+- [Expectations and evaluation criteria](#expectations-and-evaluation-criteria)
+- [Attacker characteristics](#attacker-characteristics)
+- [Duress signal consequences](#duress-signal-consequences)
+- [Solution](#solution)
+  - [Assumptions](#assumptions)
+  - [Proposal](#proposal)
+    - [Core](#core)
+    - [Ceremony](#ceremony)
+      - [Setup](#setup)
+      - [Withdrawal](#withdrawal)
+
 ## Duress actors
 
 1. **The User**: Is the person of interest that creates a doxing data package and chooses a doxing password and signs up with the SAR privately.
@@ -19,7 +35,7 @@ Doxing data consists of two parts:
     ```rust
     StaticDoxingData {
         name: String,
-        national_id: String, 
+        national_id: String,
         address_home: String,
         address_work: String,
         phone_number_mobile: String,

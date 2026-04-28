@@ -1,5 +1,39 @@
 # Forced determinism
 
+## Table of Contents
+
+- [Vector attacks review](#vector-attacks-review)
+  - [1. Stealing at least 1 boomlet card](#1-stealing-at-least-1-boomlet-card)
+    - [Description](#description)
+    - [Potential guards](#potential-guards)
+    - [Vulnerability](#vulnerability)
+    - [Justification](#justification)
+  - [2. Starting the withdrawal ceremony too late](#2-starting-the-withdrawal-ceremony-too-late)
+    - [Description](#description-1)
+    - [Potential guards](#potential-guards-1)
+    - [Vulnerability](#vulnerability-1)
+    - [Justification](#justification-1)
+  - [3. Non-cooperation of one of the peers](#3-non-cooperation-of-one-of-the-peers)
+    - [Description](#description-2)
+    - [Guard](#guard)
+    - [Vulnerability](#vulnerability-2)
+    - [Justification](#justification-2)
+- [On solution](#on-solution)
+  - [Rough ideas](#rough-ideas)
+  - [Solution for now](#solution-for-now)
+    - [Thing to be considered](#thing-to-be-considered)
+- [Comments and Discussions](#comments-and-discussions)
+  - [Comment 1](#comment-1)
+  - [Comment 2](#comment-2)
+  - [Comment 3](#comment-3)
+  - [Comment 4](#comment-4)
+  - [Comment 5](#comment-5)
+  - [Comment 6](#comment-6)
+  - [Comment 7](#comment-7)
+  - [Comment 8](#comment-8)
+  - [Comment 9](#comment-9)
+  - [Comment 10](#comment-10)
+
 ## Vector attacks review
 
 ### 1. Stealing at least 1 boomlet card
@@ -35,11 +69,11 @@ Limiting the range in protocol, leads to adversary knowing the effective startin
 #### Vulnerability
 
 - Flush mechanisms cannot be static, for they will lead to leaving the problem of the last resort unsolved.
-- People can be sloppy and inattentive to the requirement or the notification. 
+- People can be sloppy and inattentive to the requirement or the notification.
 
 #### Justification
 
-- 
+-
 
 ### 3. Non-cooperation of one of the peers
 

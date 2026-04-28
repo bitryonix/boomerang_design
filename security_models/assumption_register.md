@@ -1,5 +1,37 @@
 # Boomerang Threat-Model Assumption Register And Derived Design Gaps
 
+## Table of Contents
+
+- [Purpose](#purpose)
+- [Corpus Reviewed](#corpus-reviewed)
+  - [Core protocol and overview docs](#core-protocol-and-overview-docs)
+  - [Canonical and supporting diagrams](#canonical-and-supporting-diagrams)
+  - [Security WIP artifacts](#security-wip-artifacts)
+  - [Hardware prototype material](#hardware-prototype-material)
+  - [Files reviewed but not directly assumption-bearing](#files-reviewed-but-not-directly-assumption-bearing)
+- [Method](#method)
+- [Status Legend](#status-legend)
+- [Source Legend](#source-legend)
+- [High-Level Observations Before The Register](#high-level-observations-before-the-register)
+- [Assumption Register](#assumption-register)
+  - [A. Baseline Security Scope And Canonical Trust Boundaries](#a-baseline-security-scope-and-canonical-trust-boundaries)
+  - [B. Bitcoin, Descriptor, And Timing Model](#b-bitcoin-descriptor-and-timing-model)
+  - [C. Cryptography, Serialization, And Binding](#c-cryptography-serialization-and-binding)
+  - [D. Boomlet And Boomletwo](#d-boomlet-and-boomletwo)
+  - [E. Secure Terminal And Human Interface](#e-secure-terminal-and-human-interface)
+  - [F. Iso, Niso, And Phone Environments](#f-iso-niso-and-phone-environments)
+  - [G. Peers, Users, And Human Operations](#g-peers-users-and-human-operations)
+  - [H. WT And SAR Service Assumptions](#h-wt-and-sar-service-assumptions)
+  - [I. Network, Metadata, And Privacy](#i-network-metadata-and-privacy)
+  - [J. Recovery, Uniqueness, And Design Evolution](#j-recovery-uniqueness-and-design-evolution)
+- [Formal Threat-Model Boundaries Made Explicit By The TLA+ Spec](#formal-threat-model-boundaries-made-explicit-by-the-tla-spec)
+  - [Formal Security Assumptions](#formal-security-assumptions)
+  - [Additional Formal Security Assumptions Exposed By The Merged Withdrawal Model](#additional-formal-security-assumptions-exposed-by-the-merged-withdrawal-model)
+  - [Formal Proof-Scope Limits That Narrow The Checked Security Claims](#formal-proof-scope-limits-that-narrow-the-checked-security-claims)
+- [Derived Design Gaps](#derived-design-gaps)
+- [Practical Reading Of The Register](#practical-reading-of-the-register)
+- [Recommended Next Use Of This Document](#recommended-next-use-of-this-document)
+
 ## Purpose
 
 This document is the repository's threat-model-oriented register. It collects the security-relevant assumptions and proof-scope limits that the current Boomerang design and formalization rely on, then derives a design-gaps table from those security-relevant boundaries only.

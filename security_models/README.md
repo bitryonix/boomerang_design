@@ -3,21 +3,59 @@
 ## Table of Contents
 
 - [Scope & assumptions](#scope-assumptions)
-- [Trust boundaries + Trust Boundary Diagram](#trust-boundaries)
+  - [System summary](#system-summary)
+  - [In-scope components](#in-scope-components)
+  - [Out-of-scope](#out-of-scope)
+  - [Primary assets](#primary-assets)
+  - [Security objectives](#security-objectives)
+  - [High-impact assumptions](#high-impact-assumptions)
+  - [Key unknowns blocking production readiness](#key-unknowns-blocking-production-readiness)
+  - [Open design boundaries](#open-design-boundaries)
+- [Trust boundaries + Trust Boundary Diagram](#trust-boundaries-trust-boundary-diagram)
+  - [Trust boundary list](#trust-boundary-list)
+  - [Cross-boundary flows](#cross-boundary-flows)
+  - [Trust Boundary Diagram](#trust-boundary-diagram)
 - [Human & Physical Risk](#human-physical-risk)
+  - [Human/physical threat scenarios](#humanphysical-threat-scenarios)
+  - [Duress mechanism assumptions](#duress-mechanism-assumptions)
+  - [Operational hardening checklist](#operational-hardening-checklist)
 - [Architecture & data flows](#architecture-data-flows)
+  - [Data flow diagram with trust boundaries](#data-flow-diagram-with-trust-boundaries)
+  - [Data classification](#data-classification)
+  - [Protocol parameter surface](#protocol-parameter-surface)
+  - [Current protocol-binding boundaries](#current-protocol-binding-boundaries)
 - [Systematic attack identification](#systematic-attack-identification)
+  - [Attack Pattern Checklist](#attack-pattern-checklist)
 - [Risk register](#risk-register)
-- [Attack / attack-defense trees](#attack-trees)
+  - [Scoring method](#scoring-method)
+  - [Risk register table](#risk-register-table)
+- [Attack / attack-defense trees](#attack-attack-defense-trees)
+  - [Tree 0: Primary attacker campaign: steal funds under coercion or force deterministic fallback](#tree-0-primary-attacker-campaign-steal-funds-under-coercion-or-force-deterministic-fallback)
+  - [Tree 1: Steal funds by tampering PSBT or breaking intent continuity](#tree-1-steal-funds-by-tampering-psbt-or-breaking-intent-continuity)
+  - [Tree 2: Reach deterministic fallback and then steal with normal keys](#tree-2-reach-deterministic-fallback-and-then-steal-with-normal-keys)
+  - [Tree 3: Complete a coerced withdrawal without effective duress-triggered rescue](#tree-3-complete-a-coerced-withdrawal-without-effective-duress-triggered-rescue)
+  - [Tree 4: Deanonymize peers and target them with coercion](#tree-4-deanonymize-peers-and-target-them-with-coercion)
+  - [Tree 5: Supply-chain compromise of Boomlet and ST](#tree-5-supply-chain-compromise-of-boomlet-and-st)
 - [Mitigations & roadmap](#mitigations-roadmap)
-- [Appendix A: STRIDE mapping](#appendix-stride)
-- [Appendix B: OWASP mapping](#appendix-owasp)
-- [Appendix C: CCSS mapping & roadmap](#appendix-ccss)
-- [Appendix D: Detailed design gaps](#appendix-design-gaps)
+  - [Mitigation roadmap](#mitigation-roadmap)
+  - [Component-specific hardening summary](#component-specific-hardening-summary)
+- [Appendix A: STRIDE mapping](#appendix-a-stride-mapping)
+  - [STRIDE Threat Table](#stride-threat-table)
+  - [STRIDE coverage notes](#stride-coverage-notes)
+- [Appendix B: OWASP mapping](#appendix-b-owasp-mapping)
+- [Appendix C: CCSS mapping & roadmap](#appendix-c-ccss-mapping-roadmap)
+  - [Target CCSS level recommendation](#target-ccss-level-recommendation)
+  - [Main CCSS-driven gaps](#main-ccss-driven-gaps)
+  - [Condensed now / next / later roadmap](#condensed-now-next-later-roadmap)
+    - [Now (security-critical prerequisites)](#now-security-critical-prerequisites)
+    - [Next (scale and resilience)](#next-scale-and-resilience)
+    - [Later (high assurance)](#later-high-assurance)
+- [Appendix D: Detailed design gaps](#appendix-d-detailed-design-gaps)
+  - [Protocol, timing, and transaction semantics](#protocol-timing-and-transaction-semantics)
+  - [Boomlet, ST, and endpoint platform assurance](#boomlet-st-and-endpoint-platform-assurance)
+  - [Services, operators, and recovery](#services-operators-and-recovery)
+  - [Privacy and network exposure](#privacy-and-network-exposure)
 
----
-
-<a id="scope-assumptions"></a>
 ## Scope & assumptions
 [Back to Table of Contents](#table-of-contents)
 
@@ -309,8 +347,8 @@ flowchart LR
 
 **Interpretation**
 
-- Boomerang’s strongest intended security properties depend on TB-BOOMLET and TB-ST holding.  
-- Boomerang’s strongest intended availability properties depend on TB-WT and TB-RPC behaving correctly, or having redundancy and failover.  
+- Boomerang’s strongest intended security properties depend on TB-BOOMLET and TB-ST holding.
+- Boomerang’s strongest intended availability properties depend on TB-WT and TB-RPC behaving correctly, or having redundancy and failover.
 - Coercion resistance is fundamentally a **human + physical** problem; the technical protocol mainly shapes incentives and time.
 
 ---
@@ -351,7 +389,7 @@ The duress mechanism assumes two things:
 
 These assumptions are operationally fragile. Cameras, multiple attackers, and controlled environments directly weaken them. Shielding, private environments, and operator drills remain necessary.
 
-Primary coercion campaign: [Tree 0](#attack-trees).
+Primary coercion campaign: [Tree 0](#tree-0-primary-attacker-campaign-steal-funds-under-coercion-or-force-deterministic-fallback).
 
 ### Operational hardening checklist
 

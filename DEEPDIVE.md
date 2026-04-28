@@ -26,50 +26,50 @@ Apart from its performance in case of coercion, we want **Boomerang** to act as 
 
 ## Table of Contents
 
-- [Boomerang: Bitcoin Cold Storage With Built-in Coercion Resistance](#boomerang-bitcoin-cold-storage-with-built-in-coercion-resistance)
-  - [Table of Contents](#table-of-contents)
-  - [Motivation](#motivation)
-  - [Our Solution](#our-solution)
-    - [Predictability As An Attack Vector](#predictability-as-an-attack-vector)
-    - [Design Goals](#design-goals)
-    - [Solution Description](#solution-description)
-    - [Scope And Positioning](#scope-and-positioning)
-  - [Protocol Overview](#protocol-overview)
-    - [Entities](#entities)
-    - [Descriptor](#descriptor)
-    - [Overarching Overview Of The Protocol](#overarching-overview-of-the-protocol)
-    - [Setup And Withdrawal Steps In Code](#setup-and-withdrawal-steps-in-code)
-    - [Overview Of The Boomerang Setup Procedure](#overview-of-the-boomerang-setup-procedure)
-    - [Overview Of The Boomerang Withdrawal Procedure](#overview-of-the-boomerang-withdrawal-procedure)
-    - [Design Decisions](#design-decisions)
-  - [Duress Protection Mechanism](#duress-protection-mechanism)
-  - [Economics Of Coercion](#economics-of-coercion)
-    - [A Simple Game-Theoretic Model](#a-simple-game-theoretic-model)
-    - [How Boomerang Shifts Incentives](#how-boomerang-shifts-incentives)
-    - [Parameter Knobs As Economic Levers](#parameter-knobs-as-economic-levers)
-  - [Game-Theoretic Threat Analysis Under Realistic Cost Assumptions](#game-theoretic-threat-analysis-under-realistic-cost-assumptions)
-    - [Expected Withdrawal Duration Under Boomerang](#expected-withdrawal-duration-under-boomerang)
-    - [Realistic Cost of Sustained Coercion](#realistic-cost-of-sustained-coercion)
-    - [Escalation Probability Under Weekly Duress Checks](#escalation-probability-under-weekly-duress-checks)
-    - [Two Escalation Regimes](#two-escalation-regimes)
-    - [Attacker Decision Dynamics](#attacker-decision-dynamics)
-    - [Deterrence Threshold](#deterrence-threshold)
-    - [Core Insight](#core-insight)
-    - [Practical Implication](#practical-implication)
-    - [Final Assessment](#final-assessment)
-  - [Security Model](#security-model)
-  - [Ancillaries](#ancillaries)
-  - [Concerns](#concerns)
-  - [Why Boomerang Matters](#why-boomerang-matters)
-    - [Current Designs Secure Keys. They Do Not Secure People](#current-designs-secure-keys-they-do-not-secure-people)
-    - [The Core Insight: Predictability Is The Attacker’s Advantage](#the-core-insight-predictability-is-the-attackers-advantage)
-    - [What Boomerang Does Differently](#what-boomerang-does-differently)
-    - [Why This Matters Even If You Never Use Boomerang](#why-this-matters-even-if-you-never-use-boomerang)
-    - [What Boomerang Is *Not*](#what-boomerang-is-not)
-    - [The Question Boomerang Asks](#the-question-boomerang-asks)
-  - [Proof-Of-Concept](#proof-of-concept)
-  - [Roadmap](#roadmap)
-  - [Who Are We](#who-are-we)
+- [Motivation](#motivation)
+- [Our Solution](#our-solution)
+  - [Predictability As An Attack Vector](#predictability-as-an-attack-vector)
+  - [Design Goals](#design-goals)
+  - [Solution Description](#solution-description)
+  - [Scope And Positioning](#scope-and-positioning)
+- [Protocol Overview](#protocol-overview)
+  - [Entities](#entities)
+  - [Descriptor](#descriptor)
+  - [Overarching Overview Of The Protocol](#overarching-overview-of-the-protocol)
+  - [Setup And Withdrawal Steps In Code](#setup-and-withdrawal-steps-in-code)
+  - [Overview Of The Boomerang Setup Procedure](#overview-of-the-boomerang-setup-procedure)
+  - [Overview Of The Boomerang Withdrawal Procedure](#overview-of-the-boomerang-withdrawal-procedure)
+  - [Design Decisions](#design-decisions)
+- [Duress Protection Mechanism](#duress-protection-mechanism)
+- [Economics Of Coercion](#economics-of-coercion)
+  - [A Simple Game-Theoretic Model](#a-simple-game-theoretic-model)
+  - [How Boomerang Shifts Incentives](#how-boomerang-shifts-incentives)
+  - [Parameter Knobs As Economic Levers](#parameter-knobs-as-economic-levers)
+- [Game-Theoretic Threat Analysis Under Realistic Cost Assumptions](#game-theoretic-threat-analysis-under-realistic-cost-assumptions)
+  - [Expected Withdrawal Duration Under Boomerang](#expected-withdrawal-duration-under-boomerang)
+  - [Realistic Cost of Sustained Coercion](#realistic-cost-of-sustained-coercion)
+  - [Escalation Probability Under Weekly Duress Checks](#escalation-probability-under-weekly-duress-checks)
+  - [Two Escalation Regimes](#two-escalation-regimes)
+    - [Regime A: Escalation Leads to Detention and Prosecution](#regime-a-escalation-leads-to-detention-and-prosecution)
+    - [Regime B: Escalation Has Minimal Consequence](#regime-b-escalation-has-minimal-consequence)
+  - [Attacker Decision Dynamics](#attacker-decision-dynamics)
+  - [Deterrence Threshold](#deterrence-threshold)
+  - [Core Insight](#core-insight)
+  - [Practical Implication](#practical-implication)
+  - [Final Assessment](#final-assessment)
+- [Security Model](#security-model)
+- [Ancillaries](#ancillaries)
+- [Concerns](#concerns)
+- [Why Boomerang Matters](#why-boomerang-matters)
+  - [Current Designs Secure Keys. They Do Not Secure People](#current-designs-secure-keys-they-do-not-secure-people)
+  - [The Core Insight: Predictability Is The Attacker’s Advantage](#the-core-insight-predictability-is-the-attackers-advantage)
+  - [What Boomerang Does Differently](#what-boomerang-does-differently)
+  - [Why This Matters Even If You Never Use Boomerang](#why-this-matters-even-if-you-never-use-boomerang)
+  - [What Boomerang Is Not](#what-boomerang-is-not)
+  - [The Question Boomerang Asks](#the-question-boomerang-asks)
+- [Proof-Of-Concept](#proof-of-concept)
+- [Roadmap](#roadmap)
+- [Who Are We](#who-are-we)
 
 ## Motivation
 
@@ -140,7 +140,7 @@ We hope even if **Boomerang** itself is not widely adopted, the problems it addr
 3. **Niso**: A stateful piece of software that runs on a non-isolated computing environment with access to a full bitcoin node and TOR network.
 4. **Boomlet**: A java card applet that is installed and run on a java card.
 5. **Boomletwo**: A java card applet that is installed and run on a java card, acting as the back up of Boomlet.
-6. **ST**: Short for Secure Terminal. A tamper evident, air-gapped hardware used for trust minimization in communications between user and boomlet. More on ST can be found in [secure terminal folder](secure_terminal).
+6. **ST**: Short for Secure Terminal. A tamper evident, air-gapped hardware used for trust minimization in communications between user and boomlet. More on ST can be found in the [Secure Terminal README](secure_terminal/README.md).
 7. **WT**: Short for Watchtower. An online entity that manages coordination of the peers and act as one of the roots of trust to provide the heartbeat of the protocol which is the latest bitcoin block height.
 8. **SAR**: Short for Search And Rescue. Is an online entity that receives encrypted doxing data from user and checks for the duress signal. Should it detect a positive duress signal, the SAR uses that signal to decrypt the doxing data and perform a search and rescue operation based on the aforementioned data. Since SAR's operations are mostly focused on physical security, this entity is jurisdiction dependent in order to comply with the pertinent use-of-force rules and regulations.
 9. **Phone**: User's phone that registers with the SAR and provides encrypted dynamic and static data to the SAR.
@@ -212,7 +212,7 @@ At a high level:
 
 ### Setup And Withdrawal Steps In Code
 
-All steps are laid out clearly in [setup.rs](https://github.com/bitryonix/boomerang/blob/main/poc/poc-steps/src/setup.rs) and [withdrawal.rs](https://github.com/bitryonix/boomerang/blob/main/poc/poc-steps/src/withdrawal.rs) files, exactly following the design message diagrams of [setup](setup/setup_diagram_without_states.svg), [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) design files.  
+All steps are laid out clearly in [setup.rs](https://github.com/bitryonix/boomerang/blob/main/poc/poc-steps/src/setup.rs) and [withdrawal.rs](https://github.com/bitryonix/boomerang/blob/main/poc/poc-steps/src/withdrawal.rs) files, exactly following the design message diagrams of [setup](setup/setup_diagram_without_states.svg), [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg) and [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) design files.
 
 ### Overview Of The Boomerang Setup Procedure
 
@@ -418,7 +418,7 @@ These decisions are not permanent and can be changed to modify the dynamic behav
 
 ## Duress Protection Mechanism
 
-The core idea for our duress protection mechanism is as follows. A more detailed description can be found in [duress protection folder](duress_protection).
+The core idea for our duress protection mechanism is as follows. A more detailed description can be found in the [duress protection README](duress_protection/README.md).
 
 1. Boomlet has the set of all countries in memory.
 2. At setup user selects 5 countries combination of which signal their consent. All other combinations of countries are interpreted as duress. (5-dictionary model of *Jeremy Clark and Urs Hengartner. 2008. Panic passwords: authenticating under duress. In Proceedings of the 3rd conference on Hot topics in security (HOTSEC'08). USENIX Association, USA, Article 8, 1–6.*)
@@ -578,7 +578,7 @@ In that case, the relevant question becomes:
 
 The deterrence strength of Boomerang depends critically on the real-world consequence of escalation.
 
-#### Regime A: Escalation Leads to Detention and Prosecution<!-- omit from toc -->
+#### Regime A: Escalation Leads to Detention and Prosecution
 
 If SAR activation plausibly results in:
 
@@ -610,7 +610,7 @@ In this regime:
 
 > Boomerang produces strong economic deterrence.
 
-#### Regime B: Escalation Has Minimal Consequence<!-- omit from toc -->
+#### Regime B: Escalation Has Minimal Consequence
 
 If SAR activation:
 
@@ -731,7 +731,7 @@ During the design evolution of **Boomerang**, we faced multiple threats. Some of
 1. **Man-in-the-middle attacks**: We have used TOR for remote communications and we have used encrypted communications for local interactions. We also have engaged user for approving critical data in setup and withdrawal. Nevertheless, we have relied on two assumptions here:
    - We have an isolated environment in which Iso is running. Iso as a software is trusted and the hardware executing it is trusted as well. Here, we assume we are not overusing current assumptions of security prevalent in Bitcoin cold storage security.
    - We are using a Secure Terminal or ST, which we assume to be tamper evident. At the current design stage, we are opting for a do-it-yourself design to minimize the supply chain attack vector. But, we may also consider a pre-built device like common physical hardware wallets.
-  
+
 2. **Peers escaping protocol and deceiving an honest user to be in Boomerang**: We have made the **Boomerang** regime to be an n-of-n multisig. So that if even only 1 user is honest, the promise of unpredictability and duress protection will stand true.
 
 3. **Need-to-know principle**: We have tried to abide by this principle in the protocol. This has led us to minimize unnecessary exposures to WTs and SAR except for when absolutely required. For example WT does not know of the descriptor and SAR can only know about the user when the duress signal is sent and SAR's involvement is demanded. Nevertheless, this begs the question of then what? Once the duress signal is sent, SAR will know about user's engagement with bitcoin. What if the SAR turns rogue after the duress signal and turn into an attacker itself at that instance or in the future? We don't have concrete answers to those questions as of now. SAR's requirement to rescue the user stipulates real world knowledge of the bitcoiner. For now, we are counting on reputation and social trust for one user to address this class of issues.
@@ -787,7 +787,7 @@ During the design evolution of **Boomerang**, we faced multiple threats. Some of
 
     In Bitcoin, complexity is often viewed as *a vulnerability itself*. Even if every component is individually sound, emergent failure modes are hard to reason about, audit, and formally verify.
 
-The comprehensive threat model is at its final stages and will be shared soon. The work in progress can be found in [security_models folder](security_models).
+The comprehensive threat model is at its final stages and will be shared soon. The work in progress can be found in the [security models README](security_models/README.md).
 
 ## Ancillaries
 

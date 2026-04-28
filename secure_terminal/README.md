@@ -1,5 +1,17 @@
 # Secure Terminal (ST)
 
+## Table of Contents
+
+- [Inception](#inception)
+  - [Operational expectations from the ST in duress](#operational-expectations-from-the-st-in-duress)
+    - [Trust assumptions in duress](#trust-assumptions-in-duress)
+    - [Capabilities](#capabilities)
+    - [Tamper resistance](#tamper-resistance)
+    - [Hardware requirements](#hardware-requirements)
+    - [Package](#package)
+      - [Common](#common)
+      - [Arduino](#arduino)
+
 ## Inception
 
 The idea of a Secure Terminal (ST) was formed during duress design, to omit the need for user to go into the isolated environment to enter their duress answer and to eliminate the risk of Niso messing up with the duress signaling as we deemed Niso untrusted in withdrawal process.

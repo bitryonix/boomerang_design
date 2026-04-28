@@ -1,439 +1,295 @@
+# Boomerang
 
-# Boomerang: Bitcoin Cold Storage with Enforced Non-Deterministic Withdrawal and Silent Duress Signaling
+**Bitcoin cold storage that treats withdrawal timing as part of security.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-> **Status:** Research-stage protocol design. Not production ready.  
-> This repository contains the **design/specification** (message diagrams + docs). A separate repo contains a Rust PoC.
+> **Status:** Not production ready.
+> This repository describes the protocol, diagrams, threat model, and open questions. It is not a consumer wallet and should not be used to custody real funds.
 
-**TL;DR:** Boomerang is a coercion-aware Bitcoin cold-storage protocol that enforces a **bounded but unpredictable withdrawal time** in hardware and embeds **plausibly deniable duress signaling** into the normal withdrawal flow — **without changing Bitcoin consensus**.
+Boomerang is a design for high-value Bitcoin custody where the main risk is not only “can someone steal a key?” but also “can someone force a person to help move funds now?”
 
-![Cryptography alone does not save you and your bitcoins. There is always a $5 wrench out there ready to break your assumptions.](https://imgs.xkcd.com/comics/security.png)
+The core idea is simple:
 
-Credit: [xkcd #538](https://xkcd.com/538/)
+> A withdrawal should eventually succeed, but it should not be rushable or precisely predictable.
 
-Boomerang is a Bitcoin cold-storage protocol designed to protect not only against digital compromise, but also against **real-world coercion**. Conventional custody systems are largely **deterministic**: attackers can learn who must sign, what steps must occur, and approximately how long it will take. Under physical coercion, that predictability becomes the attacker’s advantage.
+Boomerang explores how to do that with standard Bitcoin tools: Taproot, MuSig2-style multisignature keys, timelocks, dedicated hardware, and a withdrawal ceremony that includes hidden emergency signaling.
 
-Boomerang explores a different primitive:
-> **Hardware-enforced, bounded but unpredictable withdrawal time** + **plausibly deniable duress signaling** embedded in normal protocol flow — **without changing Bitcoin consensus**.
-
-----
+---
 
 ## Table of Contents
 
-- [Boomerang: Bitcoin Cold Storage with Enforced Non-Deterministic Withdrawal and Silent Duress Signaling](#boomerang-bitcoin-cold-storage-with-enforced-non-deterministic-withdrawal-and-silent-duress-signaling)
+- [Boomerang](#boomerang)
   - [Table of Contents](#table-of-contents)
-  - [Motivation](#motivation)
-  - [Core Idea](#core-idea)
-  - [What Boomerang Is And Is Not](#what-boomerang-is-and-is-not)
-  - [Architecture Overview](#architecture-overview)
-  - [System Topology](#system-topology)
-  - [How Withdrawal Works](#how-withdrawal-works)
-      - [Conceptual Withdrawal Flow](#conceptual-withdrawal-flow)
-      - [What Makes It Non-Deterministic (But Bounded)](#what-makes-it-non-deterministic-but-bounded)
-  - [Duress Signaling](#duress-signaling)
-  - [Security Model](#security-model)
-  - [Trade-offs](#trade-offs)
-  - [Limitations And Open Problems](#limitations-and-open-problems)
-  - [Progress So Far](#progress-so-far)
-  - [Repository Map](#repository-map)
-  - [Call For Collaboration](#call-for-collaboration)
+  - [The one-minute version](#the-one-minute-version)
+  - [Mental model](#mental-model)
+    - [Primary path: Boomerang withdrawal](#primary-path-boomerang-withdrawal)
+    - [Recovery path: deterministic fallback](#recovery-path-deterministic-fallback)
+  - [Why the “mystery” matters](#why-the-mystery-matters)
+  - [What a withdrawal looks like](#what-a-withdrawal-looks-like)
+  - [Emergency signaling, without making it obvious](#emergency-signaling-without-making-it-obvious)
+  - [What Boomerang is](#what-boomerang-is)
+  - [What Boomerang is not](#what-boomerang-is-not)
+  - [Who should care?](#who-should-care)
+  - [Read this repo in the right order](#read-this-repo-in-the-right-order)
+  - [The main security trade-offs](#the-main-security-trade-offs)
+  - [Open problems worth working on](#open-problems-worth-working-on)
+  - [Contribution ideas](#contribution-ideas)
   - [Contact](#contact)
-  - [Closing Thought](#closing-thought)
-  - [Updates](#updates)
+  - [Closing thought](#closing-thought)
 
-----
+## The one-minute version
 
-## Motivation
+Most cold storage protects **keys**. Boomerang also tries to protect the **timeline**.
 
-Bitcoin cryptography secures **keys**. It does not secure **people**.
+In a normal multisig setup, once the required people are forced or tricked into cooperating, the process is often predictable: the attacker can estimate who must sign, what steps are required, and how long it should take.
 
-In high-value custody settings (enterprise treasuries, sovereign individuals, multi-operator governance), a realistic adversary is not just a remote attacker. It may be a coercive attacker who:
+Boomerang changes that in three ways:
 
-- identifies key holders,
-- forces them to participate,
-- and relies on predictable procedures and timelines.
+1. **Hardware-enforced waiting**
+   Each signer has a small secure device, called a **Boomlet**, that will not sign until its own secret internal threshold has been reached.
 
-Most cold storage designs are deterministic under coercion. Boomerang is an attempt to **reduce the attacker’s confidence in time** and to create a **reaction window** for intervention — while still guaranteeing eventual recoverability.
+2. **Bounded but unpredictable completion**
+   The withdrawal range is chosen during setup, so the delay is not infinite. But the exact point at which each device becomes ready is hidden, even from the user.
 
-----
+3. **Emergency signaling inside the normal flow**
+   During withdrawal, the user periodically answers challenges on an air-gapped **Secure Terminal**. A normal answer says “continue.” A different answer can quietly signal duress to a rescue service without changing the visible protocol flow.
 
-## Core Idea
+Boomerang does **not** make coercion impossible. It is meant to reduce the attacker’s confidence, increase the cost of a rushed withdrawal, and create time for detection or intervention.
 
-Funds are locked in a Taproot output with **two spending regimes**:
+---
 
-```
-        Unspendable key path
-                 |
-    ---------------------------------
-    |                               |
-Boomerang regime                Normal regime
-(non-deterministic)         (deterministic fallback)
+## Mental model
 
-```
+Think of Boomerang as a vault with two exits:
 
-#### 1) Boomerang regime (primary)<!-- omit from toc -->
-- Requires **N-of-N MuSig2 aggregated keys**.
-- Each aggregated key includes:
-  - a recoverable **normal key** (mnemonic-backed), and
-  - a **non-exportable hardware key share** inside a secure element (**Boomlet**).
-- Withdrawals require a coordinated protocol and only become signable after a secret, per-device threshold (“**mystery**”) is reached.
-- **No participant (including the victim) can know in advance when signing becomes possible.**
+```mermaid
+flowchart TB
+    A[Bitcoin locked in a Taproot output]
+    A --> B[Primary Boomerang path]
+    A --> C[Later recovery path]
 
-#### 2) Normal regime (fallback)<!-- omit from toc -->
-- Activated after milestone block heights.
-- Provides deterministic, time-locked scripts that gradually reduce the required signer threshold.
-- Ensures **eventual liveness** even if hardware is lost or the Boomerang regime cannot complete.
+    B --> B1[All peers cooperate]
+    B1 --> B2[Each Boomlet reaches its private mystery threshold]
+    B2 --> B3[Final signatures become possible]
 
-Boomerang introduces uncertainty; the normal regime guarantees recoverability.
-
-----
-
-## What Boomerang Is And Is Not
-
-#### Boomerang is:<!-- omit from toc -->
-- A **research protocol** for coercion-aware custody.
-- A design that treats **time determinism as an attack surface**.
-- A Taproot/MuSig2/timelock construction that **requires no consensus changes**.
-
-#### Boomerang is not:<!-- omit from toc -->
-- “Duress-proof Bitcoin.”
-- A consumer wallet.
-- A replacement for simple multisig cold storage.
-- Production ready.
-
-----
-
-## Architecture Overview
-
-Boomerang is not a single device. It is a distributed custody protocol involving:
-
-- multiple peer operators,
-- dedicated hardware,
-- an online coordination service,
-- and a rescue service that only learns identity upon duress.
-
-#### Actors<!-- omit from toc -->
-
-Per peer:
-
-- **Boomlet**: Secure element (JavaCard-class) that:
-  - holds a MuSig2 key share,
-  - enforces the withdrawal non-determinism (“mystery” threshold),
-  - executes duress logic.
-- **Boomletwo**: Backup smartcard (inactive until activation; activation procedure is an ancillary still under design).
-- **Iso**: Offline environment for:
-  - key derivation / installation,
-  - sensitive operations,
-  - final MuSig2 signing with Boomlet.
-- **Niso**: Online environment for:
-  - Tor communications with peers and Watchtower,
-  - direct Bitcoin node RPC access,
-  - mediating the withdrawal protocol.
-- **ST (Secure Terminal)**: Air-gapped human interface for:
-  - transaction approvals,
-  - duress input,
-  - minimizing trust in online components.
-- **Phone**: Used to register with SAR and stream encrypted dynamic data.
-
-External:
-
-- **Bitcoin Network**
-- **Bitcoin Node (RPC endpoint)**: used by each peer’s Niso (direct, not “restricted to Tor”).
-- **Tor Network**: used for peer↔peer and peer↔WT communication.
-- **WT (Watchtower)**: coordination + liveness service.
-- **SAR (Search & Rescue)**: receives duress placeholders; decrypts identity only on duress.
-
-----
-
-## System Topology
-
-This diagram reflects the setup and withdrawal design constraints:
-
-- **Niso has direct RPC access to a Bitcoin node** for block height and transaction context.
-- **Tor is used for peer and Watchtower communications**, not as a requirement for Bitcoin node access.
-- **ST is air-gapped**: it communicates via QR through **Iso or Niso** (screen/camera relay), depending on phase.
-- **Phone talks directly to SAR** for registration and dynamic doxing feed.
-- **WT forwards duress placeholders to SAR** during withdrawal.
-
-```
-                       ┌──────────────────────────────┐
-                       │        Bitcoin Network       │
-                       └───────────────┬──────────────┘
-                                       │
-                                       ▼
-                              ┌────────────────┐
-                              │  Bitcoin Node  │
-                              │  (RPC endpoint)│
-                              └───────┬────────┘
-                                      │  Direct RPC
-                                      ▼
-    ┌────────────────────────────────────────────────────┐
-    │                    Tor Network                     │
-    └────────────────────────────────────────────────────┘
-                     ▲                         ▲
-                     │                         │
-               ┌─────┴─────┐             ┌─────┴─────┐
-               │ Watchtower│◄───────────►│    SAR    │
-               │    (WT)   │             │ (Rescue)  │
-               └─────┬─────┘             └─────┬─────┘
-                     │                         ▲
-                     │                         │
-    ┌────────────────┼───────────────────┐     │
-    ▼                ▼                   ▼     │
-┌────────┐      ┌────────┐         ┌────────┐  │
-│ Peer 0 │      │ Peer 1 │   ...   │ Peer 4 │  │
-└───┬────┘      └───┬────┘         └───┬────┘  │
-    │               │                  │       │
-    ▼               ▼                  ▼       │
-┌─────────────────────────────────────────────────────────────┐
-│                     Per-Peer Architecture                   │
-│                                                             │
-│   ┌────────────┐       ┌────────────┐                       │
-│   │     Iso    │◄─────►│  Boomlet   │                       │
-│   │ (offline)  │       │ (smartcard)│                       │
-│   └─────┬──────┘       └─────┬──────┘                       │
-│         │                    │                              │
-│         │ (backup ceremony)  ▼                              │
-│   ┌─────▼──────┐       ┌────────────┐                       │
-│   │ Boomletwo  │       │    Niso    │                       │
-│   │  (backup)  │       │ (online PC)│                       │
-│   └────────────┘       └─────┬──────┘                       │
-│                              │                              │
-│                              │ Tor → peers & WT             │
-│                              │ RPC → Bitcoin node           │
-│                              ▼                              │
-│                            (WT)                             │
-│                                                             │
-│   Air-gapped Human Interface:                               │
-│                                                             │
-│        ┌────────────┐                                       │
-│        │     ST     │                                       │
-│        └─────┬──────┘                                       │
-│              │ QR relay via Iso or Niso (screen/camera)     │
-│              ▼                                              │
-│            Boomlet                                          │
-│                                                             │
-│   Phone ───────────────► SAR (registration & dynamic feed)  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-
+    C --> C1[Timelocked normal-key scripts]
+    C1 --> C2[Thresholds reduce over later milestones]
+    C2 --> C3[Funds remain recoverable if hardware or peers are lost]
 ```
 
-----
+### Primary path: Boomerang withdrawal
 
-## How Withdrawal Works
+This is the path the protocol wants you to use first.
 
-Withdrawal is a multi-phase ceremony coordinated through WT, with repeated human verification and duress opportunities. The full step-by-step protocol is defined in the PlantUML diagrams and the detailed specs (see [Repository Map](#repository-map)).
+It requires every peer in the current design profile. Each peer contributes a key that is made from two parts:
 
-#### Conceptual Withdrawal Flow
+- a normal, recoverable key backed by a mnemonic; and
+- a non-exportable key share held inside the peer’s Boomlet.
 
-This diagram is intentionally simplified to communicate the core structure without overwhelming detail:
+The Boomlet does not simply sign on command. It tracks a withdrawal ceremony and only becomes ready after reaching a secret internal value called its **mystery**.
+
+### Recovery path: deterministic fallback
+
+The fallback path exists so funds do not become permanently stuck if the primary path cannot complete.
+
+After later milestone block heights, normal-key timelocked scripts become available. Their thresholds gradually weaken over time. This improves recoverability, but it also means operators must plan rollovers carefully so the system does not drift into a predictable fallback state too early.
+
+---
+
+## Why the “mystery” matters
+
+During setup, each Boomlet chooses a secret number inside a range selected by the user or policy.
+
+During withdrawal, the device advances only when it sees valid, fresh protocol progress tied to Bitcoin block height and the current withdrawal. When its internal counter reaches the secret number, that Boomlet becomes ready to sign.
+
+The important result:
+
+- the delay is **bounded** by the configured range;
+- the exact finish time is **not known** to the user, the peers, or the Watchtower;
+- pressure on a human signer should not make the hardware sign early.
+
+That is the “boomerang” idea: the process comes back with a result, but not on an attacker’s schedule.
+
+---
+
+## What a withdrawal looks like
+
+A Boomerang withdrawal is a ceremony, not a single click.
 
 ```mermaid
 sequenceDiagram
-    participant Initiator
+    participant User
     participant Peers
-    participant WT
-    participant SAR
+    participant Boomlets
+    participant WT as Watchtower
+    participant SAR as Rescue service
+    participant BTC as Bitcoin network
 
-    Initiator->>WT: Submit PSBT approval
-    WT->>Peers: Distribute PSBT
-    Peers->>WT: Approvals
+    User->>WT: Propose withdrawal transaction
+    WT->>Peers: Ask peers to review it
+    Peers->>WT: Approve or abort
 
-    Note over Initiator,Peers: Commitment + Duress Check
-    Peers->>WT: Commit + Duress Placeholder
-    WT->>SAR: Forward Placeholder
-    SAR-->>WT: Signed Response
+    Peers->>Boomlets: Commit to the transaction
+    Boomlets->>WT: Send progress + emergency-signal placeholder
+    WT->>SAR: Relay placeholder
+    SAR-->>WT: Signed acknowledgement
 
-    Note over Initiator,Peers: Non-deterministic Digging Game
-    loop Until all mystery thresholds reached
-        Peers->>WT: Ping (with random duress checks)
-        WT->>SAR: Forward placeholder
-        SAR-->>WT: Signed response
-        WT->>Peers: Pong
+    loop Until every Boomlet is ready
+        Boomlets->>WT: Fresh progress ping
+        WT-->>Boomlets: Fresh progress pong
     end
 
-    Peers->>WT: Signed PSBT
-    WT->>Bitcoin Network: Broadcast transaction
+    Peers->>Boomlets: Final signing ceremony
+    Boomlets->>WT: Signed fragments
+    WT->>BTC: Broadcast final transaction
 ```
 
-#### What Makes It Non-Deterministic (But Bounded)
+The Watchtower coordinates messages and liveness. It is not supposed to custody funds. The rescue service receives encrypted placeholders and only learns meaningful identity or rescue information if a duress signal is actually sent.
 
-Each Boomlet draws a secret integer (“mystery”) during setup.
+---
 
-Importantly:
+## Emergency signaling, without making it obvious
 
-- Each peer selects, at setup time, a **minimum and maximum range** (in blocks) that defines acceptable withdrawal latency.
-- The Boomlet then samples a random integer uniformly from within that user-selected range.
-- The exact mystery value is stored only inside the secure element and is never revealed.
-- Other peers do not know each other’s mystery values.
-- The Watchtower does not know any mystery value.
+Boomerang’s duress mechanism is designed around a hard constraint: the outside world should not be able to tell whether the user answered “safe” or “help.”
 
-During withdrawal:
+At setup, the user memorizes a consent pattern. During withdrawal, the Secure Terminal displays challenges. A matching answer means normal continuation. A non-matching answer means duress.
 
-- Each Boomlet maintains a counter.
-- The counter advances only under valid block-height and freshness constraints inside the coordinated ping-pong loop.
-- Signing becomes available only when the Boomlet’s internal counter reaches its mystery threshold.
+Either way, the Boomlet produces a normal-looking encrypted placeholder and the protocol continues through the same visible steps.
 
-Therefore:
+In the safe case, the placeholder contains inert encrypted material. In the duress case, it contains unlock material that allows the rescue service to identify the user’s encrypted rescue information and begin its real-world response process.
 
-- Withdrawal duration is **bounded** (by the selected range),
-- But the exact completion time is **unpredictable** to any participant or adversary.
+This mechanism is not magic. It depends on hardware integrity, careful protocol design, jurisdiction-aware rescue operations, and operational discipline. It is an area for serious review, not blind trust.
 
-Boomerang enforces *bounded unpredictability*, not unbounded delay.
+---
 
-----
+## What Boomerang is
 
-## Duress Signaling
+Boomerang is:
 
-Duress signaling is designed to be:
+- a research protocol for coercion-aware Bitcoin custody;
+- a design that treats predictable withdrawal timing as an attack surface;
+- a Taproot / MuSig2 / timelock construction that aims to avoid Bitcoin consensus changes;
+- a collection of specifications, diagrams, threat models, and open design questions;
+- a useful place for security researchers, Bitcoin engineers, hardware engineers, and UX designers to collaborate.
 
-* **unavoidable** (recurs during withdrawal),
-* **plausibly deniable** (no observable protocol divergence),
-* **hardware-evaluated** (Boomlet is the trusted evaluator, ST is the trusted UI).
+## What Boomerang is not
 
-At setup, the user selects and memorizes a **consent pattern** (e.g., a set of countries). During withdrawal:
+Boomerang is not:
 
-* Boomlet generates randomized challenges.
-* ST displays them air-gapped.
-* The user’s selection either matches the consent set (safe) or does not (duress).
+- a production wallet;
+- a replacement for ordinary multisig for most users;
+- a promise of “duress-proof Bitcoin”;
+- a way to remove all human safety risk;
+- a finished hardware product;
+- ready for real funds.
 
-Boomlet then produces a **duress placeholder** included in normal messages:
+---
 
-* Safe: an encrypted zero/padding placeholder
-* Duress: an encrypted key that allows SAR to unlock the user’s encrypted doxing data
+## Who should care?
 
-WT forwards these placeholders to SAR, and SAR responds with a signed acknowledgement while keeping protocol flow consistent.
+Boomerang is most relevant if you think about one of these problems:
 
-----
+- high-value Bitcoin custody;
+- physical coercion and key-holder safety;
+- multisig ceremonies under stress;
+- hardware-enforced policy;
+- Taproot spending-policy design;
+- wallet UX for rare but high-risk events;
+- formal threat modeling for custody systems.
 
-## Security Model
+You do not need to believe Boomerang is the final answer to find the project useful. The repository is valuable because it makes a neglected custody problem concrete enough to inspect, attack, and improve.
 
-Boomerang aims to increase attacker uncertainty and create a reaction window. It does **not** claim to eliminate coercion risk.
+---
 
-Assumptions (non-exhaustive):
+## Read this repo in the right order
 
-* Secure element (Boomlet) resists key extraction and behaves correctly.
-* ST is tamper-resistant/evident enough to preserve integrity of user verification and duress input.
-* Cryptographic primitives hold.
-* WT is non-custodial but is a coordination actor (liveness + metadata exposure).
-* SAR operates under real-world legal constraints and only learns identity upon duress signal.
+Start here if you are new:
 
-----
+1. **This README** — the high-level mental model.
+2. **[`READING_GUIDE.md`](READING_GUIDE.md)** — choose a 10-minute, 30-minute, or deep-review path.
+3. **[`GLOSSARY.md`](GLOSSARY.md)** — decode the names: Boomlet, Iso, Niso, ST, WT, SAR, mystery, fallback, and more.
+4. **[`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVERVIEW.md)** — preserves the previous root README material as a denser technical overview.
+5. **[`spec/SPEC.md`](spec/SPEC.md)** — the canonical protocol narrative and the best place to check exact behavior.
+6. **[`DEEPDIVE.md`](DEEPDIVE.md)** — motivation, economics, design rationale, and broader context.
+7. **[`security_models/`](security_models/README.md)** — threat model, assumptions, risk register, and design gaps.
 
-## Trade-offs
+Subsystem docs:
 
-Boomerang intentionally trades simplicity for coercion resistance:
+| Area | Where to look | What it explains |
+| --- | --- | --- |
+| Setup | [`setup/`](setup/README.md) | How peers, devices, keys, rescue registration, and shared parameters are established |
+| Withdrawal | [`withdrawal/`](withdrawal/README.md) | How a withdrawal is proposed, checked, delayed, signed, and broadcast |
+| Duress mechanism | [`duress_protection/`](duress_protection/README.md) | How hidden emergency signaling is intended to work |
+| Secure Terminal | [`secure_terminal/`](secure_terminal/README.md) | Why an air-gapped UI exists and what it must protect |
+| Threat model | [`security_models/`](security_models/README.md) | Assumptions, attacks, mitigations, and known gaps |
+| Protocol spec | [`spec/SPEC.md`](spec/SPEC.md) | The canonical protocol behavior, status, and TODOs |
 
-| Property                        | Cost                                                      |
-| ------------------------------- | --------------------------------------------------------- |
-| Enforced non-determinism        | Potentially long withdrawal latency                       |
-| Embedded duress signaling       | Additional devices and ceremony complexity                |
-| N-of-N Boomerang regime         | Coordination burden; peer non-cooperation blocks progress |
-| Eventual deterministic recovery | Requires milestone planning and rollover discipline       |
-| External services (WT/SAR)      | Operational trust and metadata exposure (not custody)     |
+---
 
-Boomerang is optimized for long-term holdings, not frequent spending.
+## The main security trade-offs
 
-----
+Boomerang intentionally buys one kind of safety by spending complexity elsewhere.
 
-## Limitations And Open Problems
+| Design choice | Benefit | Cost |
+| --- | --- | --- |
+| Hardware-enforced mystery threshold | Makes the primary withdrawal hard to rush | Requires trusted hardware and careful lifecycle management |
+| N-of-N primary path | Prevents a subset of peers from silently bypassing the Boomerang path | One non-cooperating peer can block the primary path |
+| Timelocked fallback path | Keeps funds recoverable over time | Eventually becomes more predictable and requires rollover discipline |
+| Recurring emergency checks | Creates repeated chances to signal distress | Adds ceremony burden and UX risk |
+| Watchtower and rescue service | Enables coordination and response | Adds non-custodial but security-critical services |
 
-Boomerang is research-stage; several issues are explicitly open:
+The protocol’s value depends on whether these trade-offs are acceptable for a specific threat model.
 
-#### 1) Forced determinism<!-- omit from toc -->
+---
 
-Boomerang can collapse into the deterministic regime if:
+## Open problems worth working on
 
-* a Boomlet is lost/destroyed,
-* the backup path is unavailable,
-* withdrawal is initiated too late relative to milestones,
-* or a peer refuses to cooperate.
+The project is intentionally open about unfinished pieces. Useful contributions include:
 
-Mitigation today relies on disciplined rollover and operational guidance. More robust mitigations remain open research.
+- choosing safe and usable timing parameters;
+- improving reorg and chain-view disagreement policy;
+- specifying exact cryptographic encodings, KDFs, AEAD choices, and transcript binding;
+- hardening Boomlet and Secure Terminal assumptions;
+- designing backup and device-replacement procedures;
+- improving timeout, blame, and failover rules;
+- reducing ceremony complexity;
+- red-teaming the duress signaling model;
+- making the fallback and rollover process safer for real operators.
 
-#### 2) Peer non-cooperation<!-- omit from toc -->
+A good contribution does not need to “finish Boomerang.” A good contribution can simply make one assumption explicit, one diagram clearer, one failure mode testable, or one part of the ceremony harder to misuse.
 
-N-of-N preserves the coercion-resistance promise (one honest peer can prevent “silent bypass”), but it increases liveness risk.
+---
 
-#### 3) Hardware trust<!-- omit from toc -->
+## Contribution ideas
 
-Security depends heavily on secure element behavior (RNG, side-channel resistance, lifecycle, supply chain). Compromise of Boomlet undermines the non-determinism guarantee.
+High-impact help would come from:
 
-#### 4) SAR trust + legal/jurisdiction constraints<!-- omit from toc -->
+- Bitcoin protocol engineers reviewing the Taproot and timelock structure;
+- cryptographers reviewing transcript binding, MuSig2 usage, and encrypted placeholder design;
+- secure-element and JavaCard developers reviewing Boomlet feasibility;
+- embedded engineers reviewing Secure Terminal feasibility;
+- threat modelers and red-teamers attacking the assumptions;
+- UX designers simplifying the setup and withdrawal ceremonies;
+- technical writers making the design easier to audit.
 
-SAR intervention is jurisdiction-dependent and introduces legal exposure. Incentives, abuse resistance, and privacy implications require careful treatment.
+When contributing, prefer precision over optimism. Boomerang is most useful when its claims, assumptions, and limits are written down clearly.
 
-#### 5) Complexity as attack surface<!-- omit from toc -->
-
-The protocol is a distributed state machine with many checks. Complexity increases the risk of emergent failure modes and usability errors.
-
-----
-
-## Progress So Far
-
-- **Protocol Design:** Full specifications, including message sequence diagrams for [setup](setup) and [withdrawal](withdrawal).
-- **SVGs:** View diagrams for [setup](setup/setup_diagram_without_states.svg), [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg), and [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg).
-- **Proof-of-Concept:** Rust implementation available at [github.com/bitryonix/boomerang](https://github.com/bitryonix/boomerang).
-----
-
-## Repository Map
-
-This repository contains the design artifacts and specs:
-
-* [SPEC.md](spec/SPEC.md) — RFC-style protocol specification and canonical protocol narrative
-* [DEEPDIVE.md](DEEPDIVE.md) — comprehensive technical deep dive (recommended for experts)
-* [setup/](setup)
-
-  * `setup_diagram_without_states.puml` (+ SVG render) — setup message sequence diagram
-  * Setup procedure specification
-* [withdrawal/](withdrawal)
-
-  * `initiator_withdrawal_diagram_without_states.puml` (+ SVG render)
-  * `non_initiator_withdrawal_diagram_without_states.puml` (+ SVG render)
-  * Withdrawal procedure specification
-* [duress_protection/](duress_protection) — duress mechanism design and rationale
-* [secure_terminal/](secure_terminal) — ST design requirements and threat assumptions
-* [security_models/](security_models) — threat analyses including forced determinism discussions
-
-For the full protocol, start with [SPEC.md](spec/SPEC.md). The sequence diagrams, DEEPDIVE, and subsystem folders remain companion references and should be kept aligned with the spec.
-
-----
-
-## Call For Collaboration
-
-We welcome comments and contributions on the protocol design and its implementation.
-
-If you want to contribute — as an anonymous individual, a private entity, or a legal entity — the following expertise would be especially valuable:
-
-1. Red-team security researchers to attack the design and implementation.
-2. JavaCard developers to implement Boomlet applets.
-3. Embedded developers to build ST firmware/software.
-4. Rust developers to implement production-grade components.
-5. UI/UX designers to streamline the human ceremony and reduce error rates.
-6. Formal methods researchers to prove security properties and identify gaps.
-
-----
+---
 
 ## Contact
 
-You can reach us at <bitryonix@proton.me> or <bitryonix@gmail.com>
+Project contact from the original repository:
 
-----
+- <bitryonix@proton.me>
+- <bitryonix@gmail.com>
 
-## Closing Thought
+---
 
-Bitcoin has spent years hardening keys against math, networks, and software.
+## Closing thought
 
-Boomerang asks:
+Boomerang asks a narrow but important question:
 
-> What does it look like to harden Bitcoin custody against humans with guns — by making **time** uncertain?
+> What if Bitcoin custody protected not only the key, but also the time it takes to use the key?
 
-This repository is an exploration of that question. It is intentionally adversarial, intentionally strict, and intentionally unfinished.
-
-----
-
-## Updates
-
-None for now.
+That question is worth exploring carefully.
