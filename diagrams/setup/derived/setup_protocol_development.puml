@@ -22,7 +22,7 @@ note over User, SAR
   <b>Scope</b>
   One peer is expanded. Peer agreement and checkpoint exchanges run for all five peers.
   Guard definitions and detailed-message coverage are in setup_development_contracts.md.
-  Exact schemas, cryptographic contexts, and failure classes are normative in ../../spec/SPEC.md.
+  Exact schemas, cryptographic contexts, and failure classes are normative in ../../../spec/SPEC.md.
 end note
 
 note over Boomlet #LightYellow

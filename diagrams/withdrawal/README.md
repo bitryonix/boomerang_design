@@ -33,13 +33,13 @@ Their compact guard calls are defined in
 [withdrawal_no_prose_guards.md](derived/withdrawal_no_prose_guards.md), and their
 cryptographic calls follow the
 [diagram notation](../setup/README.md#diagram-notation) and the
-[SPEC cryptographic profile](../spec/SPEC.md#9-cryptographic-profile).
+[SPEC cryptographic profile](../../spec/SPEC.md#9-cryptographic-profile).
 Repeated role-parameterized operations are defined in
 [withdrawal_no_prose_fragments.puml](derived/withdrawal_no_prose_fragments.puml).
 
 The development views, contract tables, detailed diagrams, and this README are
 explanatory implementation aids. Normative protocol requirements are defined
-only by [SPEC.md](../spec/SPEC.md).
+only by [SPEC.md](../../spec/SPEC.md).
 
 ## Procedure
 

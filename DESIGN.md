@@ -8,8 +8,6 @@ This document is the technical companion to the
 argument, boundaries, and status. The
 [protocol specification](spec/SPEC.md) is normative for exact behavior and
 controls wherever the two differ.
-The generated [wire catalog](wip/wire_catalog.txt) provides the corresponding
-ASCII packet layouts, field IDs, and size formulas.
 
 ## Contents
 
@@ -266,7 +264,7 @@ between the initiator and non-initiators. Each required step shown withholds
 signing, transmits a `placeholder` that SAR must acknowledge, or does both.
 Validation checks, retries, and wire-level detail are omitted.
 [Section 10](#10-withdrawal-in-detail) describes the omitted checks and retries.
-The [withdrawal subsystem](withdrawal/README.md) contains the message-level
+The [withdrawal subsystem](diagrams/withdrawal/README.md) contains the message-level
 sequence diagrams.
 
 ```mermaid
@@ -511,9 +509,9 @@ of Boomlet and Boomletwo is active remain unresolved.
 
 The setup subsystem contains the complete 94-step message-level procedure, its
 operation-notation table, and the full sequence diagram in
-[`setup/README.md`](setup/README.md) and
-[`setup_diagram_without_states.svg`](setup/setup_diagram_without_states.svg).
-[Diagram Notation](setup/README.md#diagram-notation) defines the notation.
+[`diagrams/setup/README.md`](diagrams/setup/README.md) and
+[`setup_diagram_without_states.svg`](diagrams/setup/setup_diagram_without_states.svg).
+[Diagram Notation](diagrams/setup/README.md#diagram-notation) defines the notation.
 
 ## 10. Withdrawal in detail
 
@@ -665,9 +663,10 @@ rollover procedure remains unspecified work
 ([forced-determinism analysis](security_models/forced_determinism.md)).
 
 The 73-message step-level ceremony and its per-step checks are in
-[`withdrawal/README.md`](withdrawal/README.md), with full sequence diagrams for
-the [initiator](withdrawal/initiator_withdrawal_diagram_without_states.svg) and
-[non-initiators](withdrawal/non_initiator_withdrawal_diagram_without_states.svg).
+[`diagrams/withdrawal/README.md`](diagrams/withdrawal/README.md), with full
+sequence diagrams for
+the [initiator](diagrams/withdrawal/initiator_withdrawal_diagram_without_states.svg) and
+[non-initiators](diagrams/withdrawal/non_initiator_withdrawal_diagram_without_states.svg).
 
 ## 11. Duress protection and observability
 
@@ -683,7 +682,7 @@ Correct later answers preserve it.
 
 ST is a battery-powered, air-gapped trusted display-and-input device that uses
 QR transport and has a deliberately small display
-([`secure_terminal/README.md`](secure_terminal/README.md)). A nearby observer
+([Secure Terminal](<operational notes/secure_terminal/README.md>)). A nearby observer
 can still see which countries the user selects. The security argument assumes
 the attacker cannot observe closely enough to learn or dictate the user's safe
 selection. An attacker who learns it can force later checks to evaluate as
@@ -712,9 +711,7 @@ probability
 and any non-matching valid answer silently signals duress. Random guessing is
 therefore not the operative attack. The realistic threats are observation of
 past safe entries, learned or extracted consent responses, repeated testing,
-and coerced disclosure. Those threats motivate the observability contract below
-and the iteration and forced-randomization analysis in the panic-password
-literature ([Section 17](#17-external-context)).
+and coerced disclosure. Those threats motivate the observability contract below.
 
 ### Observability contract
 
@@ -746,12 +743,9 @@ Malformed traffic and service failures may stop progress, although their
 attacker-visible errors must remain within the specification's permitted
 classes rather than reveal a finer duress reason.
 
-The normative duress protocol is [SPEC §16 and Appendix A](spec/SPEC.md). The
-duress subsystem document,
-[`duress_protection/README.md`](duress_protection/README.md), records the
-design rationale and evaluation criteria. The specification controls where
-they differ. Secure Terminal expectations and hardware are in
-[`secure_terminal/README.md`](secure_terminal/README.md); ADR 0005 defines the
+The normative duress protocol is [SPEC §16 and Appendix A](spec/SPEC.md).
+Secure Terminal expectations and hardware are in
+[Secure Terminal](<operational notes/secure_terminal/README.md>); ADR 0005 defines the
 [rescue-data password derivation](adr/0005-user-chosen-doxing-password.md).
 
 ## 12. Attack economics and security argument
@@ -1180,16 +1174,15 @@ The recommended review order follows.
    and CCSS coverage.
 3. [`adr/`](adr/README.md) records accepted decisions, including per-withdrawal
    mystery generation and the target-bound backup profile.
-4. The [setup](setup/README.md), [withdrawal](withdrawal/README.md),
-   [duress](duress_protection/README.md), and
-   [Secure Terminal](secure_terminal/README.md) documents provide subsystem
-   views. Where they differ, the specification controls.
+4. The [setup](diagrams/setup/README.md), [withdrawal](diagrams/withdrawal/README.md),
+   and [Secure Terminal](<operational notes/secure_terminal/README.md>) documents
+   provide subsystem views. Where they differ, the specification controls.
 5. The setup and withdrawal-role SVG diagrams provide visual cross-checks
    against those subsystem procedures. Review the
-   [setup sequence](setup/setup_diagram_without_states.svg),
-   [initiator withdrawal](withdrawal/initiator_withdrawal_diagram_without_states.svg),
+   [setup sequence](diagrams/setup/setup_diagram_without_states.svg),
+   [initiator withdrawal](diagrams/withdrawal/initiator_withdrawal_diagram_without_states.svg),
    and
-   [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg)
+   [non-initiator withdrawal](diagrams/withdrawal/non_initiator_withdrawal_diagram_without_states.svg)
    diagrams. They are explanatory; the specification remains normative.
 
 A serious verification effort must include timing simulation, formal

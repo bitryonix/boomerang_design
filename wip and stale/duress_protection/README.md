@@ -56,13 +56,13 @@ Most communications with the SAR is done through the user's phone.
 
 Once the positive duress signal is sent, boomlet sends a payload containing `doxing_key_for_sar` encrypted for SAR. This is sent to WT via the next packet. WT sends it to SAR to receive an acknowledgement of reception.
 
-In other cases (`under_duress` is false), boomlet encrypts an all zeros data in the same manner and puts it in the duress signal bearing part of each message. SAR always decrypts the received data with its keys. If the decrypted data turns out to be all zeros, there is no duress. Otherwise SAR derives `doxing_data_identifier` from the received `doxing_key_for_sar`. It then searches its database for a matching registration and makes static data and every retained upload available to its rescue application under [SPEC Section 16.4](../spec/SPEC.md#164-sar-processing).
+In other cases (`under_duress` is false), boomlet encrypts an all zeros data in the same manner and puts it in the duress signal bearing part of each message. SAR always decrypts the received data with its keys. If the decrypted data turns out to be all zeros, there is no duress. Otherwise SAR derives `doxing_data_identifier` from the received `doxing_key_for_sar`. It then searches its database for a matching registration and makes static data and every retained upload available to its rescue application under [SPEC Section 16.4](../../spec/SPEC.md#164-sar-processing).
 
 ## Consent rotation
 
 Boomlet and its inactive Boomletwo replace the consent set using signed ST
-approval relayed through Niso. See [SPEC Section 16.7](../spec/SPEC.md#167-consent-rotation)
-and the [procedure sequence](../diagrams/ancillary/consent_rotation_diagram.puml).
+approval relayed through Niso. See [SPEC Section 16.7](../../spec/SPEC.md#167-consent-rotation)
+and the [procedure sequence](../../diagrams/ancillary/consent_rotation_diagram.puml).
 
 ## Duress coverage
 

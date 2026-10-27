@@ -2,7 +2,7 @@
 
 This file supplies the compact contracts referenced by the initiator and
 non-initiator protocol-development diagrams. It is a development aid.
-Normative requirements remain in [`SPEC.md`](../../spec/SPEC.md), especially
+Normative requirements remain in [`SPEC.md`](../../../spec/SPEC.md), especially
 Sections 14 through 18.
 
 ## Notation
@@ -81,7 +81,7 @@ signing share.
 
 Finish and send any ping already under construction, then enter rotation at the
 start of the next DIGGING iteration before input and next ping construction. Apply
-[SPEC Section 16.7](../../spec/SPEC.md#167-consent-rotation) for recovery
+[SPEC Section 16.7](../../../spec/SPEC.md#167-consent-rotation) for recovery
 and SAR receipt gates.
 
 ## Acceptance guards

@@ -28,7 +28,7 @@ The annotated sequence with prose and Pink notes removed is
 The development view, contract tables, annotated diagram, and this README are
 explanatory implementation aids.
 Normative protocol requirements are defined only by
-[SPEC.md](../spec/SPEC.md).
+[SPEC.md](../../spec/SPEC.md).
 
 ## Diagram Notation
 

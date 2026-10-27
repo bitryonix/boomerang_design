@@ -47,13 +47,13 @@ jurisdiction-dependent rescue, and parameter selection remain open.
 
 | ID | Assumption | Sources | If False | Status |
 | --- | --- | --- | --- | --- |
-| AR-15 | Schnorr, MuSig2, ECDH, tagged hashing, SP 800-108 CMAC KDF, AES-256-CBC/PKCS#7, and AES-CMAC encrypt-then-MAC are secure as specified and implemented. | `SPEC`, `R`, `D`, `SU`, `WD`, `DP`, `ADR` | Core funds, identity, and duress guarantees fail. | Explicit |
+| AR-15 | Schnorr, MuSig2, ECDH, tagged hashing, SP 800-108 CMAC KDF, AES-256-CBC/PKCS#7, and AES-CMAC encrypt-then-MAC are secure as specified and implemented. | `SPEC`, `R`, `D`, `SU`, `WD`, `ADR` | Core funds, identity, and duress guarantees fail. | Explicit |
 | AR-16 | Every component serializes and interprets the same canonical message content identically. | `SPEC`, `SU`, `WD`, `SP`, `WI`, `WN` | Signatures, CMACs, and identifiers can validate over mismatched semantics, or peers can disagree about what was approved. | Implicit |
-| AR-17 | RNG quality is sufficient across Boomlet, ST, WT, SAR, and supporting hardware. | `R`, `D`, `DP`, `ST`, `HW-H7` | Mystery, nonces, keys, and duress spaces can be biased or predictable. | Explicit |
+| AR-17 | RNG quality is sufficient across Boomlet, ST, WT, SAR, and supporting hardware. | `R`, `D`, `ST`, `HW-H7` | Mystery, nonces, keys, and duress spaces can be biased or predictable. | Explicit |
 | AR-18 | Nonces, setup and withdrawal scope IDs, chained setup checkpoints, sequence numbers, strict state transitions, freshness checks, and SAR replay tuples are sufficient replay protection for the message set. | `SPEC`, `ADR` | Old approvals, checks, placeholders, or commitments may be replayed into new contexts. | Explicit |
 | AR-19 | `tx_id`, `withdrawal_id`, `approved_withdrawal_id`, approval-set attestations, signing-package verification, and final transaction revalidation are strong enough to anchor transaction-authorization correctness throughout the ceremony. | `SPEC`, `WD`, `WI`, `WN`, `D` | A participant may believe they are approving one spend while another spend is actually signed. | Explicit |
 | AR-20 | Fresh CBC IVs, context-bound placeholders, status-free acknowledgements, a fixed release deadline, the same bounded durable-write path, and uniform retry/failure behavior make valid safe and duress traffic indistinguishable within the specified protocol surface. | `SPEC` | WT or an observer can infer duress from ciphertext, timing, storage, queue, log, metric, or failure behavior. | Explicit |
-| AR-21 | `doxing_key_for_sar -> doxing_data_identifier` is unique enough operationally to locate the right setup-bound SAR record without ambiguity. | `SPEC`, `SU`, `DP`, `SM` | SAR may fail to rescue the right user or may treat malformed inputs incorrectly. | Implicit |
+| AR-21 | `doxing_key_for_sar -> doxing_data_identifier` is unique enough operationally to locate the right setup-bound SAR record without ambiguity. | `SPEC`, `SU`, `SM` | SAR may fail to rescue the right user or may treat malformed inputs incorrectly. | Implicit |
 
 ### D. Boomlet and Boomletwo
 
@@ -73,13 +73,13 @@ jurisdiction-dependent rescue, and parameter selection remain open.
 
 | ID | Assumption | Sources | If False | Status |
 | --- | --- | --- | --- | --- |
-| AR-31 | ST is the trusted UI for verification and duress input; Niso is not. | `R`, `DP`, `ST`, `SM` | Duress signaling and user verification reduce to whatever the online host shows. | Explicit |
-| AR-32 | ST securely generates, stores, and uses its long-term keys. | `ST`, `DP`, `DCS` | An attacker can read or alter the ST-Boomlet channel. | Explicit |
-| AR-33 | ST displays exact Boomlet-authored content and its joystick records exact user intent. | `ST`, `DP`, `DCW` | Users can be tricked into false safe or false duress outcomes. | Explicit |
-| AR-34 | ST remains air-gapped except for the intended QR exchange path. | `R`, `ST`, `DP` | Malware-capable connectivity can directly exfiltrate consent-set or duress data. | Explicit |
-| AR-35 | An attacker cannot practically observe both the ST display and the user's selection behavior well enough to learn the consent set under coercion. | `DP`, `ST` | Plausible deniability degrades, and attackers can demand the true safe response. | Explicit |
-| AR-36 | Users can memorize the consent set and reliably reproduce it during legitimate safe use, including under stress and fatigue. | `SPEC`, `DP` | Valid but mistaken selections trigger false duress and unnecessary rescue escalation. | Implicit |
-| AR-37 | One ST per peer is enough for ongoing operation, although ST replacement remains ancillary. | `DP`, `D` | ST loss or compromise becomes an operational dead end. | Open |
+| AR-31 | ST is the trusted UI for verification and duress input; Niso is not. | `R`, `ST`, `SM` | Duress signaling and user verification reduce to whatever the online host shows. | Explicit |
+| AR-32 | ST securely generates, stores, and uses its long-term keys. | `ST`, `SP` | An attacker can read or alter the ST-Boomlet channel. | Explicit |
+| AR-33 | ST displays exact Boomlet-authored content and its joystick records exact user intent. | `ST`, `WI`, `WN` | Users can be tricked into false safe or false duress outcomes. | Explicit |
+| AR-34 | ST remains air-gapped except for the intended QR exchange path. | `R`, `ST` | Malware-capable connectivity can directly exfiltrate consent-set or duress data. | Explicit |
+| AR-35 | An attacker cannot practically observe both the ST display and the user's selection behavior well enough to learn the consent set under coercion. | `ST` | Plausible deniability degrades, and attackers can demand the true safe response. | Explicit |
+| AR-36 | Users can memorize the consent set and reliably reproduce it during legitimate safe use, including under stress and fatigue. | `SPEC` | Valid but mistaken selections trigger false duress and unnecessary rescue escalation. | Implicit |
+| AR-37 | One ST per peer is enough for ongoing operation, although ST replacement remains ancillary. | `D` | ST loss or compromise becomes an operational dead end. | Open |
 | AR-38 | A DIY Portenta-based ST can be made tamper-evident and tamper-resistant enough to satisfy the ST trust boundary. | `ST`, `HW-BB`, `HW-H7` | The assumed trusted UI is only a prototype dev kit with insufficient hardening. | Prototype tension |
 | AR-39 | Prototype attack surface exposed by bootloader, USB, JTAG, Ethernet, SD, camera, and other breakout/debug features can be controlled by build and ops choices. | `HW-BB`, `HW-H7`, `ST` | The proposed ST platform may remain much easier to tamper with than the security model assumes. | Prototype tension |
 
@@ -91,7 +91,7 @@ jurisdiction-dependent rescue, and parameter selection remain open.
 | AR-41 | User entropy, BIP39/BIP32 derivation, mnemonic handling, and passphrase handling on Iso are correct and secret. | `SPEC` | Normal-key security collapses independently of Boomlet. | Implicit |
 | AR-42 | Niso may be malicious without authorizing a spend because Boomlet and ST verify critical state; Niso can still censor, misroute, corrupt presentation, or supply unsafe chain data. | `SPEC`, `SM` | The online host can gain more authorization power than the protocol assigns it. | Explicit boundary |
 | AR-43 | Niso's RPC endpoint is honest, reachable, and configured correctly. | `R`, `SU`, `WD`, `SM` | Block height, satisfiability, and freshness decisions can be manipulated. | Implicit |
-| AR-44 | Phone OS/app security is good enough for dynamic doxing collection and SAR registration. | `R`, `D`, `SU`, `DP` | Rescue data can be stale, forged, leaked, or suppressed. | Explicit |
+| AR-44 | Phone OS/app security is good enough for dynamic doxing collection and SAR registration. | `R`, `D`, `SU` | Rescue data can be stale, forged, leaked, or suppressed. | Explicit |
 | AR-45 | Phone-to-SAR registration, payment, and synchronization cannot be silently redirected or spoofed in a way the user will miss. | `SPEC` | The user can think they are covered while SAR never received valid rescue data. | Implicit |
 | AR-45A | `doxing_password` is user-chosen; Boomlet receives `doxing_key` and does not enforce password policy. | `SPEC`, `ADR`, `SM` | Setup or backup may depend on a second mnemonic-length secret, or components may diverge on password-policy enforcement. | Explicit |
 | AR-46 | Users can safely shuttle Boomlet between Iso and Niso without plugging the wrong device into the wrong host or mixing peer hardware. | `SU`, `WD`, `D` | Cross-device confusion can undermine both safety and liveness. | Implicit |
@@ -117,7 +117,7 @@ jurisdiction-dependent rescue, and parameter selection remain open.
 | AR-56 | WT signs only correct protocol statements and forwards messages without selective censorship or bias. | `WD`, `WI`, `WN`, `SM` | A non-custodial service can force desynchronization or liveness failure. | Implicit |
 | AR-57 | WT's block-height view is trustworthy enough to act as the protocol heartbeat. | `R`, `D`, `SM`, `WD` | Freshness windows and progress rules rest on an attacker-controlled clock. | Explicit |
 | AR-58 | Ancillary procedures can provide WT redundancy, switching, and recovery without changing protocol state or trust assumptions. | `SM`, `D` | A single WT remains a critical service dependency. | Open |
-| AR-59 | SAR securely stores encrypted doxing data, identifiers, and related metadata over long periods, assuming offline cracking resistance is bounded by the user-chosen `doxing_password`. | `R`, `SM`, `SU`, `DP`, `ADR` | Off-chain safety data become a privacy or rescue failure point; weak passwords make leaked ciphertext more exposed to offline guessing. | Implicit |
+| AR-59 | SAR securely stores encrypted doxing data, identifiers, and related metadata over long periods, assuming offline cracking resistance is bounded by the user-chosen `doxing_password`. | `R`, `SM`, `SU`, `ADR` | Off-chain safety data become a privacy or rescue failure point; weak passwords make leaked ciphertext more exposed to offline guessing. | Implicit |
 | AR-60 | Each setup-bound SAR classifies valid placeholders, commits the same-shaped durable record by the fixed deadline, handles repeats idempotently, and signs the exact encrypted placeholder. | `SPEC`, `SM` | Positive duress may be missed, observable processing may reveal it, or Boomlet may continue under false delivery assumptions. | Explicit |
 | AR-61 | Effective, lawful, correctly directed, and non-escalatory SAR action is required for physical intervention but is not guaranteed by protocol acknowledgement. | `R`, `D`, `SM` | Authenticated signaling can succeed while rescue fails, harms the wrong person, or escalates violence. | Explicit |
 | AR-62 | Reputation and SAR operator selection are an acceptable control for WT and SAR social trust. | `D`, `SM` | Operational trust remains an assumption rather than a designed control. | Explicit |
@@ -262,9 +262,11 @@ operator-run lifecycle procedures still have high-priority gaps.
 Source keys: `SPEC` = `spec/SPEC.md`; `R` = repository `README.md`;
 `D` = `DESIGN.md`; `SM` = `security_models/README.md`; `FD` =
 `security_models/forced_determinism.md`; `ADR` = `adr/*.md`; `SU` =
-`setup/README.md`; `WD` = `withdrawal/README.md`; `DP` =
-`duress_protection/README.md`; `ST` = `secure_terminal/README.md`; `SP`,
-`WI`, `WN`, `DCS`, and `DCW` are the maintained setup, withdrawal, and
-duress PlantUML diagrams; `BD` = `withdrawal/block_constraints.{svg,pdf}`;
+`diagrams/setup/README.md`; `WD` = `diagrams/withdrawal/README.md`;
+`ST` = `operational notes/secure_terminal/README.md`; `SP` =
+`diagrams/setup/setup_diagram_without_states.puml`; `WI` =
+`diagrams/withdrawal/initiator_withdrawal_diagram_without_states.puml`;
+`WN` = `diagrams/withdrawal/non_initiator_withdrawal_diagram_without_states.puml`;
+`BD` = `diagrams/withdrawal/block_constraints.{svg,pdf}`;
 `HW-BB` and `HW-H7` are the referenced Secure Terminal prototype
 datasheets.

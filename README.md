@@ -698,14 +698,13 @@ verification path.
 | [`GLOSSARY.md`](GLOSSARY.md) | Concise lookup index for actors, keys, states, and protocol terms |
 | [`DESIGN.md`](DESIGN.md) | The complete conceptual, economic, and security argument |
 | [`spec/SPEC.md`](spec/SPEC.md) | Normative protocol behavior: actors, states, messages, cryptography, and failure rules |
-| [`wip/wire_catalog.txt`](wip/wire_catalog.txt) | Generated ASCII packet layouts, field IDs, size formulas, and nesting paths |
 | [`security_models/`](security_models/README.md) | Threat model, assumptions, attack trees, risks, and unresolved gaps |
 | [`security_models/coercion_economics.md`](security_models/coercion_economics.md) | Detailed quantitative model, observed evidence, and calibration boundaries |
 | [`adr/`](adr/README.md) | Accepted design decisions and their rationale |
-| [Setup procedure](setup/README.md) and [setup sequence SVG](setup/setup_diagram_without_states.svg) | Setup ceremony and its message sequence |
-| [Withdrawal procedure](withdrawal/README.md), [initiator SVG](withdrawal/initiator_withdrawal_diagram_without_states.svg), and [non-initiator SVG](withdrawal/non_initiator_withdrawal_diagram_without_states.svg) | Withdrawal steps and role-specific message sequences |
-| [Duress protection](duress_protection/README.md) | Consent enrollment and duress signaling |
-| [Secure Terminal](secure_terminal/README.md) | Trusted display, input, QR transport, and hardware expectations |
+| [Setup procedure](diagrams/setup/README.md) and [setup sequence SVG](diagrams/setup/setup_diagram_without_states.svg) | Setup ceremony and its message sequence |
+| [Withdrawal procedure](diagrams/withdrawal/README.md), [initiator SVG](diagrams/withdrawal/initiator_withdrawal_diagram_without_states.svg), and [non-initiator SVG](diagrams/withdrawal/non_initiator_withdrawal_diagram_without_states.svg) | Withdrawal steps and role-specific message sequences |
+| [Duress protocol](spec/SPEC.md#16-duress-protocol) | Consent enrollment and duress signaling |
+| [Secure Terminal](<operational notes/secure_terminal/README.md>) | Trusted display, input, QR transport, and hardware expectations |
 
 The subsystem documents and listed SVGs are explanatory. The specification
 controls where they differ.
@@ -718,4 +717,4 @@ controls where they differ.
 | **Technical overview · about 1 hour** | [`DESIGN.md`](DESIGN.md) end to end, then the specification's protocol profile, goals and non-goals, architecture, descriptor, withdrawal protocol, and failure-behavior sections |
 | **Deep review** | [`spec/SPEC.md`](spec/SPEC.md) in full, then the [threat model](security_models/README.md), [assumption register](security_models/assumption_register.md), [forced-determinism analysis](security_models/forced_determinism.md), [coercion economics](security_models/coercion_economics.md), and the [ADRs](adr/README.md) |
 | **Visual protocol review** | Compare the setup and withdrawal-role SVGs in the resource table with their subsystem procedures; resolve discrepancies against the specification |
-| **By contribution angle** | Protocol review uses [`spec/SPEC.md`](spec/SPEC.md). Threat modeling uses [`security_models/`](security_models/README.md). Hardware review uses [Secure Terminal](secure_terminal/README.md), [duress protection](duress_protection/README.md), and the specification's Boomlet sections. Usability review uses the [setup](setup/README.md) and [withdrawal](withdrawal/README.md) ceremonies. |
+| **By contribution angle** | Protocol review uses [`spec/SPEC.md`](spec/SPEC.md). Threat modeling uses [`security_models/`](security_models/README.md). Hardware review uses [Secure Terminal](<operational notes/secure_terminal/README.md>), the [duress protocol](spec/SPEC.md#16-duress-protocol), and the specification's Boomlet sections. Usability review uses the [setup](diagrams/setup/README.md) and [withdrawal](diagrams/withdrawal/README.md) ceremonies. |
