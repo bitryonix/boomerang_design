@@ -1,0 +1,68 @@
+@startuml wt_setup_failover
+title WT failover during setup or while idle
+hide footbox
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 75
+participant "Niso i" as N
+participant "Boomlet i" as B
+participant "Other four peers" as P
+participant "Old WT" as Old
+participant "Candidate WT" as C
+participant "Bound SAR i" as S
+participant "Iso and designated Boomletwo" as Backup
+
+N -> Old: Pending WT-dependent setup request
+... Silence threshold or explicit user decision ...
+N -> B: Propose roster candidate
+
+alt Parameter agreement incomplete
+  B -> P: Complete consistent parameter agreement first
+  P -> B: Five matching signed parameter fingerprints
+  B -> B: Establish setup ID, immutable roster and genesis head
+end
+
+ref over B,C
+  02_common_switch.puml
+  Five reviews and frozen snapshots, candidate registration,
+  required SAR finalization and obligation discharge, PREPARE and COMMIT.
+  07_decision_recovery.puml handles an interrupted decision.
+end ref
+
+alt Final ABORT
+  B -> B: Persist cancellation and unlock matching setup state
+  B -> Old: Retry setup under the retained predecessor head
+else Final ACTIVATE
+  B -> B: Install candidate head and retain completed checkpoints
+  alt PARAMETERS_AGREED
+    C -> B: Candidate registration receipt
+    B -> B: Verify local WT-ready prerequisite
+    B -> P: Signed WT-ready checkpoint
+    P -> B: Complete matching checkpoint collection
+  else WT_READY
+    B -> B: Verify retained SAR finalization receipt from candidate preparation
+    B -> B: Complete own SAR-ready prerequisite
+    B -> P: Signed SAR-ready checkpoint
+    P -> B: Complete matching checkpoint collection
+  else SAR_READY
+    ref over B,Backup
+      Finish base authorized encrypted Boomletwo backup.
+      Preserve normal-key authorization, Iso checks and BackupDone.
+    end ref
+    B -> B: Verify local backup-ready prerequisite
+    B -> P: Signed backup-ready checkpoint
+    P -> B: Complete matching checkpoint collection
+  else BACKUP_READY or partial final checkpoint delivery
+    P -> B: Exact completed checkpoint evidence
+    B -> B: Verify collection and finish local completion guards
+  else Completed setup with no active withdrawal
+    B -> B: Retain idle state and use candidate for next withdrawal
+  end
+  ref over B,Backup
+    Complete any remaining setup checkpoints in order.
+    01_setup_changes.puml shows the full setup progression.
+  end ref
+  Old -> B: Delayed predecessor-head response
+  B -> B: Reject stale WT authority
+end
+@enduml

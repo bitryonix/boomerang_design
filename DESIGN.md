@@ -8,6 +8,8 @@ This document is the technical companion to the
 argument, boundaries, and status. The
 [protocol specification](spec/SPEC.md) is normative for exact behavior and
 controls wherever the two differ.
+The generated [wire catalog](wip/wire_catalog.txt) provides the corresponding
+ASCII packet layouts, field IDs, and size formulas.
 
 ## Contents
 
@@ -308,7 +310,6 @@ sequenceDiagram
         SAR-->>WT: Acknowledgment required before pong use
         WT-->>B: Recipient-specific pong with current peer pings
         Note over B: A valid catch-up round need not increment the local counter
-        Note over SAR: If duress was entered, response proceeds asynchronously
     end
 
     WT-->>B: Signed reached collection for all five Boomlets
@@ -350,8 +351,9 @@ agreements, peer identity keys, SAR routing information, active ceremony
 identifiers, protocol objects, receipts, and replay state. It does not store the
 descriptor or the milestone schedule, and every PSBT it relays is encrypted for
 its recipient Boomlet ([SPEC §7.4, §13.8, §15.3](spec/SPEC.md)). SAR
-stores a pseudonymous `doxing_data_identifier`, encrypted rescue-data
-envelopes it cannot read, payment status, and `placeholder` replay tuples; it
+stores a pseudonymous `doxing_data_identifier`, `dynamic_update_auth_key`,
+encrypted rescue data and upload receipts, payment status, and `placeholder`
+replay tuples; it
 gains the ability to decrypt the rescue data only when a valid duress
 `placeholder` delivers `doxing_key_for_sar`
 ([SPEC §7.5, §16.3–16.4](spec/SPEC.md)). A SAR that learns identifying data
@@ -373,11 +375,11 @@ authorization continuity across those boundaries.
 
 ### Topology
 
-Peers and WT communicate over Tor onion services; each Niso keeps its own
-Bitcoin RPC chain view; the air-gapped ST exchanges encrypted messages with
-Boomlet over a host-relayed channel rather than a network connection; and
-Phone talks only to SAR. The security models contain the authoritative
-pictures. The
+Peers and WT communicate over Tor onion services. Phone talks only to its
+selected SAR, using the onion address in `SarId`. Each Niso keeps its own
+Bitcoin RPC chain view. The air-gapped ST exchanges encrypted messages with
+Boomlet over a host-relayed channel rather than a network connection. The
+security models contain the authoritative pictures. The
 [trust-boundary diagram](security_models/architecture.md#trust-boundaries-and-diagram)
 and the
 [data-flow diagram](security_models/architecture.md#architecture--data-flows)
@@ -495,7 +497,7 @@ The versioned implementation profile fixes the `mystery` bounds
 `MAX_TRIES_FOR_DIGGING_GAME_IN_BLOCKS`), the duress cadence
 (`DURESS_CHECK_INTERVAL_IN_BLOCKS`), freshness tolerances, spacing between
 `ping` and `pong` messages,
-and height-catch-up limits ([SPEC §6](spec/SPEC.md)). These constants are
+and block-height catch-up limits ([SPEC §6](spec/SPEC.md)). These constants are
 loaded locally. The milestone schedule is chosen during setup. Setup creates
 no `mystery`, and the backup contains no future `mystery`
 ([ADR 0006](adr/0006-per-withdrawal-mystery-generation.md)).
@@ -539,7 +541,7 @@ ordered five-`TxApproval` set; it scopes every later commitment, `placeholder`,
 `ping`, `pong`, reached report, signing step, and replay check.
 
 **Preconditions ([SPEC §15.1](spec/SPEC.md)).** A locally stored final setup
-checkpoint; inputs controlled by the Boomerang descriptor; current height at
+checkpoint; inputs controlled by the Boomerang descriptor; current block height at
 least `milestone_block_0`; a transaction satisfiable under the five-of-five
 Boomerang branch; no other active withdrawal ceremony.
 
@@ -559,7 +561,7 @@ non-initiator verifies the visible approval state, decrypts its PSBT copy
 inside its Boomlet, reconstructs and checks `withdrawal_id` from the PSBT
 contents, reviews the complete transaction on Niso, performs the same
 nonce-bound ST `tx_id` confirmation, and only then signs its own
-`TxApproval`. WT collects one valid approval per peer in active setup peer
+`TxApproval`. WT collects one valid approval per peer in setup peer
 order. Every receiver verifies one approval from each expected peer in that
 order before computing `approved_withdrawal_id` locally. The four non-initiator
 Boomlets each sign an approval-set attestation over a self-computed
@@ -607,24 +609,24 @@ failure.
 reached_mystery_flag}` and attaches a freshly encrypted `placeholder`. The
 envelope has a fresh IV even when the underlying safe-or-duress plaintext has
 not changed. WT verifies both signatures, `approved_withdrawal_id`, strict
-increase of `ping_seq_num`, the allowed height range, and monotonicity of
+increase of `ping_seq_num`, the allowed block-height range, and monotonicity of
 `reached_mystery_flag`. A correctly authenticated `ping` whose
 `last_seen_block` lags is still protocol-valid. Lagging `ping` messages drive
 bounded catch-up rather than terminal failure, and WT must obtain SAR's exact
 acknowledgment of the `ping`'s `placeholder` before using that `ping` in any
 `pong`.
 
-**`Pong`, `counter` advancement, and height catch-up
+**`Pong`, `counter` advancement, and block-height catch-up
 ([SPEC §15.8–15.9](spec/SPEC.md)).** WT answers each round with
 recipient-specific `pong` messages that bundle the signed current `ping`
-messages of every other active peer, observing the profile's minimum block
+messages of every other peer, observing the profile's minimum block
 spacing between rounds. A Boomlet increments its `counter` only when the
 `pong` is valid for the active ceremony, its local chain view has advanced
 since its previous `ping`, and every included peer `ping` falls inside the
 permitted freshness window
-relative to its local height. Whether or not the `counter` advances, a valid
+relative to its local block height. Whether or not the `counter` advances, a valid
 `pong` performs bounded `last_seen_block` catch-up, and the Boomlet emits its
-next `ping` with a freshly encrypted `placeholder`. Height decreases, sequence
+next `ping` with a freshly encrypted `placeholder`. Block height decreases, sequence
 regressions, or material chain-view disagreement stall the ceremony.
 
 **Repeated duress checks and `reached_pings_collection`
@@ -644,15 +646,14 @@ revalidates descriptor membership, transaction identity, and
 Boomlet to Iso. Iso reconstructs the normal key, verifies its local signing
 package, and completes the peer's MuSig2 signature with the Boomlet under BIP327
 nonce discipline. Back on Niso, the Boomlet exports the signed fragment and
-clears all active withdrawal state, including the `mystery`; WT aggregates the
+finishes cleanup after final SAR delivery and any paired reset; WT aggregates the
 five fragments, verifies the complete transaction, and broadcasts the exact
 `tx_id` committed by the approved withdrawal.
 
-Any invalid signature, identity, context, sequence, height relation, or
+Any invalid signature, identity, context, sequence, block-height relation, or
 transition stalls the active ceremony while retaining its bindings. A retry
 may retransmit an identical authenticated object; it may not repurpose
-nonces, IVs, sequences, or signing secrets. Explicit abandonment clears
-volatile attempt state while retaining long-lived state and replay memory
+nonces, IVs, sequences, or signing secrets. Explicit abandonment clears volatile state while retaining long-lived state and replay memory
 ([SPEC §17–18](spec/SPEC.md)).
 
 Fallback provides eventual access to funds but introduces forced determinism.
@@ -677,8 +678,8 @@ renders the vocabulary in five
 independently shuffled columns, and the user selects one entry per column
 ([SPEC §16.2](spec/SPEC.md)). The Boomlet rejects stale nonces, duplicate
 responses, wrong counts, duplicate indices, and out-of-range indices; among
-structurally valid answers, equality with the consent set means safe, and any
-other five-element set means duress.
+structurally valid answers, a wrong answer sets `under_duress` to true.
+Correct later answers preserve it.
 
 ST is a battery-powered, air-gapped trusted display-and-input device that uses
 QR transport and has a deliberately small display
@@ -689,7 +690,7 @@ selection. An attacker who learns it can force later checks to evaluate as
 safe. Protocol-traffic concealment does not provide physical privacy.
 
 Both answers produce the same artifact. The `placeholder` plaintext is 32 zero
-bytes when safe or `doxing_key_for_sar` when duress, freshly encrypted
+bytes if `under_duress` is false or `doxing_key_for_sar` otherwise, freshly encrypted
 for the setup-bound SAR under a context bound to `approved_withdrawal_id`
 ([SPEC §16.3](spec/SPEC.md)). Because that identifier transitively binds the
 withdrawal and setup instance, a `placeholder` cannot be replayed across
@@ -1025,9 +1026,8 @@ ceremony state, and `reached_pings_collection`
 **Device load and endurance.** Long ceremonies require sustained per-round
 signing, MAC, and KDF work plus persistent-write traffic on a card with limited
 transient memory and finite write endurance. Whether target cards can sustain
-the expected `ping` and `pong` cycle counts is unvalidated
-([SPEC §19.2, §22](spec/SPEC.md)). The current profile keeps one Boomlet and one
-ST per peer ([SPEC §2](spec/SPEC.md)).
+the expected `ping` and `pong` cycle counts is unvalidated. The current profile
+keeps one Boomlet and one ST per peer ([SPEC §2](spec/SPEC.md)).
 
 The design has the following costs.
 
@@ -1078,7 +1078,7 @@ ancillary. Secure build, update, deployment, and hardening controls for every
 endpoint and service are required but not defined by the protocol.
 
 **Services and chain view.** WT's block-height view and each Niso's Bitcoin RPC
-view affect freshness and progress. Height decrease or material disagreement
+view affect freshness and progress. Block height decrease or material disagreement
 stalls the ceremony; reorg recovery is open. One active WT is a critical
 dependency, and redundancy, switching, timeout, and blame procedures are not
 complete. SAR or WT unavailability stalls the Boomlet-enforced withdrawal
@@ -1090,7 +1090,7 @@ attacker.
 **Long-ceremony viability.** Fee estimates, UTXO data, and permitted PSBT
 hydration must remain viable when signing finally begins. Valid progress must
 finish before fallback becomes the practical choice. Production values for
-`mystery` bounds, cadence, spacing, freshness, and height tolerances are not yet
+`mystery` bounds, cadence, spacing, freshness, and block-height tolerances are not yet
 selected; bad values could destroy either the security benefit or ordinary
 liveness. It remains an open assumption that workable values can be selected
 without changing the core mechanism.
@@ -1192,11 +1192,11 @@ The recommended review order follows.
    [non-initiator withdrawal](withdrawal/non_initiator_withdrawal_diagram_without_states.svg)
    diagrams. They are explanatory; the specification remains normative.
 
-A serious verification effort must include adversarial protocol review,
-canonical test vectors, state-machine and replay tests, hardware evaluation,
-failure injection, usability work under stress, and jurisdiction-specific
-response exercises. None of the qualitative argument above substitutes for
-that evidence.
+A serious verification effort must include timing simulation, formal
+state-machine and replay analysis, independent cryptographic review, published
+interoperability vectors, hardware evaluation, failure injection, usability
+work under stress, and jurisdiction-specific response exercises. None of the
+qualitative argument above substitutes for that evidence.
 
 Dynamic simulation of ceremony timing is planned. Network delay, irregular
 block intervals, and human response latency interact with the profile's

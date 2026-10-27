@@ -199,7 +199,7 @@ flowchart TB
 
     subgraph RES["RESPONSE — proceeds asynchronously"]
         direction LR
-        R1["Duress answer<br/>durably activates response"] --> R2["Prepared responder<br/>assesses and acts"]
+        R1["Duress answer<br/>activates duress response"] --> R2["Prepared responder<br/>assesses and acts"]
     end
 
     A2 -. "forces" .-> B1
@@ -637,7 +637,7 @@ Not through the primary Boomerang branch, which requires signatures under all
 five Boomerang keys. The fallback branches change the required set on the
 agreed schedule. They require five normal keys from `milestone_block_1`, four
 from `milestone_block_2`, and so on down to one from `milestone_block_5`. Once
-a fallback height passes, that branch needs only its stated number of normal
+a fallback block height passes, that branch needs only its stated number of normal
 keys. This is the recoverability trade the design makes, and it is why
 operators are expected to roll funds into a fresh setup before fallback
 becomes an attractive predictable target; see the
@@ -698,6 +698,7 @@ verification path.
 | [`GLOSSARY.md`](GLOSSARY.md) | Concise lookup index for actors, keys, states, and protocol terms |
 | [`DESIGN.md`](DESIGN.md) | The complete conceptual, economic, and security argument |
 | [`spec/SPEC.md`](spec/SPEC.md) | Normative protocol behavior: actors, states, messages, cryptography, and failure rules |
+| [`wip/wire_catalog.txt`](wip/wire_catalog.txt) | Generated ASCII packet layouts, field IDs, size formulas, and nesting paths |
 | [`security_models/`](security_models/README.md) | Threat model, assumptions, attack trees, risks, and unresolved gaps |
 | [`security_models/coercion_economics.md`](security_models/coercion_economics.md) | Detailed quantitative model, observed evidence, and calibration boundaries |
 | [`adr/`](adr/README.md) | Accepted design decisions and their rationale |

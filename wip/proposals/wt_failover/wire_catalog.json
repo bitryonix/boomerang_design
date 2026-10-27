@@ -1,0 +1,566 @@
+{
+  "extension_format_version": 1,
+  "status": "proposal_requires_conformance",
+  "base_catalog": "../../wire_catalog.json",
+  "protocol_version": "boomerang-wt-1",
+  "schemas": [
+    {
+      "id": 30,
+      "name": "WtHeadContent",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "active_wt_head",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "content",
+          "type": "value",
+          "required": true,
+          "context_rule": "wt_head_content"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "name": "WtScope",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "setup_instance_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "previous_head",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "switch_id",
+          "type": "bytes32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "name": "WtOptionalId",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "present",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "id",
+          "type": "bytes32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "name": "WtObligation",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "present",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "approved_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "iv",
+          "type": "bytes16",
+          "required": true
+        },
+        {
+          "id": 4,
+          "name": "envelope_digest",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 5,
+          "name": "padded_digest",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 6,
+          "name": "gate_digest",
+          "type": "bytes32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "name": "WtManifest",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "setup_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "previous_head",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "previous_index",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 4,
+          "name": "candidate_index",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 5,
+          "name": "phase",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 6,
+          "name": "scope_kind",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 7,
+          "name": "scope_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 8,
+          "name": "withdrawal_id",
+          "type": "WtOptionalId",
+          "required": true
+        },
+        {
+          "id": 9,
+          "name": "approved_id",
+          "type": "WtOptionalId",
+          "required": true
+        },
+        {
+          "id": 10,
+          "name": "initialized",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": 11,
+          "name": "accepted_pong",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": 12,
+          "name": "pong_height",
+          "type": "u32",
+          "required": true
+        },
+        {
+          "id": 13,
+          "name": "inherited_floor",
+          "type": "WtOptionalHeight",
+          "required": true
+        },
+        {
+          "id": 14,
+          "name": "ping_digest",
+          "type": "WtOptionalId",
+          "required": true
+        },
+        {
+          "id": 15,
+          "name": "ping_sequence",
+          "type": "u64",
+          "required": true
+        },
+        {
+          "id": 16,
+          "name": "reached",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": 17,
+          "name": "resume_digest",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 18,
+          "name": "obligation",
+          "type": "WtObligation",
+          "required": true
+        },
+        {
+          "id": 19,
+          "name": "closed_ids",
+          "type": "list<bytes32>",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "name": "WtOptionalHeight",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "present",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "height",
+          "type": "u32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "name": "WtReady",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "scope",
+          "type": "WtScope",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "candidate_index",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "mode",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 4,
+          "name": "closed_withdrawal",
+          "type": "WtOptionalId",
+          "required": true
+        },
+        {
+          "id": 5,
+          "name": "closed_approved",
+          "type": "WtOptionalId",
+          "required": true
+        },
+        {
+          "id": 6,
+          "name": "obligation_digest",
+          "type": "bytes32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "name": "WtVote",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "scope",
+          "type": "WtScope",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "ballot",
+          "type": "u64",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "value_kind",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 4,
+          "name": "value_digest",
+          "type": "bytes32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "name": "WtPrepared",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "vote",
+          "type": "WtVote",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "signatures",
+          "type": "list<bytes64>",
+          "required": true,
+          "exact_items": {
+            "constant": "peer_count"
+          }
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "name": "WtRecover",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "scope",
+          "type": "WtScope",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "target_ballot",
+          "type": "u64",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "has_prepared",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": 4,
+          "name": "prepared_ballot",
+          "type": "u64",
+          "required": true
+        },
+        {
+          "id": 5,
+          "name": "prepared_kind",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 6,
+          "name": "prepared_digest",
+          "type": "bytes32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "name": "WtFragmentReceipt",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "setup_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "approved_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "origin_peer",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 4,
+          "name": "fragment_digest",
+          "type": "bytes32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "name": "WtCompletionReceipt",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "setup_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "approved_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "tx_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 4,
+          "name": "transaction_digest",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 5,
+          "name": "fragment_digests",
+          "type": "list<bytes32>",
+          "required": true,
+          "exact_items": {
+            "constant": "peer_count"
+          }
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "name": "WtPublicArchive",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "setup_id",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "params",
+          "type": "BoomerangParams",
+          "required": true
+        },
+        {
+          "id": 3,
+          "name": "checkpoint",
+          "type": "bytes32",
+          "required": true
+        },
+        {
+          "id": 4,
+          "name": "public_evidence",
+          "type": "bytes",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "name": "WtResumeEntry",
+      "version": 1,
+      "fields": [
+        {
+          "id": 1,
+          "name": "artifact_kind",
+          "type": "u8",
+          "required": true
+        },
+        {
+          "id": 2,
+          "name": "payload",
+          "type": "bytes",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "signature_context_overrides": {
+    "Boomerang/wt/switch_review": "MessageWithNonce<bytes32>",
+    "Boomerang/wt/switch_intent": "MessageWithNonce<bytes32>",
+    "Boomerang/wt/candidate_ready": "bytes32",
+    "Boomerang/wt/decision_prepare": "WtVote",
+    "Boomerang/wt/decision_commit": "WtVote",
+    "Boomerang/wt/decision_recover": "WtRecover",
+    "Boomerang/wt/pending_intent_cancel_review": "MessageWithNonce<bytes32>",
+    "Boomerang/withdrawal/wt_tx_approval": "WtHeadContent<WtTxApproval>",
+    "Boomerang/withdrawal/wt_tx_commit_ack": "WtHeadContent<SignedMessage<TxCommit>>",
+    "Boomerang/withdrawal/pong": "WtHeadContent<Pong>",
+    "Boomerang/withdrawal/reached_collection": "WtHeadContent<list<SignedMessage<Ping>>>",
+    "Boomerang/wt/fragment_receipt": "WtHeadContent<WtFragmentReceipt>",
+    "Boomerang/wt/completion_receipt": "WtHeadContent<WtCompletionReceipt>",
+    "Boomerang/setup/wt_sar_response": "WtHeadContent<WtSarSetupResponse>"
+  },
+  "head_content_contexts": {
+    "Boomerang/withdrawal/wt_tx_approval": "WtTxApproval",
+    "Boomerang/withdrawal/wt_tx_commit_ack": "SignedMessage<TxCommit>",
+    "Boomerang/withdrawal/pong": "Pong",
+    "Boomerang/withdrawal/reached_collection": "list<SignedMessage<Ping>>",
+    "Boomerang/wt/fragment_receipt": "WtFragmentReceipt",
+    "Boomerang/wt/completion_receipt": "WtCompletionReceipt",
+    "Boomerang/setup/wt_sar_response": "WtSarSetupResponse"
+  },
+  "forbidden_schema_ids": [],
+  "encryption_type_overrides": {
+    "withdrawal_pong": "SignedMessage<WtHeadContent<Pong>>"
+  },
+  "limits": {
+    "peers": 5,
+    "roster_max": 5,
+    "withdrawals": 4,
+    "fragment_bytes": 8192,
+    "resume_bytes": 16384,
+    "control_bytes": 16384,
+    "intent_bytes": 2048,
+    "prepared_bytes": 1024,
+    "sidecars": 5,
+    "nesting": 12,
+    "chunk_bytes": 1024,
+    "placeholder_bytes": 512,
+    "switch_intents": 64,
+    "ballots": 16,
+    "automatic_successors": 2,
+    "verifications": 128,
+    "control_transactions": 80,
+    "journal_bytes": 16384,
+    "replay_ledger_bytes": 8192,
+    "decision_instances": 64
+  }
+}

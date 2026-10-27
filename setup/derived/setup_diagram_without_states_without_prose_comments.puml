@@ -1,0 +1,391 @@
+@startuml setup_diagram_without_states
+skinparam sequenceMessageAlign left
+title Setup Sequence Diagram (Without States)
+box "User Side" #AliceBlue
+actor User order 1 #LightCyan
+participant Iso order 2 #LightBlue
+participant Boomlet order 3 #LightPink
+participant ST order 4 #Violet
+participant Boomletwo order 4 #LightGray
+participant Niso order 5 #LightGreen
+participant Phone order 6 #CadetBlue
+end box
+participant WT order 98 #Red
+participant SAR order 99 #Yellow
+actor Peers order 100
+
+legend left
+encrypt_for_<peer> and decrypt_from_<peer> use CBC-CMAC directional channels
+with the acting device's identity key and the named peer's public key.
+Decryption authenticates before returning content.
+endlegend
+
+autonumber "<b>[00]"
+note over User, SAR
+<b>PARAMETERS
+# #define PROTOCOL_VERSION
+# #define MAX_TRIES_FOR_DIGGING_GAME_IN_BLOCKS
+# #define MIN_TRIES_FOR_DIGGING_GAME_IN_BLOCKS
+end note
+group SAR sign-up
+
+' Step 1
+User o-> Phone:  <b>SetupPhoneInput1 \n doxing_password \n sar_id \n static_doxing_data
+hnote over Phone #Lavender:  doxing_password_bytes := utf8(doxing_password) \n doxing_key := tagged_sha256("Boomerang/doxing_key", doxing_password_bytes) \n sar_pubkey := sar_id.sar_pubkey \n sar_pubkey_bytes := canonical_public_key_bytes(sar_pubkey) \n doxing_key_for_sar := tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes) \n doxing_data_identifier := tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar)
+
+' Step 2
+Phone o-> SAR:  <b>SetupPhoneSarMessage1 \n doxing_data_identifier
+hnote over SAR #Lavender:  service_fee_invoice := invoice bound to doxing_data_identifier and PROTOCOL_VERSION \n payment_deadline := deadline for service_fee_invoice \n sar_service_fee_payment_info := SarServiceFeePaymentInfo{ \n service_fee_invoice: service_fee_invoice, \n payment_deadline: payment_deadline, \n sar_id: sar_id \n }.
+
+' Step 3
+SAR o-> Phone:  <b>SetupSarPhoneMessage1 \n sar_service_fee_payment_info
+
+' Step 4
+Phone o-> User:  <b>SetupPhoneOutput1 \n sar_service_fee_payment_info
+hnote over User #Lavender:  sar_service_fee_payment_receipts := pay(sar_service_fee_payment_info)
+
+' Step 5
+User o-> Phone:  <b>SetupPhoneInput2 \n sar_service_fee_payment_receipts
+hnote over Phone #Lavender:  static_doxing_data_cbc_cmac_keys := derive_cbc_cmac_keys(doxing_key_for_sar, "Boomerang/sar_stored_data") \n static_doxing_data_encrypted_by_doxing_key_for_sar := cbc_cmac_encrypt(keys: \n static_doxing_data_cbc_cmac_keys, \n context: canonical_encode("Boomerang", PROTOCOL_VERSION, "sar_static_data", doxing_data_identifier), \n content: static_doxing_data) \n device_id := random_bytes(32) \n upload_id := random_bytes(32) \n upload_seq_num := 0 \n device_data_key := kdf_counter_cmac_aes256(doxing_key_for_sar, "Boomerang/sar_dynamic_device_data_key/v1", canonical_encode(device_id), 32) \n dynamic_update_auth_key := kdf_counter_cmac_aes256(doxing_key_for_sar, "Boomerang/sar_dynamic_update_auth_key/v1", canonical_encode(PROTOCOL_VERSION, doxing_data_identifier), 32) \n dynamic_context := canonical_encode("Boomerang", PROTOCOL_VERSION, "sar_dynamic_data", doxing_data_identifier, device_id, upload_id, upload_seq_num) \n dynamic_doxing_data_cbc_cmac_keys := derive_cbc_cmac_keys(device_data_key, "Boomerang/sar_stored_data") \n dynamic_doxing_data_encrypted_by_device_data_key := cbc_cmac_encrypt(keys: \n dynamic_doxing_data_cbc_cmac_keys, \n context: dynamic_context, \n content: dynamic_doxing_data) \n dynamic_upload_cmac := aes256_cmac(dynamic_update_auth_key, \n canonical_encode("Boomerang/sar_dynamic_upload/v1", PROTOCOL_VERSION, doxing_data_identifier, device_id, upload_id, upload_seq_num, dynamic_doxing_data_encrypted_by_device_data_key)) \n first_dynamic_doxing_data_upload := DynamicRescueUpload{doxing_data_identifier, device_id, upload_id, upload_seq_num, dynamic_doxing_data_encrypted_by_device_data_key, dynamic_upload_cmac}
+
+' Step 6
+Phone o-> SAR:  <b>SetupPhoneSarMessage2 \n sar_service_fee_payment_receipts \n doxing_data_identifier \n static_doxing_data_encrypted_by_doxing_key_for_sar \n dynamic_update_auth_key \n first_dynamic_doxing_data_upload
+
+' Step 7
+SAR --> Phone:  <b>SetupSarPhoneMessage2 \n dynamic_doxing_data_upload_receipt_signed_by_sar
+
+' Step 8
+Phone o-> User:  <b>SetupPhoneOutput2 \n magic: "setup_sar_registered_and_connected_to_phone"
+end group
+group Duress setup
+
+' Step 9
+User o-> Iso:  <b>SetupIsoInput1 \n network \n account \n key_index \n entropy_bytes \n passphrase \n doxing_password \n sar_id
+hnote over Iso #Lavender:  coin_type := 0 if network is mainnet else 1 \n mnemonic := mnemonic_from_entropy(entropy_bytes) \n master_xpriv_0 := derive_master_xpriv(mnemonic, passphrase) \n purpose_xpriv_0 := derive_child_xpriv(master_xpriv_0, 52102, hardened: true) \n coin_xpriv_0 := derive_child_xpriv(purpose_xpriv_0, coin_type, hardened: true) \n account_xpriv_0 := derive_child_xpriv(coin_xpriv_0, account, hardened: true) \n external_xpriv_0 := derive_child_xpriv(account_xpriv_0, 0, hardened: false) \n normal_privkey_0 := derive_child_xpriv(external_xpriv_0, key_index, hardened: false) \n normal_pubkey_0 := derive_public_key(normal_privkey_0) \n doxing_password_bytes := utf8(doxing_password) \n doxing_key := tagged_sha256("Boomerang/doxing_key", doxing_password_bytes)
+
+' Step 10
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage1 \n normal_pubkey_0 \n doxing_key \n sar_id
+hnote over Boomlet #Lavender:  boomlet_0_identity_privkey := generate_private_key() \n boomlet_0_boom_musig2_privkey_share := generate_private_key() \n boomlet_0_boom_musig2_pubkey_share := derive_public_key(boomlet_0_boom_musig2_privkey_share) \n boomlet_0_identity_pubkey := derive_public_key(boomlet_0_identity_privkey) \n boom_pubkey_0 := derive_musig2_public_key(boomlet_0_boom_musig2_pubkey_share, normal_pubkey_0)
+
+' Step 11
+Boomlet -> Iso:  <b>SetupBoomletIsoMessage1 \n boomlet_0_identity_pubkey
+
+' Step 12
+Iso o-> ST:  <b>SetupIsoStMessage1 \n boomlet_0_identity_pubkey
+hnote over ST #Lavender:  st_0_identity_privkey := generate_private_key() \n st_0_identity_pubkey := derive_public_key(st_0_identity_privkey)
+
+' Step 13
+ST o-> Iso:  <b>SetupStIsoMessage1 \n st_0_identity_pubkey
+
+' Step 14
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage2 \n st_0_identity_pubkey
+hnote over Boomlet #Lavender:  duress_check_space := DuressCheckSpace{space: random_permutation([1..193])} \n duress_check_space_with_nonce := MessageWithNonce{ \n content: duress_check_space \n nonce: random_bytes(32) } \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st := encrypt_for_st_0(context: canonical_encode("duress_challenge"), \n content: duress_check_space_with_nonce)
+
+' Step 15
+Boomlet o-> Iso:  <b>SetupBoomletIsoMessage2 \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st
+
+' Step 16
+Iso o-> ST:  <b>SetupIsoStMessage2 \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st
+hnote over ST #Lavender:  duress_check_space_with_nonce := decrypt_from_boomlet_0(context: canonical_encode("duress_challenge"), \n envelope: duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st) \n duress_check_space := duress_check_space_with_nonce.content \n duress_display_columns, retained_display_maps := create_duress_display_columns(duress_check_space.space)
+
+' Step 17
+ST o-> User:  <b>SetupStOutput1 \n duress_display_columns
+hnote over User #Lavender:  user_selection := select_one_from_each(duress_display_columns)
+
+' Step 18
+User o-> ST:  <b>SetupStInput1 \n user_selection
+hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, \n retained_display_maps) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: duress_signal_index \n nonce: duress_check_space_with_nonce.nonce} \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("duress_response"), \n content: duress_signal_index_with_nonce)
+
+' Step 19
+ST o-> Iso:  <b>SetupStIsoMessage2 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0
+
+' Step 20
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage3 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0
+hnote over Boomlet #Lavender:  duress_signal_index_with_nonce := decrypt_from_st_0(context: canonical_encode("duress_response"), \n envelope: duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0)
+hnote over Boomlet #Lavender:  duress_consent_set := \n duress_check_space.space[duress_signal_index_with_nonce.content.indices]
+hnote over Boomlet #Lavender:  duress_check_space := DuressCheckSpace{space: random_permutation([1..193])} \n duress_check_space_with_nonce := MessageWithNonce{ \n content: duress_check_space \n nonce: random_bytes(32) } \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st := encrypt_for_st_0(context: canonical_encode("duress_challenge"), \n content: duress_check_space_with_nonce)
+
+' Step 21
+Boomlet -> Iso:  <b>SetupBoomletIsoMessage3 \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st
+
+' Step 22
+Iso o-> ST:  <b>SetupIsoStMessage3 \n duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st
+hnote over ST #Lavender:  duress_check_space_with_nonce := decrypt_from_boomlet_0(context: canonical_encode("duress_challenge"), \n envelope: duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st) \n duress_check_space := duress_check_space_with_nonce.content \n duress_display_columns, retained_display_maps := create_duress_display_columns(duress_check_space.space)
+
+' Step 23
+ST o-> User:  <b>SetupStOutput2 \n duress_display_columns
+hnote over User #Lavender:  user_selection := select_one_from_each(duress_display_columns)
+
+' Step 24
+User o-> ST:  <b>SetupStInput2 \n user_selection
+hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, \n retained_display_maps) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: duress_signal_index \n nonce: duress_check_space_with_nonce.nonce \n } \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("duress_response"), \n content: duress_signal_index_with_nonce)
+
+' Step 25
+ST o-> Iso:  <b>SetupStIsoMessage3 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0
+
+' Step 26
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage4 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0
+hnote over Boomlet #Lavender:  duress_signal_index_with_nonce := decrypt_from_st_0(context: canonical_encode("duress_response"), \n envelope: duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0)
+hnote over Boomlet #Lavender:  consent_counter := 0 \n under_duress := false
+
+' Step 27
+Boomlet o-> Iso:  <b>SetupBoomletIsoMessage4 \n magic: "setup_duress_finished"
+end group
+group Boomerang parameters setup
+
+' Step 28
+Iso o-> User:  <b>SetupIsoOutput1 \n mnemonic
+
+' Step 29
+User o-> Niso:  <b>SetupNisoInput1 \n network \n rpc_client_url \n rpc_client_auth
+
+' Step 30
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage1 \n magic: "setup_initialized"
+hnote over Boomlet #Lavender:  peer_0_tor_secret_key := generate_private_key() \n peer_0_setup_nonce := random_bytes(32) \n peer_0_tor_address := derive_tor_address(peer_0_tor_secret_key) \n peer_0_id := PeerId{ \n boom_pubkey: boom_pubkey_0, \n normal_pubkey: normal_pubkey_0, \n boomlet_identity_pubkey: boomlet_0_identity_pubkey \n } \n peer_0_setup_identity_record := PeerSetupRecord{peer_id: peer_0_id, peer_setup_nonce: peer_0_setup_nonce, \n tor_address: peer_0_tor_address} \n peer_0_setup_identity_record_signed_by_boomlet_0 := sign_message(boomlet_0_identity_privkey, \n "Boomerang/setup/peer_setup_record", peer_0_setup_identity_record)
+
+' Step 31
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage1 \n peer_0_tor_secret_key \n peer_0_setup_identity_record_signed_by_boomlet_0
+hnote over Niso #Lavender:  peer_0_tor_address := derive_tor_address(peer_0_tor_secret_key).
+
+' Step 32
+Niso o-> ST:  <b>SetupNisoStMessage1 \n peer_0_setup_identity_record_signed_by_boomlet_0
+
+' Step 33
+ST o-> User:  <b>SetupStOutput3 \n peer_0_setup_identity_record_signed_by_boomlet_0
+
+' Step 34
+User <--> Peers:  <b>SetupUserPeersOutOfBandMessage1 \n peer_0_setup_identity_record_signed_by_boomlet_0
+hnote over User #Lavender:  peer_setup_records_collection := \n Collection<peer_i_setup_identity_record_signed_by_boomlet_i> [0 <= i <= 4]
+
+' Step 35
+User o-> Niso:  <b>SetupNisoInput2 \n peer_setup_records_collection \n wt_ids_collection \n milestone_block_collection
+hnote over Niso #Lavender:  Connect to peer_i_setup_identity_record_signed_by_boomlet_i.content.tor_address [1 \n <= i <= 4]. \n ordered_peer_setup_records := peer_setup_records_collection sorted by encoded Boomlet identity pubkey \n active_wt_id := wt_ids_collection[0] \n wt_pubkey := active_wt_id.wt_pubkey
+
+' Step 36
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage2 \n ordered_peer_setup_records \n wt_ids_collection \n milestone_block_collection
+group ST review of BoomerangParamsSeed commitment
+hnote over Boomlet #Lavender:  peer_ids_collection := Collection<ordered_peer_setup_records.content.peer_id> \n [0 <= i <= 4] \n ordered_boomlet_identity_pubkeys := \n Collection<ordered_peer_setup_records.content.peer_id.boomlet_identity_pubkey> [0 <= i <= 4] \n active_wt_id := wt_ids_collection[0] \n wt_pubkey := active_wt_id.wt_pubkey \n boomerang_params_seed := BoomerangParamsSeed{ordered_peer_setup_records: ordered_peer_setup_records, wt_ids: \n wt_ids_collection, milestone_blocks: milestone_block_collection} \n setup_instance_id := tagged_sha256("Boomerang/setup_instance_id", canonical_encode(PROTOCOL_VERSION, \n boomerang_params_seed)) \n setup_instance_id_with_nonce := MessageWithNonce{ \n content: setup_instance_id \n nonce: random_bytes(32) \n } \n setup_instance_id_with_nonce_encrypted_by_boomlet_0_for_st := encrypt_for_st_0(context: canonical_encode("params_review", setup_instance_id), \n content: setup_instance_id_with_nonce)
+
+' Step 37
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage2 \n setup_instance_id \n setup_instance_id_with_nonce_encrypted_by_boomlet_0_for_st
+
+' Step 38
+Niso o-> ST:  <b>SetupNisoStMessage2 \n setup_instance_id \n setup_instance_id_with_nonce_encrypted_by_boomlet_0_for_st \n ordered_peer_setup_records \n wt_ids_collection \n milestone_block_collection
+hnote over ST #Lavender:  setup_instance_id_with_nonce := decrypt_from_boomlet_0(context: canonical_encode("params_review", setup_instance_id), \n envelope: setup_instance_id_with_nonce_encrypted_by_boomlet_0_for_st) \n decrypted_setup_instance_id := setup_instance_id_with_nonce.content \n boomerang_params_seed := BoomerangParamsSeed{ordered_peer_setup_records: ordered_peer_setup_records, wt_ids: \n wt_ids_collection, milestone_blocks: milestone_block_collection} \n recomputed_setup_instance_id := tagged_sha256("Boomerang/setup_instance_id", \n canonical_encode(PROTOCOL_VERSION, boomerang_params_seed))
+
+' Step 39
+ST o-> User:  <b>SetupStOutput4 \n ordered_peer_setup_records \n wt_ids_collection \n milestone_block_collection
+hnote over User #Lavender:  expected_ordered_peer_setup_records := peer_setup_records_collection sorted by \n encoded Boomlet identity pubkey
+
+' Step 40
+User o-> ST:  <b>SetupStInput3 \n magic: "setup_user_verified_peer_ids_and_wt_ids_received_with_those_registered_before"
+hnote over ST #Lavender:  setup_instance_id_with_nonce_signed_by_st := sign_message(st_0_identity_privkey, \n "Boomerang/setup/params_review_approval", setup_instance_id_with_nonce) \n setup_instance_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("params_review_approval", setup_instance_id), \n content: setup_instance_id_with_nonce_signed_by_st)
+
+' Step 41
+ST o-> Niso:  <b>SetupStNisoMessage1 \n setup_instance_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_0
+
+' Step 42
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage3 \n setup_instance_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_0
+hnote over Boomlet #Lavender:  setup_instance_id_with_nonce_signed_by_st := decrypt_from_st_0(context: canonical_encode("params_review_approval", setup_instance_id), \n envelope: setup_instance_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_0)
+end group
+hnote over Boomlet #Lavender:  boomerang_descriptor := construct_boomerang_descriptor(peer_ids_collection, \n milestone_block_collection) \n boomerang_params := BoomerangParams{ \n setup_instance_id: setup_instance_id, \n peer_ids: peer_ids_collection, \n wt_ids: wt_ids_collection, \n milestone_blocks: milestone_block_collection, \n boomerang_descriptor: boomerang_descriptor \n } \n boomerang_params_fingerprint := tagged_sha256("Boomerang/boomerang_params", \n canonical_encode(boomerang_params)) \n boomerang_params_fingerprint_signed_by_boomlet_0 := sign_message(boomlet_0_identity_privkey, \n "Boomerang/setup/agreement", boomerang_params_fingerprint)
+group BoomerangParams acknowledgement between Boomlets
+
+' Step 43 -1
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage3 \n boomerang_params_fingerprint_signed_by_boomlet_0
+
+' Step 44 -2
+Niso <-> Peers:  <b>SetupNisoPeerNisoMessage1 \n boomerang_params_fingerprint_signed_by_boomlet_i [0 <= i <= 4]
+hnote over Niso #Lavender:  boomerang_params_fingerprint := \n boomerang_params_fingerprint_signed_by_boomlet_0.content
+
+' Step 45 -3
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage4 \n boomerang_params_fingerprint_signed_by_all_peers: Collection<boomerang_params_fingerprint_signed_by_boomlet_i> \n [1 <= i <= 4]
+hnote over Boomlet #Lavender:  setup_checkpoint := tagged_sha256("Boomerang/setup_phase_checkpoint", \n canonical_encode(setup_instance_id, "parameters_agreed", zero_bytes_32))
+end group
+
+group Watchtower activation
+' Step 48
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage4 \n magic: "setup_boomerang_params_fixed_register_with_wt"
+
+' Step 49
+Niso o-> WT:  <b>SetupNisoWtMessage1 \n setup_instance_id \n boomerang_params_fingerprint_signed_by_boomlet_0 \n peer_0_setup_identity_record_signed_by_boomlet_0
+autonumber stop
+Peers o-> WT:  <b>SetupNisoWtMessage1 \n setup_instance_id \n boomerang_params_fingerprint_signed_by_boomlet_i \n peer_i_setup_identity_record_signed_by_boomlet_i [1<=i<=4]
+autonumber resume 1 "<b>[00]"
+hnote over WT #Lavender:  boomerang_params_fingerprint := \n boomerang_params_fingerprint_signed_by_boomlet_0.content
+hnote over WT #Lavender:  boomlet_0_identity_pubkey := \n peer_0_setup_identity_record_signed_by_boomlet_0.content.peer_id.boomlet_identity_pubkey \n wt_pubkey := wt_id.wt_pubkey \n service_fee_invoice := peer-specific invoice bound to setup_instance_id \n payment_deadline := deadline for service_fee_invoice \n wt_service_fee_payment_info := WtServiceFeePaymentInfo{ \n setup_instance_id: setup_instance_id, \n service_fee_invoice: service_fee_invoice, \n payment_deadline: payment_deadline, \n wt_id: wt_id \n }
+
+' Step 50
+WT o-> Niso:  <b>SetupWtNisoMessage1 \n wt_service_fee_payment_info
+
+' Step 51
+Niso o-> User:  <b>SetupNisoOutput1 \n wt_service_fee_payment_info
+hnote over User #Lavender:  wt_service_fee_payment_receipt := pay(wt_service_fee_payment_info)
+
+' Step 52
+User o-> Niso:  <b>SetupNisoInput3 \n wt_service_fee_payment_receipt
+
+' Step 53
+Niso o-> WT:  <b>SetupNisoWtMessage2 \n wt_service_fee_payment_receipt
+hnote over WT #Lavender:  wt_setup_receipt := WtSetupReceipt{setup_instance_id: setup_instance_id, \n boomerang_params_fingerprint: boomerang_params_fingerprint} \n wt_setup_receipt_signed_by_wt := sign_message(wt_privkey, "Boomerang/setup/wt_receipt", wt_setup_receipt)
+
+' Step 54
+WT o-> Niso:  <b>SetupWtNisoMessage2 \n wt_setup_receipt_signed_by_wt
+
+' Step 55
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage6 \n wt_setup_receipt_signed_by_wt
+group WT-ready checkpoint synchronization
+hnote over Boomlet #Lavender:  setup_checkpoint := tagged_sha256("Boomerang/setup_phase_checkpoint", \n canonical_encode(setup_instance_id, "wt_ready", setup_checkpoint)) \n setup_checkpoint_signed_by_boomlet_0 := sign_message(boomlet_0_identity_privkey, \n "Boomerang/setup/phase_checkpoint", setup_checkpoint)
+
+' Step 56 Step 1
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage6 \n setup_checkpoint_signed_by_boomlet_0
+
+' Step 57 Step 2
+Niso <-> Peers:  <b>SetupNisoPeerNisoMessage2 \n setup_checkpoint_signed_by_boomlet_i [0 <= i <= 4]
+hnote over Niso #Lavender:  setup_checkpoint := setup_checkpoint_signed_by_boomlet_0.content
+
+' Step 58 Step 3
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage7 \n setup_checkpoint_signed_by_all_peers: Collection<setup_checkpoint_signed_by_boomlet_i> [1 <= i <= 4]
+end
+
+' Step 59
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage7 \n magic: "setup_wt_service_confirmed_by_peers"
+
+' Step 60
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage8 \n magic: "setup_wt_service_confirmed_by_peers_sar_can_be_finalized"
+hnote over Boomlet #Lavender:  sar_pubkey := sar_id.sar_pubkey \n sar_pubkey_bytes := canonical_public_key_bytes(sar_pubkey) \n doxing_key_for_sar := tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes) \n doxing_data_identifier := tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar) \n doxing_data_identifier_encrypted_by_boomlet_0_for_sar := encrypt_for_sar(context: canonical_encode("sar_identifier", setup_instance_id), \n content: {setup_instance_id, doxing_data_identifier}) \n sar_id_signed_by_boomlet_0 := sign_message(boomlet_0_identity_privkey, "Boomerang/setup/sar_id", \n {setup_instance_id, sar_id}) \n sar_id_signed_by_boomlet_0_encrypted_by_boomlet_0_for_wt := encrypt_for_wt(context: canonical_encode("sar_id", setup_instance_id), \n content: sar_id_signed_by_boomlet_0)
+end group
+group SAR activation
+
+' Step 61
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage8 \n sar_id_signed_by_boomlet_0_encrypted_by_boomlet_0_for_wt \n doxing_data_identifier_encrypted_by_boomlet_0_for_sar
+
+' Step 62
+Niso o-> WT:  <b>SetupNisoWtMessage3 \n sar_id_signed_by_boomlet_0_encrypted_by_boomlet_0_for_wt \n doxing_data_identifier_encrypted_by_boomlet_0_for_sar
+hnote over WT #Lavender:  sar_id_signed_by_boomlet_0 := decrypt_from_boomlet_0(context: canonical_encode("sar_id", setup_instance_id), \n envelope: sar_id_signed_by_boomlet_0_encrypted_by_boomlet_0_for_wt) \n sar_binding_signed_by_boomlet_0 := sar_id_signed_by_boomlet_0.content
+
+' Step 63
+WT o-> SAR:  <b>SetupWtSarMessage1 \n doxing_data_identifier_encrypted_by_boomlet_0_for_sar \n boomlet_0_identity_pubkey \n setup_instance_id
+hnote over SAR #Lavender:  sar_pubkey := sar_id.sar_pubkey \n freshly_received_sar_payload := decrypt_from_boomlet_0(context: canonical_encode("sar_identifier", setup_instance_id), \n envelope: doxing_data_identifier_encrypted_by_boomlet_0_for_sar)
+hnote over SAR #Lavender:  sar_setup_response := SarSetupResponse{ \n setup_instance_id: setup_instance_id, \n doxing_data_identifier: doxing_data_identifier, \n fingerprint_of_static_doxing_data_encrypted_by_doxing_key_for_sar: \n sha256(static_doxing_data_encrypted_by_doxing_key_for_sar), \n iv_of_static_doxing_data_encrypted_by_doxing_key_for_sar: \n static_doxing_data_encrypted_by_doxing_key_for_sar.iv \n } \n sar_setup_response_signed_by_sar := sign_message(sar_privkey, "Boomerang/setup/sar_response", \n sar_setup_response) \n sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("sar_response", setup_instance_id), \n content: sar_setup_response_signed_by_sar)
+
+' Step 64
+SAR o-> WT:  <b>SetupSarWtMessage1 \n sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0
+hnote over WT #Lavender:  sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt := \n WtSarSetupResponse{ \n setup_instance_id: setup_instance_id, \n content: sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0, \n wt_suffix: "setup_sar_acknowledgement_of_finalization_received" \n } \n sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt := \n sign_message(wt_privkey, "Boomerang/setup/wt_sar_response", \n sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt)
+
+' Step 65
+WT o-> Niso:  <b>SetupWtNisoMessage3 \n sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt
+
+' Step 66
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage9 \n sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt
+hnote over Boomlet #Lavender:  wt_sar_setup_response := \n sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt.content
+hnote over Boomlet #Lavender:  sar_setup_response_signed_by_sar := decrypt_from_sar(context: canonical_encode("sar_response", setup_instance_id), \n envelope: sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0)
+group SAR-ready checkpoint synchronization
+hnote over Boomlet #Lavender:  setup_checkpoint := tagged_sha256("Boomerang/setup_phase_checkpoint", \n canonical_encode(setup_instance_id, "sar_ready", setup_checkpoint)) \n setup_checkpoint_signed_by_boomlet_0 := sign_message(boomlet_0_identity_privkey, \n "Boomerang/setup/phase_checkpoint", setup_checkpoint)
+
+' Step 67 - Step 1
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage9 \n setup_checkpoint_signed_by_boomlet_0
+
+' Step 68 - Step 2
+Niso <-> Peers:  <b>SetupNisoPeerNisoMessage3 \n setup_checkpoint_signed_by_boomlet_i [0 <= i <= 4]
+hnote over Niso #Lavender:  setup_checkpoint := setup_checkpoint_signed_by_boomlet_0.content
+
+' Step 69 -3
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage10 \n setup_checkpoint_signed_by_all_peers: Collection<setup_checkpoint_signed_by_boomlet_i> [1 <= i <= 4]
+end
+
+' Step 70
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage10 \n magic: "setup_sar_acknowledgement_of_finalization_received"
+
+' Step 71
+Niso o-> User:  <b>SetupNisoOutput2 \n magic: "setup_sar_finalization_confirmed"
+hnote over Niso #Lavender:  Niso drops all information about **wt** payments.
+end group
+group Backup activation
+
+' Step 72
+User o-> Iso:  <b>SetupIsoInput2 \n magic: "setup_user_is_informed_that_sar_is_set_and_can_install_boomlet_backup"
+
+' Step 73
+Iso o-> Boomletwo:  <b>SetupIsoBoomletwo1 \n magic: "setup_backup_started"
+hnote over Boomletwo #Lavender:  boomletwo_Identity_privkey := generate_private_key() \n boomletwo_Identity_pubkey := derive_public_key(boomletwo_Identity_privkey)
+
+' Step 74
+Boomletwo o-> Iso:  <b>SetupBoomletwoIso1 \n boomletwo_Identity_pubkey
+
+' Step 75
+Iso o-> User:  <b>SetupIsoOutput2 \n magic: "setup_boomletwo_identity_pubkey_received_connect_boomlet_to_iso"
+
+' Step 76
+User o-> Iso:  <b>SetupIsoInput3 \n milestone_block_collection \n network \n account \n key_index \n mnemonic \n passphrase \n static_doxing_data \n doxing_password
+hnote over Iso #Lavender:  coin_type := 0 if network is mainnet else 1 \n master_xpriv_0 := derive_master_xpriv(mnemonic, passphrase) \n purpose_xpriv_0 := derive_child_xpriv(master_xpriv_0, 52102, hardened: true) \n coin_xpriv_0 := derive_child_xpriv(purpose_xpriv_0, coin_type, hardened: true) \n account_xpriv_0 := derive_child_xpriv(coin_xpriv_0, account, hardened: true) \n external_xpriv_0 := derive_child_xpriv(account_xpriv_0, 0, hardened: false) \n normal_privkey_0 := derive_child_xpriv(external_xpriv_0, key_index, hardened: false) \n normal_pubkey_0 := derive_public_key(normal_privkey_0) \n backup_request := BoomletBackupRequest{ \n backup_boomlet_pubkey: boomletwo_Identity_pubkey, \n backup_normal_pubkey: normal_pubkey_0 \n } \n backup_request_signed_by_normal_0 := sign_message(normal_privkey_0, "Boomerang/setup/backup_request", \n backup_request)
+
+' Step 77
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage5 \n backup_request_signed_by_normal_0
+hnote over Boomlet #Lavender:  backup_request := backup_request_signed_by_normal_0.content
+hnote over Boomlet #Lavender:  boomletwo_Identity_pubkey := backup_request.backup_boomlet_pubkey \n boomlet_backup_state := boomlet.memory
+hnote over Boomlet #Lavender:  boomlet_0_backup_encrypted_by_boomlet_0_for_boomletwo := encrypt_for_boomletwo(context: canonical_encode("backup_state"), \n content: boomlet_backup_state)
+
+' Step 78
+Boomlet o-> Iso:  <b>SetupBoomletIsoMessage5 \n boomlet_0_identity_pubkey \n boomlet_0_backup_encrypted_by_boomlet_0_for_boomletwo \n boomerang_params \n sar_setup_response_signed_by_sar
+hnote over Iso #Lavender:  boomerang_descriptor := construct_boomerang_descriptor(boomerang_params.peer_ids, \n boomerang_params.milestone_blocks)
+hnote over Iso #Lavender:  doxing_password_bytes := utf8(doxing_password) \n doxing_key := tagged_sha256("Boomerang/doxing_key", doxing_password_bytes) \n sar_pubkey := sar_setup_response_signed_by_sar.signer_identity_pubkey \n sar_pubkey_bytes := canonical_public_key_bytes(sar_pubkey) \n doxing_key_for_sar := tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes) \n doxing_data_identifier := tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar)
+hnote over Iso #Lavender:  sar_setup_response := sar_setup_response_signed_by_sar.content
+hnote over Iso #Lavender:  recreated_static_doxing_ciphertext := cbc_cmac_encrypt( \n keys: derive_cbc_cmac_keys(doxing_key_for_sar, "Boomerang/sar_stored_data"), \n context: canonical_encode("Boomerang", PROTOCOL_VERSION, "sar_static_data", doxing_data_identifier), \n content: static_doxing_data, \n iv: sar_setup_response.iv_of_static_doxing_data_encrypted_by_doxing_key_for_sar)
+
+' Step 79
+Iso o-> User:  <b>SetupIsoOutput3 \n magic: "setup_boomlet_backup_data_received_connect_boomletwo_to_iso"
+
+' Step 80
+User o-> Iso:  <b>SetupIsoInput4 \n magic: "setup_user_is_asked_to_connect_boomletwo_to_iso_boomletwo_connected_to_iso"
+
+' Step 81
+Iso o-> Boomletwo:  <b>SetupIsoBoomletwo2 \n boomlet_0_identity_pubkey \n boomlet_0_backup_encrypted_by_boomlet_0_for_boomletwo
+hnote over Boomletwo #Lavender:  boomlet_backup_state := decrypt_from_boomlet_0(context: canonical_encode("backup_state"), \n envelope: boomlet_0_backup_encrypted_by_boomlet_0_for_boomletwo) \n setup_instance_id := boomlet_backup_state.setup_instance_id \n boomletwo.memory += boomlet_backup_state \n backup_done := BackupDone{ \n setup_instance_id: setup_instance_id, \n backup_boomlet_pubkey: boomletwo_Identity_pubkey, \n boomlet_pubkey: boomlet_0_identity_pubkey \n } \n backup_done_signed_by_boomletwo := sign_message(boomletwo_Identity_privkey, "Boomerang/setup/backup_done", \n backup_done)
+
+' Step 82
+Boomletwo o-> Iso:  <b>SetupBoomletwoIso2 \n backup_done_signed_by_boomletwo
+
+' Step 83
+Iso o-> User:  <b>SetupIsoOutput4 \n magic: "setup_boomlet_backup_done_connect_boomlet_to_iso"
+
+' Step 84
+User o-> Iso:  <b>SetupIsoInput5 \n magic: "setup_user_is_asked_to_connect_boomlet_to_iso_boomlet_connected_to_iso"
+
+' Step 85
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage6 \n backup_done_signed_by_boomletwo
+hnote over Boomlet #Lavender:  backup_done := backup_done_signed_by_boomletwo.content
+
+' Step 86
+Boomlet o-> Iso:  <b>SetupBoomletIsoMessage6 \n magic: "setup_boomlet_backup_done"
+
+' Step 87
+Iso o-> User:  <b>SetupIsoOutput5 \n magic: "setup_boomlet_backup_completed_boomlet_closed_ready_to_finish_setup"
+
+' Step 88
+User o-> Niso:  <b>SetupNisoInput4 \n magic: "setup_user_is_informed_that_boomlet_is_closed"
+
+' Step 89
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage11 \n magic: "setup_boomlet_closed_finish_setup"
+group Backup-ready checkpoint synchronization
+hnote over Boomlet #Lavender:  setup_checkpoint := tagged_sha256("Boomerang/setup_phase_checkpoint", \n canonical_encode(setup_instance_id, "backup_ready", setup_checkpoint)) \n setup_checkpoint_signed_by_boomlet_0 := sign_message(boomlet_0_identity_privkey, \n "Boomerang/setup/phase_checkpoint", setup_checkpoint)
+
+' Step 90 - Step 1
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage11 \n setup_checkpoint_signed_by_boomlet_0
+
+' Step 91 - Step 2
+Niso <-> Peers:  <b>SetupNisoPeerNisoMessage4 \n setup_checkpoint_signed_by_boomlet_i [0 <= i <= 4]
+hnote over Niso #Lavender:  setup_checkpoint := setup_checkpoint_signed_by_boomlet_0.content
+
+' Step 92 - Step 3
+Niso o-> Boomlet:  <b>SetupNisoBoomletMessage12 \n setup_checkpoint_signed_by_all_peers: Collection<setup_checkpoint_signed_by_boomlet_i>
+end
+
+' Step 93
+Boomlet o-> Niso:  <b>SetupBoomletNisoMessage12 \n magic: "setup_done"
+
+' Step 94
+Niso o-> User:  <b>SetupNisoOutput3 \n magic: "setup_done"
+end group
+
+@enduml

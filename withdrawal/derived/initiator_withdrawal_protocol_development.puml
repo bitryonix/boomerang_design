@@ -1,0 +1,182 @@
+@startuml initiator_withdrawal_protocol_development
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+title Initiator Withdrawal Protocol Development View
+
+box "Initiator peer" #AliceBlue
+actor User_0 as User #LightCyan
+participant Iso_0 as Iso #LightBlue
+participant Boomlet_0 as Boomlet #LightPink
+participant ST_0 as ST #Violet
+participant Niso_0 as Niso #LightGreen
+end box
+participant WT #Red
+participant Other_Peers as Peers #White
+participant SARs #Yellow
+participant Bitcoin #LightGray
+
+autonumber "<b>[WI00]"
+
+note over User, SARs
+  <b>Scope</b>
+  Peer 0 denotes the initiator role for this ceremony, not a fixed setup index.
+  Peer-indexed collections contain exactly one entry per setup peer in setup order.
+  Guards and detailed-message coverage are in withdrawal_development_contracts.md.
+end note
+
+note over Boomlet #LightYellow
+  <b>Boomlet withdrawal states</b>
+  IDLE -> REVIEWING_TX -> APPROVED -> COMMITTED -> DIGGING
+  -> READY_TO_SIGN -> SIGNING -> SIGNATURE_EXPORTED -> IDLE
+end note
+
+group Initiator review and approval
+User -> Niso: WI-REVIEW-1  candidate PSBT
+note over Niso #Pink: Accept under G-WITHDRAWAL-PRECONDITIONS and G-PSBT-PREVALIDATION
+Niso -> Boomlet: WI-REVIEW-2  PSBT and current local block height
+note over Boomlet #Pink
+  Independently accept under G-WITHDRAWAL-PRECONDITIONS and G-PSBT-AUTHORIZATION.
+  Derive tx_id, create fresh ST review nonce, IDLE -> REVIEWING_TX.
+end note
+Boomlet -> ST: WI-REVIEW-3  Enc_ST(TxReview{tx_id, nonce}) via Niso
+ST -> User: WI-REVIEW-4  trusted display of tx_id
+User -> ST: WI-REVIEW-5  approve exact intended tx_id
+ST -> Boomlet: WI-REVIEW-6  Enc_Boomlet(Sig_ST(exact TxReview)) via Niso
+note over Boomlet #Pink
+  Accept under G-TX-REVIEW-APPROVAL.
+  Derive withdrawal_id from setup_instance_id, tx_id, initiator identity, and fresh approval nonce.
+  REVIEWING_TX -> APPROVED
+end note
+Boomlet -> WT: WI-APPROVE-1  withdrawal_id, Enc_WT(Sig_Boomlet(TxApproval_0)), Enc_Boomlet_i(PSBT) x4 via Niso
+note over WT #Pink: Accept under G-INITIATOR-APPROVAL-AT-WT; create Sig_WT(WtTxApproval)
+WT -> Peers: WI-APPROVE-2  WtTxApproval, initiator TxApproval, recipient-encrypted PSBT
+Peers -> WT: WI-APPROVE-3  Enc_WT(Sig_Boomlet_i(TxApproval_i)) x4
+note over WT #Pink: Accept under G-TX-APPROVAL-COLLECTION; canonicalize in setup peer order
+WT -> Boomlet: WI-APPROVE-4  ordered five TxApprovals and WtTxApproval via Niso
+note over Niso #Pink: Prevalidate under G-APPROVAL-SET-AT-PEER
+note over Boomlet #Pink
+  Revalidate under G-APPROVAL-SET-AT-PEER.
+  approved_withdrawal_id := H(withdrawal_id, exact ordered five-approval set).
+end note
+end
+
+group Attestation gate and commitment
+par Initiator prepares its commitment
+  ref over User, ST, Boomlet
+    W-DURESS-CHECK
+    Fresh nonce-bound challenge; valid response yields safe or duress placeholder plaintext.
+  end ref
+  note over Boomlet #Lavender: Create Sig_Boomlet(TxCommit_0) and fresh approved_withdrawal_id-bound Placeholder_0
+  Boomlet -> WT: WI-COMMIT-1  Enc_WT(Sig_Boomlet(TxCommit_0 + Placeholder_0)) via Niso
+  note over Boomlet #Lavender: APPROVED -> COMMITTED
+  note over WT #Lavender: Authenticate, verify, and stage initiator commit
+else Non-initiators prove approval-set receipt
+  Peers -> WT: WI-COMMIT-2  Sig_Boomlet_i(ApprovalSetAttestation) x4
+end
+note over WT #Pink
+  G-APPROVAL-ATTESTATIONS opens only with one valid matching attestation from every non-initiator.
+  The open gate permits initiator placeholder relay, initiator commit acknowledgment,
+  and acceptance of non-initiator commits.
+end note
+WT -> SARs: WI-COMMIT-3  Placeholder_0, Boomlet identity, approved_withdrawal_id
+note over SARs #Pink: Accept and durably process under G-SAR-PLACEHOLDER; release at the fixed observable deadline
+SARs --> WT: WI-COMMIT-4  Enc_Boomlet_0(Sig_SAR_0(exact Placeholder_0))
+note over WT #Pink: Accept initiator commit under G-TX-COMMIT-AT-WT
+WT -> Peers: WI-COMMIT-5  Sig_WT(Sig_Boomlet_0(TxCommit_0))
+Peers -> WT: WI-COMMIT-6  Enc_WT(Sig_Boomlet_i(TxCommit_i + Placeholder_i)) x4
+WT -> SARs: WI-COMMIT-7  each non-initiator Placeholder_i to its setup-bound SAR
+SARs --> WT: WI-COMMIT-8  exact encrypted acknowledgment_i x4
+note over WT #Pink: Accept every commit and SAR acknowledgment under G-TX-COMMIT-AT-WT
+WT -> Boomlet: WI-COMMIT-9  complete WT-signed TxCommit set and acknowledgment_0 via Niso
+note over Niso #Pink: Prevalidate under G-COMMIT-COLLECTION
+note over Boomlet #Pink
+  Revalidate complete set and exact own acknowledgment under G-COMMIT-COLLECTION.
+  COMMITTED -> DIGGING.
+  Draw one fresh private mystery only on DIGGING entry.
+  Initialize counter := 0, ping_seq_num := 0, reached := false, last_seen_block := local block height.
+end note
+end
+
+group Digging rounds
+loop Until WT holds one current reached ping from every peer
+  Boomlet -> WT: WI-DIG-1  Enc_WT(Sig_Boomlet(Ping_0 + freshly encrypted Placeholder_0)) via Niso
+  Peers -> WT: WI-DIG-2  corresponding Ping_i and fresh Placeholder_i x4
+  note over WT #Pink
+    Handle exact retries under SPEC 15.7; return after receipt-only delivery.
+    Accept each new ping under G-PING-AT-WT.
+  end note
+  WT -> SARs: WI-DIG-3  each ping's exact Placeholder_i
+  note over SARs #Pink: Durably process each under G-SAR-PLACEHOLDER
+  SARs --> WT: WI-DIG-4  exact encrypted acknowledgment_i x5
+  note over WT #Pink
+    A ping contributes to a pong only after its exact acknowledgment.
+    Enforce round spacing; construct recipient-specific Pong_i from current signed pings of all other peers.
+  end note
+  WT -> Boomlet: WI-DIG-5  Enc_Boomlet(Sig_WT(Pong_0)), acknowledgment_0 via Niso
+  WT -> Peers: WI-DIG-6  recipient-specific Pong_i and acknowledgment_i
+  note over Niso #Pink: Prevalidate visible pong and collection properties under G-PONG-AT-BOOMLET
+  note over Boomlet #Pink
+    Revalidate under G-PONG-AT-BOOMLET.
+  end note
+  note over Boomlet #Lavender: Boomlet performs any requested consent rotation.
+  opt After rotation or when selected by the profile cadence
+    ref over User, ST, Boomlet
+      W-DURESS-CHECK
+      Consume one fresh phase-bound response and update placeholder plaintext.
+    end ref
+  end
+  note over Boomlet #Lavender
+    Evaluate G-COUNTER-ADVANCE before block-height catch-up.
+    Increment only if the local chain advanced and every other current ping is within the local freshness window.
+    Apply bounded last_seen_block catch-up after every valid pong, including no-progress rounds.
+    Record reached flags monotonically; set local reached when counter >= mystery; increment ping_seq_num.
+    Freshly encrypt the current placeholder plaintext for the next ping.
+    A reached Boomlet continues participating until all five current reached pings are collected.
+  end note
+end
+end
+
+group Reached collection and signing
+WT -> Niso: WI-FINAL-1  Sig_WT(reached_pings_collection)
+WT -> Peers: WI-FINAL-2  same signed reached_pings_collection
+note over Niso #Pink
+  Accept under G-REACHED-COLLECTION.
+  Hydrate the PSBT without changing transaction semantics, ordering, sighash policy, or tx_id.
+end note
+Niso -> Boomlet: WI-FINAL-3  reached_pings_collection and hydrated PSBT
+note over Boomlet #Pink
+  Revalidate under G-REACHED-COLLECTION and G-HYDRATED-PSBT.
+  DIGGING -> READY_TO_SIGN
+end note
+Niso --> User: WI-SIGN-1  connect Boomlet to Iso
+User -> Iso: WI-SIGN-2  mnemonic, passphrase, network, account, key index
+Iso -> Boomlet: WI-SIGN-3  begin MuSig2 session
+note over Boomlet #Lavender: READY_TO_SIGN -> SIGNING; create session-bound Boomlet nonce
+Boomlet -> Iso: WI-SIGN-4  verified signing package and Boomlet public nonce
+note over Iso #Pink: Accept package under G-MUSIG2-SIGNING
+Iso -> Boomlet: WI-SIGN-5  normal public nonce and normal partial signature
+note over Boomlet #Pink: Verify normal partial; create Boomlet partial; erase nonce material
+Boomlet --> Iso: WI-SIGN-6  Boomlet partial signature
+note over Iso #Pink: Verify Boomlet partial, finalize peer fragment, erase nonce material
+Iso --> User: WI-SIGN-7  connect Boomlet to Niso
+User -> Niso: WI-SIGN-8  request signed-fragment export
+Niso -> Boomlet: WI-SIGN-9  export signed fragment
+Boomlet --> Niso: WI-SIGN-10  psbt_signed_by_peer_0
+note over Boomlet #Lavender
+  SIGNING -> SIGNATURE_EXPORTED.
+  Boomlet sends a final ping and waits for its exact SAR receipt and any required backup reset acknowledgment.
+  under_duress := false
+  Clear active withdrawal state and mystery; SIGNATURE_EXPORTED -> IDLE.
+end note
+Niso -> WT: WI-RELAY-1  psbt_signed_by_peer_0
+Peers -> WT: WI-RELAY-2  psbt_signed_by_peer_i x4
+note over WT #Pink: Accept under G-FINAL-FRAGMENTS; aggregate and verify the exact committed tx_id
+WT -> Bitcoin: WI-RELAY-3  exact signed transaction
+end
+
+note over User, Bitcoin #LightYellow
+  Invalid identity, signature, envelope, nonce, ceremony binding, sequence, block-height relation,
+  collection, transaction, or state transition stalls the active ceremony.
+end note
+
+@enduml

@@ -6,6 +6,7 @@ Duress checks and signaling initiates and takes place in the boomlet as the trus
 
 - [Duress actors](#duress-actors)
 - [Doxing Data](#doxing-data)
+- [Consent rotation](#consent-rotation)
 - [Duress coverage](#duress-coverage)
 - [Expectations and evaluation criteria](#expectations-and-evaluation-criteria)
 - [Attacker characteristics](#attacker-characteristics)
@@ -49,13 +50,19 @@ Doxing data consists of two parts:
 
 2. **Dynamic doxing data**: a live feed of choice that helps indicating user's last known state. Like a location feed provided by user's mobile phone.
 
-All doxing data are encrypted by `doxing_key` which is the SHA256 digest of the `doxing_password`. Static doxing data is indicated at setup stage and sent to SAR by user as part of the registration process with the SAR. Dynamic doxing data is encrypted at source by the `doxing_key` and continuously sent to SAR via the originating device.
+All doxing data are encrypted with keys derived from `doxing_key_for_sar`. Static doxing data is indicated at setup stage and sent to SAR by user as part of the registration process with the SAR. Dynamic doxing data is encrypted at source with a device key derived from the same root and continuously sent to SAR via the originating device.
 
 Most communications with the SAR is done through the user's phone.
 
-Once the positive duress signal is sent, boomlet sends a payload containing `doxing_key` encrypted for SAR. This is sent to WT via the next packet. WT sends it to SAR to receive an acknowledgement of reception.
+Once the positive duress signal is sent, boomlet sends a payload containing `doxing_key_for_sar` encrypted for SAR. This is sent to WT via the next packet. WT sends it to SAR to receive an acknowledgement of reception.
 
-In other cases (no positive duress signal issued), boomlet encrypts an all zeros data in the same manner and puts it in the duress signal bearing part of each message. SAR always decrypts the received data with its keys. If the decrypted data turns out to be all zeros, there is no duress. If the decrypted data turns out to be anything else, SAR will hash the resulting data (`doxing_key`) to create `doxing_identifier`. It then searches its database for a registered identifier as the `doxing_identifier` and decrypts the doxing data with the `doxing_key` to use them in the search and rescue operation.
+In other cases (`under_duress` is false), boomlet encrypts an all zeros data in the same manner and puts it in the duress signal bearing part of each message. SAR always decrypts the received data with its keys. If the decrypted data turns out to be all zeros, there is no duress. Otherwise SAR derives `doxing_data_identifier` from the received `doxing_key_for_sar`. It then searches its database for a matching registration and makes static data and every retained upload available to its rescue application under [SPEC Section 16.4](../spec/SPEC.md#164-sar-processing).
+
+## Consent rotation
+
+Boomlet and its inactive Boomletwo replace the consent set using signed ST
+approval relayed through Niso. See [SPEC Section 16.7](../spec/SPEC.md#167-consent-rotation)
+and the [procedure sequence](../diagrams/ancillary/consent_rotation_diagram.puml).
 
 ## Duress coverage
 
@@ -159,20 +166,22 @@ We chose the PRNG inside the boomlet for duress check intervals. Users will choo
 13. Niso will scan this QR code with its camera.
 14. Niso will decode the QR code into a byte array and send it to boomlet.
 15. Boomlet will decrypt the message with its shared key with ST and extract the numbers that were present in the communicated indices.
-16. Boomlet will check if the extracted numbers form a set equal to the `duress_consent_set`.
+16. Boomlet validates the answer, then consumes it and updates
+    `under_duress := under_duress OR (resolved_set != duress_consent_set)`.
+    Clearing requires final SAR delivery and any paired reset under SPEC Section 16.7.
 17. If:
 
-    ##### 17.1 the user has entered a duress signal by entering any set other than `duress_consent_set`
+    ##### 17.1 `under_duress` is true
 
-    17.1.1. Boomlet will encrypt `doxing_key` with SAR keys.
+    17.1.1. Boomlet will encrypt `doxing_key_for_sar` with SAR keys.
     17.1.2. Boomlet will put the encrypted result in the duress bearing part of the next message.
     17.1.3. Boomlet will send the message to WTs.
     17.1.4. WTs will decompose the message and send a message to SARs containing the duress bearing part of the message.
     17.1.5. SARs will receive the message and try to decrypt it with their private keys.
-    17.1.6. SARs will hash the resulted data and search if any of their customers have the resulting digest as their identifier.
-    17.1.7. If there is a match, the SAR knows its user is in duress and goes into the operational procedure of retrieval by decrypting static and dynamic doxing data by the `doxing_key`.
+    17.1.6. SAR derives `doxing_data_identifier` from `doxing_key_for_sar` and checks for a matching registration.
+    17.1.7. A match activates duress response. SAR makes static data and every retained upload available to its rescue application under SPEC Section 16.4.
 
-    ##### 17.2. the user has not input a duress
+    ##### 17.2. `under_duress` is false
 
     17.2.1. Boomlet encrypts an all zeros data with SAR keys (there is iv, hence the result will not be the same at each instance).
     17.2.2. Boomlet will put the encrypted result in the duress bearing part of the next message.

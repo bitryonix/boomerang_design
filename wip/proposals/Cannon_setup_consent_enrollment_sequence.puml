@@ -1,0 +1,61 @@
+@startuml setup_consent_enrollment_on_st
+skinparam sequenceMessageAlign left
+title Setup Consent Enrollment on ST
+
+box "User Side" #AliceBlue
+actor User order 1 #LightCyan
+participant Iso order 2 #LightGreen
+participant Boomlet order 3 #LightPink
+participant ST order 4 #Violet
+end box
+autonumber "<b>[00]"
+
+legend left
+encrypt_for_<peer> and decrypt_from_<peer> use setup's CBC-CMAC directional channel keys,
+the acting device's identity and its retained peer identity with fixed sender and receiver roles.
+Decryption authenticates before returning content.
+endlegend
+
+hnote over Boomlet, ST #LavenderBlush:  Boomlet and ST exchange identity public keys through trusted Iso as in setup.
+
+group Initial consent enrollment
+' Step 1
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage2 \n st_0_identity_pubkey
+hnote over Boomlet #Pink:  Assert Boomlet is INSTALLED and has no enrolled consent set
+hnote over Boomlet #Lavender:  consent_enrollment_nonce := random_bytes(32) \n duress_check_space := DuressCheckSpace{space: random_permutation([1..193])} \n consent_set_query := MessageWithNonce{content: duress_check_space, nonce: consent_enrollment_nonce} \n consent_set_query_encrypted_by_boomlet_0_for_st := encrypt_for_st(context: canonical_encode("setup_consent_set_query"), \n content: consent_set_query)
+' Step 2
+Boomlet o-> Iso:  <b>SetupBoomletIsoMessage2 \n consent_set_query_encrypted_by_boomlet_0_for_st
+' Step 3
+Iso o-> ST:  <b>SetupIsoStMessage2 \n consent_set_query_encrypted_by_boomlet_0_for_st
+hnote over ST #Lavender:  consent_set_query := decrypt_from_boomlet(context: canonical_encode("setup_consent_set_query"), \n envelope: consent_set_query_encrypted_by_boomlet_0_for_st) \n consent_enrollment_nonce := consent_set_query.nonce \n duress_check_space := consent_set_query.content \n duress_display_columns, retained_display_maps := create_duress_display_columns(duress_check_space.space)
+' Step 4
+ST o-> User:  <b>SetupStOutput1 \n magic: "choose_consent_set" \n duress_display_columns
+hnote over User #Lavender:  user_selection := select_one_from_each(duress_display_columns)
+' Step 5
+User o-> ST:  <b>SetupStInput1 \n user_selection
+hnote over ST #Pink:  Assert count(user_selection) == 5 \n Assert user_selection contains exactly one displayed choice from each duress_display_columns column
+hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, retained_display_maps) \n new_consent_set := duress_check_space.space[duress_signal_index.indices]
+hnote over ST #Pink:  Assert count(new_consent_set) == 5 \n Assert new_consent_set contains distinct countries in [1..193]
+hnote over ST #Lavender:  duress_display_columns, retained_display_maps := create_duress_display_columns(duress_check_space.space)
+loop Until selected countries match new_consent_set
+' Step 6
+ST o-> User:  <b>SetupStOutput2 \n magic: "confirm_consent_set" \n duress_display_columns
+hnote over User #Lavender:  user_selection := select_one_from_each(duress_display_columns)
+' Step 7
+User o-> ST:  <b>SetupStInput2 \n user_selection
+hnote over ST #Pink:  Assert count(user_selection) == 5 \n Assert user_selection contains exactly one displayed choice from each duress_display_columns column
+hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, retained_display_maps) \n selected_consent_set := duress_check_space.space[duress_signal_index.indices]
+end
+hnote over ST #Pink:  Assert selected_consent_set == new_consent_set
+hnote over ST #Lavender:  consent_set_answer := MessageWithNonce{content: duress_signal_index, nonce: consent_enrollment_nonce} \n consent_set_answer_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet(context: canonical_encode("setup_consent_set_answer"), \n content: consent_set_answer)
+' Step 8
+ST o-> Iso:  <b>SetupStIsoMessage2 \n consent_set_answer_encrypted_by_st_for_boomlet_0
+' Step 9
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage3 \n consent_set_answer_encrypted_by_st_for_boomlet_0
+hnote over Boomlet #Lavender:  consent_set_answer := decrypt_from_st(context: canonical_encode("setup_consent_set_answer"), \n envelope: consent_set_answer_encrypted_by_st_for_boomlet_0)
+hnote over Boomlet #Pink:  Assert Boomlet is INSTALLED with this outstanding enrollment query \n Assert consent_set_answer.nonce == consent_enrollment_nonce \n Assert count(consent_set_answer.content.indices) == 5 \n Assert consent_set_answer.content.indices are distinct and in range [1..193]
+hnote over Boomlet #Lavender:  duress_consent_set := duress_check_space.space[consent_set_answer.content.indices] \n Install the set and enter ST_ENROLLED before output.
+' Step 10
+Boomlet o-> Iso:  <b>SetupBoomletIsoMessage3 \n magic: "setup_duress_finished"
+end group
+@enduml

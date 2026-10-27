@@ -16,7 +16,7 @@ authenticated decryption, ECDH and KDF operations, transaction parsing, user
 interaction, and persistent state transitions consume limited computation,
 memory, write endurance, and interface bandwidth. Forwarding every object to
 Boomlet before applying checks would let traffic with an invalid signer,
-identity, ceremony, sequence, height, schema, or size consume those resources.
+identity, ceremony, sequence, block height, schema, or size consume those resources.
 An attacker without protocol authorization could then force work on Boomlet
 through Niso.
 

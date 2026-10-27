@@ -1,0 +1,174 @@
+@startuml setup_protocol_development
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+title Setup Protocol Development View
+
+box "Peer i" #AliceBlue
+actor User_i as User #LightCyan
+participant Phone_i as Phone #CadetBlue
+participant Iso_i as Iso #LightBlue
+participant Boomlet_i as Boomlet #LightPink
+participant ST_i as ST #Violet
+participant Boomletwo_i as Boomletwo #LightGray
+participant Niso_i as Niso #LightGreen
+end box
+participant Other_Peers as Peers #White
+participant WT #Red
+participant SAR_i as SAR #Yellow
+
+autonumber "<b>[S00]"
+
+note over User, SAR
+  <b>Scope</b>
+  One peer is expanded. Peer agreement and checkpoint exchanges run for all five peers.
+  Guard definitions and detailed-message coverage are in setup_development_contracts.md.
+  Exact schemas, cryptographic contexts, and failure classes are normative in ../../spec/SPEC.md.
+end note
+
+note over Boomlet #LightYellow
+  <b>Boomlet setup states</b>
+  EMPTY -> INSTALLED -> ST_ENROLLED -> PARAMS_REVIEWED -> PARAMETERS_AGREED
+  -> WT_READY -> SAR_READY -> BACKUP_READY
+end note
+
+group SAR registration
+User -> Phone: S-SAR-1  doxing_password, selected SarId, rescue data
+note over Phone #LavenderBlush
+  Derive SAR-specific doxing key and lookup identifier.
+  Encrypt static data under the SAR root; dynamic bytes under device-derived keys.
+end note
+Phone -> SAR: S-SAR-2  doxing_data_identifier
+SAR --> Phone: S-SAR-3  payment info; SAR records doxing_data_identifier, PROTOCOL_VERSION, and invoice
+Phone --> User: S-SAR-4  payment info
+User -> Phone: S-SAR-5  payment receipt
+Phone -> SAR: S-SAR-6  payment receipts, doxing_data_identifier, static envelope, dynamic_update_auth_key, first_dynamic_doxing_data_upload
+note over SAR #Pink: G-SAR-REGISTRATION
+SAR --> Phone: S-SAR-7  signed DynamicRescueReceipt
+note over Phone #Pink: Verify signed receipt under SPEC 10
+Phone --> User: S-SAR-8  SAR registration confirmed
+end
+
+group Boomlet installation and consent enrollment
+User -> Iso: S-INSTALL-1  network, key path inputs, entropy, passphrase, doxing password, SarId
+note over Iso #Lavender: Derive mnemonic, normal key, and doxing key
+Iso -> Boomlet: S-INSTALL-2  normal_pubkey_i, doxing_key, SarId
+note over Boomlet #Lavender
+  Generate Boomlet identity key and MuSig2 share.
+  Validate the aggregate boom key.
+  EMPTY -> INSTALLED
+end note
+Boomlet --> Iso: S-INSTALL-3  boomlet_identity_pubkey_i
+Iso -> ST: S-PAIR-1  pair with boomlet_identity_pubkey_i
+ST --> Iso: S-PAIR-2  st_identity_pubkey_i
+Iso -> Boomlet: S-PAIR-3  st_identity_pubkey_i
+
+loop S-CONSENT  exactly two fresh nonce-bound enrollment rounds
+  Boomlet -> ST: Enc_ST(DuressChallenge{permutation[1..193], nonce}) via Iso
+  ST -> User: five independently shuffled display columns
+  User -> ST: one selection from each column
+  ST -> Boomlet: Enc_Boomlet(DuressResponse{five original indices, nonce}) via Iso
+  note over Boomlet #Pink
+    Accept under G-SETUP-CONSENT-RESPONSE.
+    Store the first resolved set; require the second resolved set to equal it.
+  end note
+end
+note over Boomlet #Lavender: INSTALLED -> ST_ENROLLED
+Iso --> User: S-INSTALL-4  mnemonic
+end
+
+group Setup instance review and peer agreement
+User -> Niso: S-PARAMS-1  network and RPC configuration
+Niso -> Boomlet: S-PARAMS-2  initialize peer setup
+Boomlet --> Niso: S-PARAMS-3  Tor secret and Sig_Boomlet(PeerSetupRecord_i)
+note over Niso #Pink: Accept local record under G-LOCAL-PEER-RECORD
+Niso -> ST: S-PARAMS-4  signed local PeerSetupRecord_i
+ST --> User: S-PARAMS-5  trusted display of local record
+User <-> Peers: S-PARAMS-6  exchange five signed PeerSetupRecords out of band
+User -> Niso: S-PARAMS-7  five records, ordered WT preferences, milestone blocks
+Niso -> Boomlet: S-PARAMS-8  canonically ordered setup seed
+note over Boomlet #Pink
+  Accept under G-SETUP-SEED.
+  Derive setup_instance_id from PROTOCOL_VERSION and the canonical seed.
+end note
+Boomlet --> Niso: S-REVIEW-1  setup_instance_id and Enc_ST(nonce-bound setup commitment)
+Niso -> ST: S-REVIEW-2  commitment and canonical seed fields
+note over ST #Pink: Accept under G-PARAMS-REVIEW
+ST -> User: S-REVIEW-3  ordered peers, WT preferences, milestones, protocol version
+User -> ST: S-REVIEW-4  approve exact displayed setup
+ST -> Boomlet: S-REVIEW-5  Enc_Boomlet(Sig_ST(exact nonce-bound commitment)) via Niso
+note over Boomlet #Pink: Accept under G-PARAMS-REVIEW-APPROVAL; ST_ENROLLED -> PARAMS_REVIEWED
+
+Boomlet -> Peers: S-AGREE-1  Sig_Boomlet(boomerang_params_fingerprint) via Niso
+Peers --> Boomlet: S-AGREE-2  one matching signed fingerprint from every other peer via Niso
+note over Boomlet #Pink
+  Accept under G-SETUP-AGREEMENT.
+  PARAMS_REVIEWED -> PARAMETERS_AGREED.
+  C_parameters := checkpoint(setup_instance_id, parameters_agreed, zero)
+end note
+end
+
+group WT activation and checkpoint synchronization
+Boomlet -> WT: S-WT-1  setup_instance_id, signed PeerSetupRecord_i, signed params fingerprint via Niso
+Peers -> WT: S-WT-2  corresponding registration from every other peer
+note over WT #Pink: Accept all five registrations under G-WT-REGISTRATION
+WT --> User: S-WT-3  peer-specific payment info bound to setup_instance_id via Niso
+User -> WT: S-WT-4  payment receipt via Niso
+WT --> Boomlet: S-WT-5  Sig_WT(WtSetupReceipt) via Niso
+note over Boomlet #Pink: Accept local receipt under G-WT-SETUP-RECEIPT
+note over Boomlet #Lavender: C_wt := checkpoint(setup_instance_id, wt_ready, C_parameters)
+Boomlet -> Peers: S-WT-6  Sig_Boomlet(C_wt) via Niso
+Peers --> Boomlet: S-WT-7  matching Sig_Boomlet_j(C_wt) from every other peer via Niso
+note over Boomlet #Pink
+  Accept the local signature and four peer signatures under G-SETUP-CHECKPOINT.
+  PARAMETERS_AGREED -> WT_READY
+end note
+end
+
+group SAR activation and checkpoint synchronization
+Boomlet -> WT: S-SAR-ACT-1  signed selected SarId and Enc_SAR(setup_instance_id, identifier) via Niso
+note over WT #Pink: Accept binding under G-SAR-BINDING; select only the setup-bound SAR
+WT -> SAR: S-SAR-ACT-2  encrypted identifier payload, Boomlet identity, setup_instance_id
+SAR --> WT: S-SAR-ACT-3  Enc_Boomlet(Sig_SAR(SarSetupResponse))
+WT --> Boomlet: S-SAR-ACT-4  Sig_WT(wrapper with exact SAR response) via Niso
+note over Boomlet #Pink: Accept WT wrapper and local SAR response under G-SAR-SETUP-RESPONSE
+note over Boomlet #Lavender: C_sar := checkpoint(setup_instance_id, sar_ready, C_wt)
+Boomlet -> Peers: S-SAR-ACT-5  Sig_Boomlet(C_sar) via Niso
+Peers --> Boomlet: S-SAR-ACT-6  matching Sig_Boomlet_j(C_sar) from every other peer via Niso
+note over Boomlet #Pink
+  Accept the local signature and four peer signatures under G-SETUP-CHECKPOINT.
+  WT_READY -> SAR_READY
+end note
+end
+
+group Backup activation and final checkpoint
+User -> Iso: S-BACKUP-1  install empty Boomletwo and provide recovery inputs
+Iso -> Boomletwo: S-BACKUP-2  initialize target
+Boomletwo --> Iso: S-BACKUP-3  boomletwo_identity_pubkey
+Iso -> Boomlet: S-BACKUP-4  Sig_normal(BoomletBackupRequest{target key, normal pubkey})
+note over Boomlet #Pink: Accept once under G-BACKUP-REQUEST
+Boomlet --> Iso: S-BACKUP-5  target-encrypted backup state, boomerang_params, signed SAR response
+note over Iso #Pink
+  Accept under G-BACKUP-PACKAGE.
+  Reconstruct descriptor; verify active identity, milestones, SAR response, and static-data commitment.
+end note
+Iso -> Boomletwo: S-BACKUP-6  active identity and target-encrypted backup state
+note over Boomletwo #Pink: Require empty target; authenticate, decrypt, and import state with embedded setup_instance_id
+Boomletwo --> Iso: S-BACKUP-7  Sig_Boomletwo(BackupDone)
+Iso -> Boomlet: S-BACKUP-8  Sig_Boomletwo(BackupDone)
+note over Boomlet #Pink: Accept under G-BACKUP-DONE; mark backup complete
+note over Boomlet #Lavender: C_backup := checkpoint(setup_instance_id, backup_ready, C_sar)
+Boomlet -> Peers: S-BACKUP-9  Sig_Boomlet(C_backup) via Niso
+Peers --> Boomlet: S-BACKUP-10  matching Sig_Boomlet_j(C_backup) from every other peer via Niso
+note over Boomlet #Pink
+  Accept the local signature and four peer signatures under G-SETUP-CHECKPOINT.
+  SAR_READY -> BACKUP_READY; persist final checkpoint before success.
+end note
+Boomlet --> User: S-DONE  setup complete via Niso
+end
+
+note over User, SAR #LightYellow
+  Any invalid identity, signature, envelope, nonce, setup binding, ordering, receipt, checkpoint,
+  or state transition stalls the attempt under the failure rules in SPEC section 18.
+end note
+
+@enduml
