@@ -1,4 +1,4 @@
-@startuml initiator_withdrawal_diagram_without_states_no_prose
+@startuml initiator_withdrawal_diagram_no_prose
 ' GW-* definitions: withdrawal_no_prose_guards.md
 ' Cryptographic shorthand: ../../setup/README.md#diagram-notation and ../../../spec/SPEC.md#9-cryptographic-profile
 !include withdrawal_no_prose_fragments.puml

@@ -1,4 +1,4 @@
-@startuml non_initiator_withdrawal_diagram_without_states
+@startuml non_initiator_withdrawal_diagram
 skinparam sequenceMessageAlign left
 title Non-Initiator Withdrawal Sequence Diagram (Without States)
 box "User Side" #AliceBlue

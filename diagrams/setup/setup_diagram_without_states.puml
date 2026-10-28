@@ -1,4 +1,4 @@
-@startuml setup_diagram_without_states
+@startuml setup_diagram
 skinparam sequenceMessageAlign left
 title Setup Sequence Diagram (Without States)
 box "User Side" #AliceBlue
