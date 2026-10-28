@@ -1,6 +1,6 @@
-@startuml paired_consent_rotation
+@startuml consent_set_rotation
 skinparam sequenceMessageAlign left
-title Paired Consent Rotation Sequence Diagram
+title Consent Set Rotation Sequence Diagram
 
 box "User Side" #AliceBlue
 actor User order 1 #LightCyan

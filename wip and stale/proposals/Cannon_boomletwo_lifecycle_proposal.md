@@ -124,7 +124,8 @@ or a recovery procedure is specified.
 
 ### BW-SR-07 Consent continuity
 
-Apply the selected [observed-consent decision](Cannon_observed_consent_decision_proposal.md).
+Preserve consent state and pending obligations under
+[SPEC Section 16.7](../../spec/SPEC.md#167-consent-rotation).
 A stale backup cannot restore an invalidated answer; required private enrollment
 and trusted ST confirmation precede withdrawal. The consent set alone cannot
 authorize lifecycle changes, and prompts or receipts cannot reveal or test it.
