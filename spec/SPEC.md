@@ -428,12 +428,9 @@ depth `1`, and primitives add no depth. The schema limit is its deepest valid
 path, and the global limit is no lower than the catalog's deepest valid path.
 A decoder MUST reject before descending past either limit.
 
-Before v1 release, Section 8.3 MUST set finite payload-byte limits for variable
-`bytes` and `text`; item-count and encoded-size limits for lists; and
-encoded-size limits for schemas and top-level objects. Tuple counts are exact.
-Before allocation, copying, or iteration, decoders MUST use overflow-safe
-arithmetic to check lengths and counts against local and enclosing limits and
-remaining input. Decoders MUST reject any exceeded limit.
+Tuple counts are exact. Before allocation, copying, or iteration, decoders MUST
+use overflow-safe arithmetic to check lengths and counts against local and
+enclosing limits and remaining input. Decoders MUST reject any exceeded limit.
 
 `canonical_encode(value_0, ..., value_n)` is shorthand for canonical encoding of
 the ordered tuple containing exactly those values. It is not raw
@@ -443,28 +440,24 @@ Transport framing MAY add a length prefix or QR encoding, but signatures, hashes
 
 ### 8.3 Canonical size-limit requirements
 
-The finalized v1 profile MUST define inclusive limits for every variable-width
-field, collection, schema, contextual wrapper, and permitted top-level
-canonical object. It MUST also define the exact nesting limit for each schema
-and context and a protocol-wide nesting cap. Each limit applies before
-transport framing and is identified by `PROTOCOL_VERSION`.
+Each implementation profile MUST specify:
 
-Every limit MUST be justified by the accepted syntax or external format,
-protocol semantics, and the tightest supported component. Limits that apply to
-the same syntax MAY share a value, but every affected field remains explicitly
-covered. Context-selected values and encrypted envelopes MUST have limits for
-each permitted context.
+- maximum payload-byte lengths for every variable `bytes` and `text` field;
+- maximum item counts and canonical encoded sizes for collections;
+- maximum canonical encoded sizes for schemas, contextual wrappers, and
+  permitted top-level objects;
+- exact nesting limits for each schema and context, and a protocol-wide
+  nesting cap.
 
-The final registry MUST give each limit as a positive integer, name every
-permitted top-level context, and contain no unresolved entry. Conformance tests
-MUST accept a value at each limit and reject the first value above it. Encoded
-schema and object maxima MUST be independently recalculated from the canonical
-encoding in Section 8.2 and the schemas in Section 10.
+Limits MUST be finite positive integers with inclusive boundaries. They apply
+before transport framing and are identified by `PROTOCOL_VERSION`. Every
+permitted top-level context MUST have assigned limits. Context-selected values
+and encrypted envelopes MUST have limits for each permitted context. Limits
+that apply to the same syntax MAY share a value, but every affected field
+remains explicitly covered.
 
-The numeric registry is not yet finalized. No implementation can claim v1
-conformance until the approved values and their boundary evidence are added to
-this section. PSBT and Bitcoin transaction limits remain with the PSBT handling
-requirements in Section 15.12 and the conformance requirements in Section 21.
+PSBT and Bitcoin transaction limits follow the requirements in Sections 15.12
+and 21.
 
 ### 8.4 Key encoding
 
@@ -728,7 +721,7 @@ After setup agreement, non-nonce setup contexts bind `setup_instance_id`. During
 withdrawal approval, contexts bind `withdrawal_id` once it exists; after
 unanimous approval, contexts bind `approved_withdrawal_id`.
 `approved_withdrawal_id` transitively binds `setup_instance_id` through
-`withdrawal_id`, so post-approval contexts MUST NOT repeat `setup_instance_id`.
+`withdrawal_id`.
 ST preview messages before `withdrawal_id` exists rely on the message type,
 directional channel keys, and the nonce-bound preview object. Boomlet-ST duress
 challenge and response envelopes omit withdrawal IDs and rely on the message
@@ -1079,8 +1072,7 @@ use `DuressSignalIndex`, whose `indices` list contains exactly five values.
 commit or ping is bound to a `duress_placeholder`. `padding` is opaque to the
 object schema and is included byte-for-byte in the signed canonical encoding.
 
-The SAR placeholder acknowledgment intentionally has no separate status-bearing
-object. Its canonical form is the SAR signature over the exact
+The SAR placeholder acknowledgment is the SAR signature over the exact
 `duress_placeholder` envelope, encrypted by SAR for the target Boomlet as
 defined in Section 16.4.
 
@@ -1155,6 +1147,35 @@ expected invoice, amount, service identity, and deadline.
 
 `BoomletBackupState` is never host-readable. Boomlet encrypts it directly for
 the authorized Boomletwo identity.
+
+Consent rotation (Section 16.7) uses the following named ordered canonical
+tuples:
+
+```text
+ConsentRotationChallenge = (
+  request: MessageWithNonce<u64>,
+  duress_check_space: DuressCheckSpace
+)
+ConsentRotationAnswer = (
+  approval: SignedMessage<MessageWithNonce<u64>>,
+  duress_signal_index: DuressSignalIndex
+)
+ConsentSetChange = (
+  approval: SignedMessage<MessageWithNonce<u64>>,
+  duress_consent_set: Collection<u16>,
+  under_duress: bool
+)
+ConsentReset = (
+  consent_counter: u64,
+  approved_withdrawal_id: bytes32,
+  sar_receipt: CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>
+)
+RotationStatus = (status: u8, space: DuressCheckSpace)
+```
+
+`ConsentSetChange.duress_consent_set` encodes five ascending, distinct integers
+in 1..193; set comparison is unordered. `ConsentReset.sar_receipt` uses the SAR
+signature domain and encryption context from Section 16.4.
 
 ## 11. Descriptor
 
@@ -1505,8 +1526,7 @@ or setup nonces produce a different identifier.
 
 1. Boomlet verifies the peer-record signatures and constructs
    `BoomerangParamsSeed{ordered_peer_setup_records, wt_ids, milestone_blocks}`
-   from the setup inputs accepted from Niso. `BoomerangParamsSeed` MUST NOT
-   carry `setup_instance_id` or a nested setup parameter structure.
+   from the setup inputs accepted from Niso.
 2. Boomlet computes `setup_instance_id` from the canonical seed. It wraps
    that setup ID in a fresh nonce and encrypts the nonce-bound value for ST.
 3. Niso forwards ST the outer `setup_instance_id`, the encrypted commitment,
@@ -1853,8 +1873,7 @@ ST `tx_id` review and signs its own `TxApproval` with a fresh peer
 
 Non-initiator approval relay messages carry `withdrawal_id` outside the encrypted
 approval for context selection. Peers recover the approving identity from the
-signed-message wrapper and the transaction binding through `withdrawal_id`;
-non-initiator approvals omit `tx_id`.
+signed-message wrapper and the transaction binding through `withdrawal_id`.
 
 WT MUST collect and verify exactly one `TxApproval` from each setup peer for
 the expected `withdrawal_id`, then sort the approvals in setup peer order:
@@ -2341,11 +2360,10 @@ If pre-acknowledgment processing misses the deadline, SAR MUST
 release no late acknowledgment and expose the same failure at that deadline
 for safe and duress cases. Each retry gets a new deadline.
 
-The acknowledgment MUST NOT contain a status, duress flag, placeholder
-plaintext, or plaintext hash in any WT-visible field. Valid safe and duress
-cases MUST produce the same response type, size class, routing, retry behavior,
-failure behavior, and externally observable acknowledgment behavior. Boomlet
-decrypts its acknowledgment, verifies the SAR signature with domain
+Valid safe and duress cases MUST produce the same response type, size class,
+routing, retry behavior, failure behavior, and externally observable
+acknowledgment behavior. Boomlet decrypts its acknowledgment, verifies the SAR
+signature with domain
 `"Boomerang/withdrawal/sar_placeholder_response"`, and requires the signed
 content to equal byte-for-byte the `duress_placeholder` envelope it sent.
 
@@ -2395,9 +2413,11 @@ envelope MUST be rejected.
 
 ### 16.7 Consent rotation
 
-User sends `consent_rotation_start` to Niso, which sends `BEGIN_ROTATION()` to
-Boomlet and relays messages within the pair provisioned under Section 13.10.
-Signed ST approval authorizes consent maintenance.
+User sends `consent_rotation_start` to Niso, which invokes the local
+`BEGIN_ROTATION()` command on Boomlet and relays messages within the pair
+provisioned under Section 13.10. Boomlet responds with an encrypted
+`ConsentRotationChallenge` when the rotation begins. Signed ST approval
+authorizes consent maintenance.
 
 `rotation_state` contains ST approval, stage, query, latest accepted
 answer digest and successors, outcome, exact device packet, and final ST reply.
@@ -2517,7 +2537,8 @@ cleanup.
 
 Boomlet and Boomletwo return the cached successor for an exact retransmission
 of an accepted message before checks for a new transition, without repeating
-classification, installation, or counter advancement. `RESUME()` returns stored
+classification, installation, or counter advancement. The local command
+`RESUME()` returns the retained successor or backup receipt as exact stored
 bytes. Older or conflicting input cannot replace an attempt or change
 `under_duress` after reset. Before recording ST approval, Boomlet keeps one
 immutable volatile query and returns it on repetition. Query loss releases the
@@ -2560,68 +2581,36 @@ logs, metrics, and diagnostics.
 Rotation preserves mystery, progress and deadlines and grants no authority to
 replace devices, rebind, activate or sign, or revoke released signing output.
 
-Consent rotation uses these ordered canonical tuples:
-
-```text
-ConsentRotationChallenge = (
-  request: MessageWithNonce<u64>,
-  duress_check_space: DuressCheckSpace
-)
-ConsentRotationAnswer = (
-  approval: SignedMessage<MessageWithNonce<u64>>,
-  duress_signal_index: DuressSignalIndex
-)
-ConsentSetChange = (
-  approval: SignedMessage<MessageWithNonce<u64>>,
-  duress_consent_set: Collection<u16>,
-  under_duress: bool
-)
-ConsentReset = (
-  consent_counter: u64,
-  approved_withdrawal_id: bytes32,
-  sar_receipt: CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>
-)
-RotationStatus = (status: u8, space: DuressCheckSpace)
-```
-
-`ConsentSetChange.duress_consent_set` encodes five ascending, distinct integers
-in 1..193; set comparison is unordered. ST approval uses signature domain
+The consent-rotation payloads are defined in Section 10. ST approval uses
+signature domain
 `"Boomerang/consent_rotation/v1/st_review"`. Device signatures use
 `"Boomerang/consent_rotation/v1/" + operation`. Receipt contents are SHA-256
-of the complete request envelope's canonical bytes. `ConsentReset.sar_receipt`
-uses the SAR signature domain and encryption context from Section 16.4.
+of the complete request envelope's canonical bytes.
 
 ST and device operations use message type `"consent_rotation_" + operation`.
 Device contexts include `setup_instance_id`; ST contexts omit a scope ID.
 Reusing `rotation_id` across phases requires distinct operation contexts and
 one immutable query per phase.
 
-| Namespace | Selector | Operation | Content or result |
-| --- | --- | --- | --- |
-| Local | 41 | `BEGIN_ROTATION()` | Encrypted `ConsentRotationChallenge` |
-| Local | 45 | `RESUME()` | Retained successor or backup receipt |
-| ST | 23 | `current_set_challenge` | `ConsentRotationChallenge` |
-| ST | 24 | `current_set_answer` | `ConsentRotationAnswer` |
-| ST | 26 | `new_set_query` | `MessageWithNonce<DuressCheckSpace>` |
-| ST | 27 | `new_set_answer` | `MessageWithNonce<DuressSignalIndex>` |
-| ST | 34 | `cancel` | `MessageWithNonce<u8>` |
-| ST | 35 | `completed` | `bytes32` rotation ID |
-| ST | 36 | `ui_status` | `MessageWithNonce<bytes32>` |
-| ST | 37 | `ui_status_response` | `MessageWithNonce<RotationStatus>` |
-| ST | 38 | `cancelled` | `bytes32` rotation ID |
-| Device | 5 | `consent_set` | `SignedMessage<ConsentSetChange>` |
-| Device | 6 | `consent_set_received` | `SignedMessage<bytes32>` |
-| Device | 12 | `reset` | `SignedMessage<ConsentReset>` |
-| Device | 13 | `reset_ack` | `SignedMessage<bytes32>` |
+The following table shows canonical payloads before encryption in the
+directional CBC-CMAC channel envelopes defined in Section 9. Both `completed`
+and `cancelled` carry `rotation_id`.
 
-Local selectors 42–44, ST selectors 21–22, 25, 28–33, and device selectors 1–4,
-7–11 are reserved. Frames contain `operation: u8 || envelope_length: uint16_be
-|| envelope_bytes || zero_padding`, totaling 4,096 bytes between devices or
-2,048 bytes for ST. Framing is excluded from signatures and receipt digests.
-Reject unknown selectors, versions, enum values, and nonzero padding; enforce
-Section 8 limits before allocation or decoding. Rotation envelopes are limited
-to 2,048 bytes between devices and 1,536 bytes for ST, with nesting depth at
-most 12.
+| Message | Payload |
+| --- | --- |
+| `current_set_challenge` | `ConsentRotationChallenge` |
+| `current_set_answer` | `ConsentRotationAnswer` |
+| `new_set_query` | `MessageWithNonce<DuressCheckSpace>` |
+| `new_set_answer` | `MessageWithNonce<DuressSignalIndex>` |
+| `cancel` | `MessageWithNonce<u8>` |
+| `completed` | `bytes32` |
+| `ui_status` | `MessageWithNonce<bytes32>` |
+| `ui_status_response` | `MessageWithNonce<RotationStatus>` |
+| `cancelled` | `bytes32` |
+| `consent_set` | `SignedMessage<ConsentSetChange>` |
+| `consent_set_received` | `SignedMessage<bytes32>` |
+| `reset` | `SignedMessage<ConsentReset>` |
+| `reset_ack` | `SignedMessage<bytes32>` |
 
 ## 17. Replay resistance and binding
 
@@ -2731,7 +2720,8 @@ implementations MUST NOT substitute another SAR within the existing setup.
 
 Backup import is defined, but activation, revocation, and prevention of concurrent active devices are not.
 
-`OPEN ISSUE`: a recovery protocol MUST guarantee one active signing authority before Boomletwo can be used for production funds.
+A recovery procedure MUST guarantee a single active signing authority when
+activating Boomletwo.
 
 ## 19. Security considerations
 
@@ -2826,8 +2816,8 @@ A conforming implementation MUST provide tests for:
   `value` payloads, non-ASCII Boomlet-parsed protocol text, top-level and nested
   trailing bytes, and nesting above schema-derived or global limits;
 - boundary vectors for every field, collection, schema, and overall limit,
-  including acceptance at the limit and rejection above it, beyond remaining
-  input, or on arithmetic overflow;
+  including acceptance at each limit and rejection of the first value above it,
+  beyond remaining input, or on arithmetic overflow;
 - normal-key derivation, including BIP39 seed derivation, BIP32 path
   `m/52102'/coin_type'/account'/0/key_index`, child private key, and BIP340
   x-only `normal_pubkey` encoding;
@@ -2893,13 +2883,10 @@ A conforming implementation MUST provide tests for:
 - consent rotation and recovery under Section 16.7, including paired reset
   and safe and duress flow equivalence.
 
-Protocol vectors MUST include exact canonical bytes, normal-key derivation
-inputs and outputs, keys, IVs, ciphertexts, tags, signatures, identifiers, and
-expected failure classes. The implementation profile MUST define exact
-per-schema maximum encoded sizes and list-length bounds before deployment.
-Full byte-level canonical encoding vectors MUST be produced after those limits
-are fixed. Java Card implementations SHOULD use streaming parsers and MUST
-reject over-limit objects before allocation.
+Protocol vectors MUST include exact, complete canonical encodings, normal-key
+derivation inputs and outputs, keys, IVs, ciphertexts, tags, signatures,
+identifiers, and expected failure classes. Java Card implementations SHOULD use
+streaming parsers and MUST reject over-limit objects before allocation.
 
 ## 22. Open issues
 

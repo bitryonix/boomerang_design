@@ -1,4 +1,10 @@
-# Size limits
+# Protocol limits, selectors, and framing
+
+This WIP tracker collects canonical-size and nesting limits, proposed transport
+framing, and command-selector assignments across the protocol. Normative
+requirements remain in [SPEC](../spec/SPEC.md). Profile-completion work and
+validation evidence are tracked under
+[Limit profile completion and validation](#limit-profile-completion-and-validation).
 
 `OPEN` means that the limit has not been defined. Values marked `exact` follow
 directly from the current canonical wire structure.
@@ -7,6 +13,26 @@ directly from the current canonical wire structure.
 limit. Finalizing the registry requires one concrete entry for every registered
 context or signature domain. They remain written as families here because the
 wire catalog still marks some context type registries as incomplete.
+
+## Limit profile completion and validation
+
+The numeric registry is incomplete. Finalizing the v1 limit profile requires:
+
+- resolving each `OPEN` entry and each context or domain family into concrete
+  limits, including every permitted top-level context;
+- justifying each limit against the accepted syntax or external format,
+  protocol semantics, and the tightest supported component;
+- independently recalculating schema and object maxima from the canonical
+  encoding in SPEC Section 8.2 and the payload definitions in Section 10;
+- checking schema and context nesting depths against the protocol-wide cap;
+- producing boundary evidence that accepts each limit and rejects the first
+  value above it, lengths beyond remaining input, and arithmetic overflow;
+- producing complete byte-level canonical encoding vectors using the selected
+  limits and recording the corresponding `PROTOCOL_VERSION`.
+
+Approval of the numeric profile depends on these values and validation
+evidence. SPEC Sections 8.3 and 21 define the implementation and conformance
+requirements.
 
 ## Collection item counts
 
@@ -276,6 +302,57 @@ the envelope schema's own depth does not include the plaintext hidden in its
 | `top_level.<context>.max_encoded_bytes` | Maximum canonical size accepted at each permitted top-level protocol boundary | `OPEN` |
 | `top_level.<context>.max_nesting_depth` | Deepest canonical value accepted at each permitted top-level protocol boundary | `OPEN` |
 | `global.max_canonical_object_bytes` | Largest maximum among all permitted top-level v1 contexts | `OPEN` |
+
+## Transport framing and selectors
+
+The transport choices below are provisional implementation-profile notes,
+outside the normative specification.
+
+### Consent rotation (proposed)
+
+Protocol behavior and payload mapping are defined in
+[SPEC Section 16.7](../spec/SPEC.md#167-consent-rotation), and canonical payload
+types in [SPEC Section 10](../spec/SPEC.md#10-protocol-objects).
+
+#### Command selectors
+
+| Namespace | Selector | Operation |
+| --- | --- | --- |
+| Local | 41 | `BEGIN_ROTATION()` |
+| Local | 45 | `RESUME()` |
+| ST | 23 | `current_set_challenge` |
+| ST | 24 | `current_set_answer` |
+| ST | 26 | `new_set_query` |
+| ST | 27 | `new_set_answer` |
+| ST | 34 | `cancel` |
+| ST | 35 | `completed` |
+| ST | 36 | `ui_status` |
+| ST | 37 | `ui_status_response` |
+| ST | 38 | `cancelled` |
+| Device | 5 | `consent_set` |
+| Device | 6 | `consent_set_received` |
+| Device | 12 | `reset` |
+| Device | 13 | `reset_ack` |
+
+Local selectors 42–44, ST selectors 21–22, 25, 28–33, and device selectors 1–4,
+7–11 are reserved.
+
+#### Transport framing and limits
+
+The proposed frames contain:
+
+```text
+operation: u8 || envelope_length: uint16_be || envelope_bytes || zero_padding
+```
+
+| Transport | Fixed frame bytes | Maximum envelope bytes | Maximum nesting depth |
+| --- | ---: | ---: | ---: |
+| Between devices | 4,096 | 2,048 | 12 |
+| ST | 2,048 | 1,536 | 12 |
+
+Framing is excluded from signatures and receipt digests. Under this proposal,
+receivers reject unknown selectors, versions, enum values, and nonzero padding
+and enforce SPEC Section 8 limits before allocation or decoding.
 
 ## PSBT and Bitcoin transaction limits
 
