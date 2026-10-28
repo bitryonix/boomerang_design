@@ -510,7 +510,7 @@ of Boomlet and Boomletwo is active remain unresolved.
 The setup subsystem contains the complete 94-step message-level procedure, its
 operation-notation table, and the full sequence diagram in
 [`diagrams/setup/README.md`](diagrams/setup/README.md) and
-[`setup_diagram_without_states.svg`](diagrams/setup/setup_diagram_without_states.svg).
+[`setup_diagram.svg`](diagrams/setup/setup_diagram.svg).
 [Diagram Notation](diagrams/setup/README.md#diagram-notation) defines the notation.
 
 ## 10. Withdrawal in detail
@@ -665,8 +665,8 @@ rollover procedure remains unspecified work
 The 73-message step-level ceremony and its per-step checks are in
 [`diagrams/withdrawal/README.md`](diagrams/withdrawal/README.md), with full
 sequence diagrams for
-the [initiator](diagrams/withdrawal/initiator_withdrawal_diagram_without_states.svg) and
-[non-initiators](diagrams/withdrawal/non_initiator_withdrawal_diagram_without_states.svg).
+the [initiator](diagrams/withdrawal/initiator_withdrawal_diagram.svg) and
+[non-initiators](diagrams/withdrawal/non_initiator_withdrawal_diagram.svg).
 
 ## 11. Duress protection and observability
 
@@ -1179,10 +1179,10 @@ The recommended review order follows.
    provide subsystem views. Where they differ, the specification controls.
 5. The setup and withdrawal-role SVG diagrams provide visual cross-checks
    against those subsystem procedures. Review the
-   [setup sequence](diagrams/setup/setup_diagram_without_states.svg),
-   [initiator withdrawal](diagrams/withdrawal/initiator_withdrawal_diagram_without_states.svg),
+   [setup sequence](diagrams/setup/setup_diagram.svg),
+   [initiator withdrawal](diagrams/withdrawal/initiator_withdrawal_diagram.svg),
    and
-   [non-initiator withdrawal](diagrams/withdrawal/non_initiator_withdrawal_diagram_without_states.svg)
+   [non-initiator withdrawal](diagrams/withdrawal/non_initiator_withdrawal_diagram.svg)
    diagrams. They are explanatory; the specification remains normative.
 
 A serious verification effort must include timing simulation, formal

@@ -25,13 +25,13 @@ note over User, SAR
 <b>PARAMETERS
 # #define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_INITIATOR_PEER_TO_TX_APPROVAL_BY_WT
 # #define TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_WT_TX_APPROVAL_BY_NON_INITIATOR_PEERS
-# Assert peer_i_tx_approval.withdrawal_id == withdrawal_id [1 <= i <= 4] 
+# Assert peer_i_tx_approval.withdrawal_id == withdrawal_id [1 <= i <= 4]
 # GW-NONINIT-APPROVAL-AT-WT-FRESH(most_work_bitcoin_block_height, wt_tx_approval, peer_i_tx_approval) [1 <= i <= 4]
 # GW-NONINIT-APPROVAL-AT-PEER-FRESH(most_work_bitcoin_block_height, wt_tx_approval, peer_i_tx_approval) [1 <= i <= 4]
 # #define \n TOLERANCE_IN_BLOCKS_FROM_TX_APPROVAL_BY_WT_TO_RECEIVING_NON_INITIATOR_TX_APPROVAL_BY_OTHER_NON_INITIATOR_PEERS
-# Assert peer_0_tx_commit.approved_withdrawal_id == approved_withdrawal_id 
+# Assert peer_0_tx_commit.approved_withdrawal_id == approved_withdrawal_id
 # GW-INIT-COMMIT-AT-NONINIT-FRESH(most_work_bitcoin_block_height, peer_0_tx_commit)
-# Assert peer_1_tx_commit.approved_withdrawal_id == approved_withdrawal_id 
+# Assert peer_1_tx_commit.approved_withdrawal_id == approved_withdrawal_id
 #GW-NONINIT-COMMIT-AT-WT-FRESH(most_work_bitcoin_block_height, peer_1_tx_commit)
 end note
 

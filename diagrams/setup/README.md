@@ -11,7 +11,7 @@
 
 The main annotated source is
 [setup_diagram_without_states.puml](setup_diagram_without_states.puml), with
-[setup_diagram_without_states.svg](setup_diagram_without_states.svg) as its
+[setup_diagram.svg](setup_diagram.svg) as its
 generated graphical rendering.
 
 The derived views are in [derived/](derived/).

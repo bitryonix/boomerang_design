@@ -701,8 +701,8 @@ verification path.
 | [`security_models/`](security_models/README.md) | Threat model, assumptions, attack trees, risks, and unresolved gaps |
 | [`security_models/coercion_economics.md`](security_models/coercion_economics.md) | Detailed quantitative model, observed evidence, and calibration boundaries |
 | [`adr/`](adr/README.md) | Accepted design decisions and their rationale |
-| [Setup procedure](diagrams/setup/README.md) and [setup sequence SVG](diagrams/setup/setup_diagram_without_states.svg) | Setup ceremony and its message sequence |
-| [Withdrawal procedure](diagrams/withdrawal/README.md), [initiator SVG](diagrams/withdrawal/initiator_withdrawal_diagram_without_states.svg), and [non-initiator SVG](diagrams/withdrawal/non_initiator_withdrawal_diagram_without_states.svg) | Withdrawal steps and role-specific message sequences |
+| [Setup procedure](diagrams/setup/README.md) and [setup sequence SVG](diagrams/setup/setup_diagram.svg) | Setup ceremony and its message sequence |
+| [Withdrawal procedure](diagrams/withdrawal/README.md), [initiator SVG](diagrams/withdrawal/initiator_withdrawal_diagram.svg), and [non-initiator SVG](diagrams/withdrawal/non_initiator_withdrawal_diagram.svg) | Withdrawal steps and role-specific message sequences |
 | [Duress protocol](spec/SPEC.md#16-duress-protocol) | Consent enrollment and duress signaling |
 | [Secure Terminal](<operational notes/secure_terminal/README.md>) | Trusted display, input, QR transport, and hardware expectations |
 

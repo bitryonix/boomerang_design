@@ -47,7 +47,7 @@ This document defines the Boomerang protocol profile: actors, data model, crypto
 
 Boomerang is research-stage. This specification describes the intended protocol
 and its current security boundaries; it does not assert production readiness,
-hardware certification, or complete operational procedures. 
+hardware certification, or complete operational procedures.
 
 The key words `MUST`, `MUST NOT`, `REQUIRED`, `SHOULD`, `SHOULD NOT`, and
 `MAY` in this document are to be interpreted as described in BCP 14

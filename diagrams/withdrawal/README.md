@@ -10,8 +10,8 @@
 The main annotated sources are the
 [initiator](initiator_withdrawal_diagram_without_states.puml) and
 [non-initiator](non_initiator_withdrawal_diagram_without_states.puml), with
-[initiator SVG](initiator_withdrawal_diagram_without_states.svg) and
-[non-initiator SVG](non_initiator_withdrawal_diagram_without_states.svg)
+[initiator SVG](initiator_withdrawal_diagram.svg) and
+[non-initiator SVG](non_initiator_withdrawal_diagram.svg)
 renderings.
 
 The derived views are in [derived/](derived/).
