@@ -35,7 +35,7 @@ hnote over User #Lavender:  user_selection := select_one_from_each(duress_displa
 ' Step 6
 User o-> ST:  <b>ConsentRotationStInput1 \n user_selection
 hnote over ST #Pink:  Assert count(user_selection) == 5 \n Assert user_selection contains exactly one displayed choice from each duress_display_columns column
-hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, retained_display_maps) \n consent_rotation_request_signed_by_st := sign_message(st_0_identity_privkey, "Boomerang/consent_rotation/v1/st_review", consent_rotation_request) \n consent_rotation_answer := ConsentRotationAnswer{ \n approval: consent_rotation_request_signed_by_st, duress_signal_index: duress_signal_index} \n consent_rotation_answer_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet(context: canonical_encode("consent_rotation_current_set_answer"), \n content: consent_rotation_answer)
+hnote over ST #Lavender:  duress_signal_index := DuressSignalIndex{indices: map_to_original_indices(user_selection, retained_display_maps)} \n consent_rotation_request_signed_by_st := sign_message(st_0_identity_privkey, "Boomerang/consent_rotation/v1/st_review", consent_rotation_request) \n consent_rotation_answer := ConsentRotationAnswer{ \n approval: consent_rotation_request_signed_by_st, duress_signal_index: duress_signal_index} \n consent_rotation_answer_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet(context: canonical_encode("consent_rotation_current_set_answer"), \n content: consent_rotation_answer)
 ' Step 7
 ST o-> Niso:  <b>ConsentRotationStNisoMessage1 \n consent_rotation_answer_encrypted_by_st_for_boomlet_0
 ' Step 8
@@ -59,7 +59,7 @@ hnote over User #Lavender:  user_selection := select_one_from_each(duress_displa
 ' Step 12
 User o-> ST:  <b>ConsentRotationStInput2 \n user_selection
 hnote over ST #Pink:  Assert count(user_selection) == 5 \n Assert user_selection contains exactly one displayed choice from each duress_display_columns column
-hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, retained_display_maps) \n new_consent_set := duress_check_space.space[duress_signal_index.indices]
+hnote over ST #Lavender:  duress_signal_index := DuressSignalIndex{indices: map_to_original_indices(user_selection, retained_display_maps)} \n new_consent_set := duress_check_space.space[duress_signal_index.indices]
 hnote over ST #Pink:  Assert count(new_consent_set) == 5 \n Assert new_consent_set contains distinct countries in [1..193]
 hnote over ST #Lavender:  duress_display_columns, retained_display_maps := create_duress_display_columns(duress_check_space.space)
 loop Until selected countries match new_consent_set
@@ -69,7 +69,7 @@ hnote over User #Lavender:  user_selection := select_one_from_each(duress_displa
 ' Step 14
 User o-> ST:  <b>ConsentRotationStInput3 \n user_selection
 hnote over ST #Pink:  Assert count(user_selection) == 5 \n Assert user_selection contains exactly one displayed choice from each duress_display_columns column
-hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, retained_display_maps) \n selected_consent_set := duress_check_space.space[duress_signal_index.indices]
+hnote over ST #Lavender:  duress_signal_index := DuressSignalIndex{indices: map_to_original_indices(user_selection, retained_display_maps)} \n selected_consent_set := duress_check_space.space[duress_signal_index.indices]
 end
 hnote over ST #Pink:  Assert selected_consent_set == new_consent_set
 hnote over ST #Lavender:  consent_set_answer := MessageWithNonce{content: duress_signal_index, nonce: rotation_id} \n consent_set_answer_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet(context: canonical_encode("consent_rotation_new_set_answer"), \n content: consent_set_answer)

@@ -478,7 +478,7 @@ The user approves a nonce-bound commitment to that exact instance on ST before
 agreement proceeds, and every later phase extends a chained `setup_checkpoint`
 whose phase labels (`parameters_agreed`, `wt_ready`, `sar_ready`,
 `backup_ready`) must verify identically across all five peers. Peer-local
-receipts stay local and never enter the shared checkpoint.
+receipts authorize each peer's checkpoint signatures.
 
 Consent enrollment happens on ST before the Boomlet ever moves to the
 networked environment. Two independent nonce-bound rounds over the fixed
@@ -725,11 +725,11 @@ or attacker-observable logs, metrics, status fields, and errors must not
 disclose it. Repeated delivery of the same valid `placeholder` is idempotent
 and must retain the same observable behavior.
 
-The acknowledgment contains no status field. SAR signs the exact encrypted
-`placeholder` envelope it received. Boomlet decrypts the
-response, checks SAR's signature, and requires byte-for-byte equality with its
-sent envelope. Before releasing the acknowledgment, SAR has durably written the
-fixed-shape processing record; for a new valid duress tuple, that write commits
+SAR signs the exact encrypted `placeholder` envelope it received. Boomlet
+decrypts the response, checks SAR's signature, and requires byte-for-byte
+equality with its sent envelope. Before releasing the acknowledgment, SAR has
+durably written the fixed-shape processing record; for a new valid duress tuple,
+that write commits
 rescue activation. Thus acknowledgment means exact delivery and durable
 activation where applicable. It says nothing about the quality or outcome of
 the later response.

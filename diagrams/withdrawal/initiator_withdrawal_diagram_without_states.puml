@@ -178,7 +178,7 @@ hnote over User #Lavender:  user_selection := select_one_from_each(duress_displa
 ' Step 31
 User o-> ST:  <b>WithdrawalStInput2 \n user_selection
 hnote over ST #LavenderBlush:  ST receives the displayed selections from User, converts them into indices in \n Boomlet's original single list, then creates \n duress_signal_index_with_nonce using the nonce from previously received duress_check_space_with_nonce, \n encrypts it for Boomlet and sends it to Niso.
-hnote over ST #Lavender:  duress_signal_index := \n original_indices_from_display_selection(duress_display_columns, user_selection) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: duress_signal_index \n nonce: duress_check_space_with_nonce.nonce } \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("withdrawal_duress_response"), \n content: duress_signal_index_with_nonce)
+hnote over ST #Lavender:  duress_signal_index := \n original_indices_from_display_selection(duress_display_columns, user_selection) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: DuressSignalIndex{indices: duress_signal_index} \n nonce: duress_check_space_with_nonce.nonce } \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("withdrawal_duress_response"), \n content: duress_signal_index_with_nonce)
 
 ' Step 32
 ST o-> Niso:  <b>WithdrawalStNisoMessage2 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0
@@ -364,7 +364,7 @@ hnote over User #Lavender:  user_selection := select_one_from_each(duress_displa
 ' Step 55
 User o-> ST:  <b>WithdrawalStInput3 \n user_selection
 hnote over ST #LavenderBlush:  ST receives the displayed selections from User, converts them into indices in \n Boomlet's original single list, then creates \n duress_signal_index_with_nonce using the nonce from previously received duress_check_space_with_nonce, \n encrypts it for Boomlet and sends it to Niso.
-hnote over ST #Lavender:  duress_signal_index := \n original_indices_from_display_selection(duress_display_columns, user_selection) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: duress_signal_index \n nonce: duress_check_space_with_nonce.nonce } \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("withdrawal_duress_response"), \n content: duress_signal_index_with_nonce)
+hnote over ST #Lavender:  duress_signal_index := \n original_indices_from_display_selection(duress_display_columns, user_selection) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: DuressSignalIndex{indices: duress_signal_index} \n nonce: duress_check_space_with_nonce.nonce } \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("withdrawal_duress_response"), \n content: duress_signal_index_with_nonce)
 
 ' Step 56
 ST o-> Niso:  <b>WithdrawalStNisoMessage3 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0

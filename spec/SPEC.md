@@ -680,7 +680,7 @@ tag :=
 
 5. returns `CbcCmacEnvelope{version: 1, iv, ciphertext, tag}`.
 
-Decryption MUST:
+A recipient calling `cbc_cmac_decrypt` MUST:
 
 1. validate envelope version and lengths;
 2. recompute and constant-time compare the full tag;
@@ -688,8 +688,9 @@ Decryption MUST:
 4. decrypt and validate PKCS#7 padding only after successful authentication;
 5. decode exactly one canonical object with no trailing bytes.
 
-MAC, padding, and decoding failures MUST have the same externally observable
-rejection class. An explicit-IV encryption operation MAY be used only to
+MAC, padding, and decrypted-object decoding failures MUST all return
+`AUTHENTICATION_FAILED` as their externally observable rejection class.
+An explicit-IV encryption operation MAY be used only to
 reconstruct a received envelope for equality verification. An IV MUST NOT
 be used to encrypt a different plaintext under the same key.
 
@@ -707,14 +708,11 @@ canonical_encode(message_type, optional_scope_id)
 Otherwise it is exactly one of `setup_instance_id`, `withdrawal_id`, or
 `approved_withdrawal_id`, according to the message's replay scope.
 
-Every envelope context MUST include `message_type`. This is the cross-message
-replay separator inside one channel and scope.
-
-Endpoint identity, entity role, traffic direction, and protocol version are not
-repeated in envelope contexts. They are provided by `channel_keys(...)`: the KDF
-binds `PROTOCOL_VERSION`, endpoint entity names, endpoint identity public keys,
-and returns distinct directional encryption and MAC keys. Setup-scoped contexts
-also bind version transitively through `setup_instance_id`, whose preimage
+The message type separates exchanges inside one channel and scope.
+The `channel_keys(...)` KDF binds `PROTOCOL_VERSION`, endpoint entity names,
+endpoint identity public keys, and traffic direction, and returns distinct
+directional encryption and MAC keys. Setup-scoped contexts also bind version
+transitively through `setup_instance_id`, whose preimage
 includes `PROTOCOL_VERSION`.
 
 After setup agreement, non-nonce setup contexts bind `setup_instance_id`. During
@@ -724,17 +722,15 @@ unanimous approval, contexts bind `approved_withdrawal_id`.
 `withdrawal_id`.
 ST preview messages before `withdrawal_id` exists rely on the message type,
 directional channel keys, and the nonce-bound preview object. Boomlet-ST duress
-challenge and response envelopes omit withdrawal IDs and rely on the message
-type, directional channel keys, and Boomlet's exact outstanding
-`duress_check_nonce`.
+challenges and responses are bound by the message type, directional channel
+keys, and Boomlet's exact outstanding `duress_check_nonce`.
 
 The first backup-state import into an empty Boomletwo uses
 `canonical_encode("backup_state")`. Boomletwo does not know the authoritative
-setup ID until it decrypts the exported state. The authenticated plaintext MUST
-contain the setup ID, and the channel keys still bind the active Boomlet
-identity, target Boomletwo identity, endpoint roles, direction, and protocol
-version. Boomletwo MUST accept this import only while empty and MUST include the
-imported ID in signed `BackupDone`.
+setup ID until it decrypts the exported state. The channel keys bind the active
+Boomlet identity, target Boomletwo identity, endpoint roles, direction, and
+protocol version. Boomletwo MUST accept this import only while empty and MUST
+include the imported ID in signed `BackupDone`.
 
 Static rescue-data envelopes use this context:
 
@@ -1058,8 +1054,7 @@ DuressSignalIndex {
 ```
 
 Object type, schema ID, signature domain, and envelope context identify the
-transition. Signed wrappers and encrypted envelopes are not duplicated inside
-the object unless explicitly shown.
+transition.
 
 `SignedMessage.content` is valid only when the caller and signature domain
 specify the expected content schema or primitive tuple shape.
@@ -1249,10 +1244,10 @@ EMPTY
   -> BACKUP_READY
 ```
 
-Any verification failure returns the relevant Section 18 failure class and stalls
-the current setup attempt. Restart from installation requires explicitly
-abandoning the stalled attempt and using a fresh `peer_setup_nonce`. A completed
-`setup_instance_id` MUST remain in memory.
+On a verification failure, Boomlet returns the relevant Section 18 failure class
+and stalls the current setup attempt. Restart from installation requires
+explicitly abandoning the stalled attempt and using a fresh `peer_setup_nonce`. A completed
+`setup_instance_id` MUST remain in Boomlet's memory.
 
 Transition prerequisites:
 
@@ -1393,7 +1388,7 @@ authentication, receipt verification, and historical decoding.
    - `boom_pubkey`.
 4. Boomlet returns only its identity public key at this stage.
 
-For peer `i`, installation constructs:
+During installation, peer `i`'s Boomlet constructs:
 
 ```text
 boomlet_i_identity_private_key := generate_private_key()
@@ -1430,9 +1425,12 @@ nonce := random_bytes(32)
 3. Boomlet sends an encrypted `MessageWithNonce{content: duress_check_space, nonce}` to ST.
 4. ST decrypts, maps each integer through `DURESS_DISPLAY_VOCABULARY`, copies the list into five independently shuffled columns, and stores each display-to-original-index map.
 5. User selects one country per column.
-6. ST converts each displayed choice to the corresponding index in Boomlet's original list and returns `MessageWithNonce{content: indices, nonce}`.
-7. Boomlet verifies the exact outstanding nonce and phase, resolves the indices, and stores the resulting unordered five-element set.
-8. A second round uses a new challenge and nonce. The resolved set MUST equal the first set. Initialize `consent_counter := 0` and `under_duress := false`.
+6. ST converts each displayed choice to the corresponding index in Boomlet's original list and returns `MessageWithNonce{content: DuressSignalIndex{indices: indices}, nonce}`.
+7. Boomlet verifies the exact outstanding nonce and phase, resolves the response's `content.indices`, and stores the resulting unordered five-element set.
+8. Boomlet generates a new challenge and nonce for a second round. The set
+   Boomlet resolves in that round MUST equal the first set. After successful
+   confirmation, Boomlet initializes its local `consent_counter := 0` and
+   `under_duress := false`.
 
 ### 13.4 Peer setup record
 
@@ -1479,8 +1477,6 @@ peer_i_setup_record_signed_by_boomlet_i :=
 5. Niso verifies the record, derives the Tor address, and requires equality with the signed address.
 6. ST displays the signed record to User.
 7. Users exchange signed records over a secure out-of-band channel.
-
-`peer_id` and `peer_setup_nonce` MUST NOT be separately transmitted beside the signed record.
 
 ### 13.5 Setup instance
 
@@ -1605,8 +1601,7 @@ setup_checkpoint :=
   )
 ```
 
-The signed `boomerang_params_fingerprint` authenticates this transition; a
-separate signature over `setup_checkpoint` is unnecessary.
+The signed `boomerang_params_fingerprint` authenticates this transition.
 
 Each later setup checkpoint update uses the current `setup_checkpoint` value as
 the predecessor input.
@@ -1637,8 +1632,6 @@ setup_checkpoint :=
 
 7. Every peer verifies that all signed `setup_checkpoint` values are identical.
 
-The local WT receipt is not hashed into `setup_checkpoint`.
-
 ### 13.9 SAR finalization
 
 1. Boomlet derives `doxing_key_for_sar` and `doxing_data_identifier`.
@@ -1665,8 +1658,6 @@ setup_checkpoint :=
 
 10. Every peer verifies identical signed `setup_checkpoint` values.
 
-Peer-specific SAR responses are not `setup_checkpoint` inputs.
-
 ### 13.10 Boomletwo backup
 
 1. Iso installs Boomletwo, which generates an identity keypair.
@@ -1681,7 +1672,7 @@ BoomletBackupRequest {
 }
 ```
 
-4. The request omits `setup_instance_id` because Iso has not yet received authoritative active setup state.
+4. Iso sends the signed request to Boomlet.
 5. Boomlet verifies the request signature against its stored `normal_pubkey`
    and verifies and retains the authorized target identity.
 6. Boomlet exports authenticated `BoomletBackupState`, including `setup_instance_id`.
@@ -1698,9 +1689,10 @@ BoomletBackupRequest {
    and verifies the signed SAR response content: signature, setup ID field
    against `boomerang_params.setup_instance_id`, derived identifier, static
    envelope hash, and static envelope IV from `static_doxing_data` and
-   `doxing_password`. Iso does not need a retained `SarId` for this backup-time
-   check; the SAR public key is the signer identity of `signed SAR response`.
-9. Iso transfers the encrypted state and active Boomlet identity to Boomletwo without a separate setup-ID field. The one-time backup bootstrap context is defined in Section 9.6.
+   `doxing_password`. Iso takes the SAR public key from the signed SAR response's
+   signer identity.
+9. Iso transfers the encrypted state and active Boomlet identity to Boomletwo.
+   The one-time backup bootstrap context is defined in Section 9.6.
 10. Boomletwo decrypts, verifies the embedded setup ID, imports the state, and signs `BackupDone`.
 11. Boomlet verifies `BackupDone`, marks backup complete, and rejects another backup request for the same active state.
 12. Boomlet computes and signs:
@@ -1719,7 +1711,7 @@ setup_checkpoint :=
 
 13. Every peer verifies identical signed `setup_checkpoint` values.
 14. Boomlet persists `setup_checkpoint` as its local final `setup_checkpoint`.
-15. Setup completion notices contain status only. They do not transmit the final checkpoint or duplicate the setup ID.
+15. Boomlet and Niso send their `setup_done` status notices.
 
 ### 13.11 Setup success
 
@@ -1749,10 +1741,11 @@ IDLE
   -> IDLE
 ```
 
-Any invalid signature, envelope, nonce, setup ID, transaction ID, withdrawal ID,
-sequence, block-height relation, or state transition returns the relevant Section 18
-failure class and stalls the active ceremony. A stalled ceremony stops advancing
-but remains bound to its active setup, withdrawal identifiers, transcript, and
+When Boomlet encounters an invalid signature, envelope, nonce, setup ID,
+transaction ID, withdrawal ID, sequence, block-height relation, or state transition,
+it returns the relevant Section 18 failure class and stalls the active ceremony.
+A stalled ceremony stops advancing but remains bound to its active setup,
+withdrawal identifiers, transcript, and
 replay state until a valid retry or recovery input is accepted, or until the
 user or operator explicitly abandons it under Section 18.2.
 
@@ -1911,9 +1904,8 @@ approved_withdrawal_id :=
 ```
 
 Each non-initiator Boomlet MUST attest that it received and verified the complete
-approval set. The Boomlet computes the fingerprint itself from the verified
-canonical approval set and WT approval; it MUST NOT sign a fingerprint supplied
-by Niso or any other host:
+approval set. The Boomlet MUST compute the fingerprint from its verified
+canonical approval set and WT approval:
 
 ```text
 approval_set_attestation_fingerprint :=
@@ -1955,8 +1947,8 @@ non-initiator commit.
 
 ### 15.5 Initial duress check and commitment
 
-The initiator performs the Section 16 duress challenge, constructs a fresh
-`duress_placeholder`, then signs:
+The initiator's Boomlet performs the Section 16 duress challenge, constructs a
+fresh `duress_placeholder`, then signs:
 
 ```text
 TxCommit {
@@ -1978,12 +1970,12 @@ gate above, WT:
    `"Boomerang/withdrawal/wt_tx_commit_ack"`;
 6. sends the WT-signed initiator commit to every non-initiator.
 
-A non-initiator MUST NOT construct, sign, or send its `TxCommit` until it has
-received and verified the WT-signed initiator commit, including the WT and
+A non-initiator Boomlet MUST NOT construct, sign, or send its `TxCommit` until
+it has received and verified the WT-signed initiator commit, including the WT and
 initiator signatures, `approved_withdrawal_id`, and freshness. It MAY prepare
 its duress challenge and placeholder earlier. After verification, each
-non-initiator constructs its own fresh `TxCommit` and sends the same signed,
-padded, outer-signed, WT-encrypted structure. WT processes each non-initiator
+non-initiator Boomlet constructs its own fresh `TxCommit` and sends the same
+signed, padded, outer-signed, WT-encrypted structure. WT processes each non-initiator
 commit through the corresponding setup-bound SAR, signs each verified commit,
 then distributes the complete commit collection and each peer's own encrypted
 SAR placeholder acknowledgment.
@@ -2029,7 +2021,9 @@ Ping {
 ```
 
 Boomlet attaches a newly encrypted placeholder, signs the combined object, encrypts it for WT, and increments `ping_seq_num` for the next ping.
-Newly encrypted means a fresh `CbcCmacEnvelope` with a fresh IV over the current `duress_placeholder_plaintext`; the plaintext may be unchanged when no new duress check ran, but the encrypted placeholder envelope MUST NOT be reused across pings.
+Each ping uses a fresh `CbcCmacEnvelope` and IV over the current
+`duress_placeholder_plaintext`, including when no new duress check ran and the
+plaintext is unchanged.
 The combined object is
 `PaddedMessage{content: signed Ping, padding: duress_placeholder}`.
 
@@ -2177,9 +2171,8 @@ signatures, sequences, and reached flags.
 ### 15.12 PSBT hydration
 
 Niso MAY add signing-support metadata to the PSBT, including UTXO data, scripts, derivation paths, Taproot metadata, and non-semantic proprietary fields.
-For Boomerang Taproot key-path inputs, the committed sighash policy is
-`SIGHASH_DEFAULT` for every Boomerang input; PSBTs MUST NOT request
-`ANYONECANPAY`, `NONE`, or `SINGLE` variants.
+For inputs signed through the primary 5-of-5 Boomerang Taproot script branch
+defined in Section 11.2, the committed sighash policy MUST be `SIGHASH_DEFAULT`.
 
 Hydration MUST NOT change:
 
@@ -2256,9 +2249,9 @@ duress_check_space_with_nonce :=
 
 3. ST maps the challenge through `DURESS_DISPLAY_VOCABULARY`, creates five independently shuffled display copies, and stores display-to-original-index maps.
 4. User selects one country from each column.
-5. ST returns five original-list indices with the exact nonce.
-6. Boomlet verifies the outstanding nonce and phase and checks for five distinct
-   in-range indices.
+5. ST returns `MessageWithNonce{content: DuressSignalIndex{indices: indices}, nonce: duress_check_nonce}` containing the five original-list indices.
+6. Boomlet verifies the outstanding nonce and phase and checks
+   the response's `content.indices` for five distinct in-range indices.
 7. Boomlet resolves the indices and compares all five countries with
    `duress_consent_set`, ignoring order. Before continuing, it consumes
    the response and updates `under_duress`, setting it to true on mismatch and
@@ -2367,9 +2360,9 @@ signature with domain
 `"Boomerang/withdrawal/sar_placeholder_response"`, and requires the signed
 content to equal byte-for-byte the `duress_placeholder` envelope it sent.
 
-Rescue processing uses the valid duress `doxing_key_for_sar` to
+For rescue processing, SAR uses the valid duress `doxing_key_for_sar` to
 decrypt static data and derive each retained device's data key under Section
-9.4. It MUST make every retained upload available to its rescue application.
+9.4. SAR MUST make every retained upload available to its rescue application.
 
 ### 16.5 Duress observability contract
 
@@ -2404,8 +2397,8 @@ surfaces.
 
 SAR records duress activation by the tuple
 `{approved_withdrawal_id, boomlet_identity_pubkey, duress_placeholder.iv}`.
-The tuple is checked only after the placeholder envelope has been authenticated
-and decrypted with the `"withdrawal_duress_placeholder"` context. Repeated
+SAR checks the tuple only after authenticating and decrypting the placeholder
+envelope with the `"withdrawal_duress_placeholder"` context. Repeated
 delivery under an existing valid safe or duress tuple is idempotent for SAR
 activation and still returns the same externally indistinguishable
 acknowledgment behavior. A mismatched context or unauthenticated placeholder
@@ -2438,14 +2431,14 @@ the copied source identity key to SAR verification; it MUST NOT expose arbitrary
 source-key signing or encryption. These roles and imported consent state survive
 restart.
 
-1. `BEGIN_ROTATION()` requires an active source in IDLE or DIGGING, available ST,
-   no incomplete attempt, and `consent_counter < 2^64 - 2`.
+1. Boomlet accepts `BEGIN_ROTATION()` only as the active source in IDLE or DIGGING,
+   with available ST, no incomplete attempt, and `consent_counter < 2^64 - 2`.
    Boomlet starts immediately in IDLE. In DIGGING, it finishes and sends any
    ping already under construction, then starts rotation at the beginning of
    the next iteration before input and ping construction, including while
-   waiting for peers after reaching mystery. If digging ends before entry,
-   it leaves the request unperformed. It pauses consent and withdrawal when
-   issuing the first challenge. Local commands supply no authority.
+   waiting for peers after reaching mystery. If digging ends before Boomlet
+   begins rotation, Boomlet leaves the request unperformed. Boomlet pauses consent
+   and withdrawal when issuing the first challenge. Local commands supply no authority.
 2. Boomlet generates `rotation_id := random_bytes(32)` and sends
    `ConsentRotationChallenge` containing that nonce, current counter, and a
    fresh permutation. ST authenticates it, collects country input under
@@ -2458,7 +2451,8 @@ restart.
    constructs the new-set query using `rotation_id` and a fresh permutation.
    It records ST approval, `under_duress`, consumed answer digest,
    the exact encrypted query, and `new_set_input` before output.
-   Invalid input preserves pending state. The counter remains unchanged during input.
+   Boomlet preserves pending state on invalid input and leaves `consent_counter`
+   unchanged during input.
 4. Boomlet sends the saved query. ST authenticates it for the approved attempt
    and presents five independently shuffled columns for the user to select
    five distinct countries, then independently reshuffles for confirmation.
@@ -2470,7 +2464,7 @@ restart.
 5. Boomlet installs the chosen set, increments `consent_counter`, and
    saves the flag, outcome, exact signed encrypted `consent_set` packet, latest
    answer digest, and `waiting_receipt`, erasing the predecessor set and query.
-   An unchanged set still increments `consent_counter`.
+   Boomlet increments `consent_counter` even when the set is unchanged.
 6. Boomletwo verifies both signatures, fixed pair, inactive role, equality of
    the approved and local `consent_counter`, valid set, storage capacity, counter
    headroom, and no pending reset. It installs the set, combines the
@@ -2504,8 +2498,8 @@ counter.
 ST cancels with an authenticated `MessageWithNonce<u8>` containing zero and
 nonce `rotation_id`. Boomlet verifies the outstanding query or input stage and
 serializes cancellation against answer acceptance and packet creation.
-Before Boomlet records ST approval, it discards only the volatile query and
-releases the pause. Afterward, it follows steps 5–7 with the unchanged set,
+Before Boomlet records ST approval, Boomlet discards only the volatile query and
+releases the pause. Afterward, Boomlet follows steps 5–7 with the unchanged set,
 stored `under_duress`, and cancelled outcome. A saved device packet fixes the
 outcome.
 
@@ -2513,8 +2507,11 @@ At withdrawal end, Boomlet freezes country input and saves a fresh final ping
 and its expected placeholder before sending the ping. It requires the exact
 SAR receipt for either flag value. WT continues delivery through cleanup;
 Boomlet blocks new withdrawals and rotations until cleanup completes.
-Abandonment before an approved withdrawal ID preserves `under_duress` for the
-next withdrawal.
+If a withdrawal is abandoned before `approved_withdrawal_id` exists,
+Boomlet completes local cleanup under Section 18.2 and returns to `IDLE`,
+preserving `under_duress` for the next withdrawal. The final-ping,
+SAR-receipt, and paired-reset cleanup requirements apply only after
+`approved_withdrawal_id` exists.
 
 If `rotation_state` exists, Boomlet requires stage `complete` and initiates
 paired reset by saving the ended withdrawal, verified final SAR receipt, and
@@ -2541,9 +2538,9 @@ classification, installation, or counter advancement. The local command
 `RESUME()` returns the retained successor or backup receipt as exact stored
 bytes. Older or conflicting input cannot replace an attempt or change
 `under_duress` after reset. Before recording ST approval, Boomlet keeps one
-immutable volatile query and returns it on repetition. Query loss releases the
-pause and requires a fresh nonce; Boomlet discards queries on setup or pairing
-changes. After recording ST approval, Boomlet retries the exact pending
+immutable volatile query and returns it on repetition. If Boomlet loses the
+query, it releases the pause and requires a fresh nonce. Boomlet discards queries
+on setup or pairing changes. After recording ST approval, Boomlet retries the exact pending
 `consent_set` packet, resumption ping, or reset under Section 18.3. Devices
 preserve recorded state on timeout, invalid input, or unavailable storage.
 
@@ -2627,7 +2624,8 @@ The protocol uses the narrowest replay mechanism appropriate to each scope:
 - SAR placeholder replay memory;
 - strict actor state transitions.
 
-`peer_setup_nonce` MUST NOT be copied into messages already protected by a fresh challenge nonce. Peer-specific receipts MUST remain local prerequisites and MUST NOT enter common `setup_checkpoint` values.
+Peers MUST verify their local WT, SAR, and backup receipts before signing the
+corresponding `setup_checkpoint`.
 
 ## 18. Failure and recovery behavior
 
@@ -2687,8 +2685,8 @@ advance until a valid retry or recovery input is accepted.
 
 `abort` means explicit user or operator abandonment of the active attempt, or an
 unrecoverable local session-secret risk such as MuSig2 nonce reuse or session
-confusion. Aborting clears only disposable volatile state. It MUST preserve
-long-lived setup state, replay memory, and required recovery records.
+confusion. The aborting actor clears only disposable volatile state and MUST
+preserve long-lived setup state, replay memory, and required recovery records.
 Restarting after an abort is a new
 attempt and MUST satisfy the normal freshness requirements, including a fresh
 `peer_setup_nonce` for setup and fresh MuSig2 nonce material for signing.
@@ -2731,10 +2729,9 @@ Boomerang increases attacker uncertainty; it does not remove coercion. Loss of d
 
 ### 19.2 Boomlet load
 
-The chained `setup_checkpoint` hashes only setup ID, phase label, and
-predecessor. Peer-specific receipts remain local. Setup agreement reuses one
-signature object. The AES profile reuses one symmetric primitive for CBC, CMAC,
-and the SP 800-108 KDF.
+The compact setup checkpoint construction and reused setup-agreement signature
+reduce Boomlet work. The AES profile reuses one symmetric primitive for CBC,
+CMAC, and the SP 800-108 KDF.
 
 Implementations SHOULD cache derived keys transiently within an exchange,
 stream CMAC/CBC processing, and avoid persisting recomputable context. They MUST
@@ -2879,7 +2876,7 @@ A conforming implementation MUST provide tests for:
   multi-device history after duress activation;
 - duress placeholder context binding, including rejection across a different
   `approved_withdrawal_id` or setup session and acceptance of the canonical
-  context without ping sequence or commitment phase fields;
+  context defined in Section 16.3;
 - consent rotation and recovery under Section 16.7, including paired reset
   and safe and duress flow equivalence.
 

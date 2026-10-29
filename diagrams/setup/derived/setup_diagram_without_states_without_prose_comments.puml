@@ -94,7 +94,7 @@ hnote over User #Lavender:  user_selection := select_one_from_each(duress_displa
 
 ' Step 18
 User o-> ST:  <b>SetupStInput1 \n user_selection
-hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, \n retained_display_maps) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: duress_signal_index \n nonce: duress_check_space_with_nonce.nonce} \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("duress_response"), \n content: duress_signal_index_with_nonce)
+hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, \n retained_display_maps) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: DuressSignalIndex{indices: duress_signal_index} \n nonce: duress_check_space_with_nonce.nonce} \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("duress_response"), \n content: duress_signal_index_with_nonce)
 
 ' Step 19
 ST o-> Iso:  <b>SetupStIsoMessage2 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0
@@ -118,7 +118,7 @@ hnote over User #Lavender:  user_selection := select_one_from_each(duress_displa
 
 ' Step 24
 User o-> ST:  <b>SetupStInput2 \n user_selection
-hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, \n retained_display_maps) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: duress_signal_index \n nonce: duress_check_space_with_nonce.nonce \n } \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("duress_response"), \n content: duress_signal_index_with_nonce)
+hnote over ST #Lavender:  duress_signal_index := map_to_original_indices(user_selection, \n retained_display_maps) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: DuressSignalIndex{indices: duress_signal_index} \n nonce: duress_check_space_with_nonce.nonce \n } \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 := encrypt_for_boomlet_0(context: canonical_encode("duress_response"), \n content: duress_signal_index_with_nonce)
 
 ' Step 25
 ST o-> Iso:  <b>SetupStIsoMessage3 \n duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0

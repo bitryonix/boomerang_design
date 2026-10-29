@@ -18,7 +18,7 @@ peers receive different receipts.
 
 ## Decision
 
-Each Boomlet generates one fresh `peer_setup_nonce` and authenticates it only
+Each Boomlet generates one fresh `peer_setup_nonce` and authenticates it
 inside its signed `PeerSetupRecord`. Peers deterministically sort the signed
 records by encoded Boomlet identity public key and construct
 `boomerang_params_seed` from the ordered signed peer records, preference-ordered
@@ -36,9 +36,8 @@ setup_instance_id =
 ```
 
 `wt_ids_collection` preserves the user-approved service preference order. The
-full structured context remains the preimage for `setup_instance_id`, but
-Boomlet does not send that full seed to ST during setup review. Instead,
-Boomlet sends a nonce-bound encrypted compact commitment:
+full structured context remains the preimage for `setup_instance_id`.
+Boomlet sends ST a nonce-bound encrypted compact commitment during setup review:
 
 ```text
 boomerang_params_seed_fingerprint =
@@ -119,13 +118,11 @@ setup_checkpoint =
 
 A Boomlet signs `setup_checkpoint` only after successfully verifying its local
 prerequisite for that phase. WT, SAR, and backup receipts remain local evidence
-and are not checkpoint inputs. `setup_checkpoint` is persisted as the local
-final `setup_checkpoint` and is not copied into setup-completion or withdrawal
-messages.
+for signing. Boomlet persists `setup_checkpoint` as its local setup-completion
+state.
 
-Messages already protected by a fresh challenge nonce do not repeat
-`peer_setup_nonce`. Withdrawal binds the stored `setup_instance_id`; the final
-checkpoint is only a local precondition that setup completed.
+Withdrawal binds the stored `setup_instance_id`; the final checkpoint is only
+a local precondition that setup completed.
 
 ## Rationale
 

@@ -17,7 +17,7 @@ hnote over ST #Lavender: duress_check_space_with_nonce := decrypt_from_%lower($b
 !endprocedure
 
 !procedure $WITHDRAWAL_DURESS_RESPONSE_CREATE($st_entity, $boomlet_entity, $response_envelope)
-hnote over ST #Lavender: duress_signal_index := \n original_indices_from_display_selection(duress_display_columns, user_selection) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: duress_signal_index \n nonce: duress_check_space_with_nonce.nonce } \n $response_envelope := encrypt_for_%lower($boomlet_entity)(context: canonical_encode("withdrawal_duress_response"), \n content: duress_signal_index_with_nonce)
+hnote over ST #Lavender: duress_signal_index := \n original_indices_from_display_selection(duress_display_columns, user_selection) \n duress_signal_index_with_nonce := MessageWithNonce{ \n content: DuressSignalIndex{indices: duress_signal_index} \n nonce: duress_check_space_with_nonce.nonce } \n $response_envelope := encrypt_for_%lower($boomlet_entity)(context: canonical_encode("withdrawal_duress_response"), \n content: duress_signal_index_with_nonce)
 !endprocedure
 
 !procedure $WITHDRAWAL_DURESS_RESPONSE_OPEN($boomlet_entity, $st_entity, $response_envelope)
