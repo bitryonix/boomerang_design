@@ -1218,8 +1218,9 @@ and(thresh(1, pk(normal_pubkey_0)..pk(normal_pubkey_4)),
     after(milestone_block_5))
 ```
 
-Milestones MUST be strictly increasing in `milestone_block_0` through
-`milestone_block_5` order. The Boomerang branch MUST be the earliest spendable
+Before setup agreement and descriptor construction, milestones MUST satisfy
+`0 <= milestone_block_0 < ... < milestone_block_5 < 500000000`.
+The Boomerang branch MUST be the earliest spendable
 branch. Fallback branches use only normal keys and monotonically reduce the
 threshold.
 
