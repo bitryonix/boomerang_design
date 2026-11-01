@@ -1,0 +1,121 @@
+@startuml non_initiator_withdrawal_protocol_development
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+title Non-Initiator Withdrawal Protocol Development View
+
+box "Non-initiator peer i" #AliceBlue
+actor User_i as User #LightCyan
+participant Boomlet_i as Boomlet #LightPink
+participant ST_i as ST #Violet
+participant Niso_i as Niso #LightGreen
+end box
+participant WT #Red
+participant Initiator_Peer as Initiator #White
+participant Other_Non_Initiators as Other_Peers #White
+participant SARs #Yellow
+
+autonumber "<b>[WN00]"
+
+note over User, SARs
+  <b>Scope</b>
+  Peer i is one of four non-initiator roles; the initiator may occupy any active setup position.
+  Approval collections remain in setup peer order.
+  Guards and detailed-message coverage are in withdrawal_development_contracts.md.
+end note
+
+note over Boomlet #LightYellow
+  <b>Boomlet withdrawal states</b>
+  IDLE -> REVIEWING_TX -> APPROVED -> COMMITTED -> DIGGING
+  -> READY_TO_SIGN -> SIGNING -> SIGNATURE_EXPORTED -> IDLE
+end note
+
+group Receive and review the initiator proposal
+Initiator -> WT: WN-OFFER-1  withdrawal_id, initiator TxApproval, recipient-encrypted PSBTs
+note over WT #Pink: Accept under G-INITIATOR-APPROVAL-AT-WT; create WtTxApproval
+WT -> Niso: WN-OFFER-2  WtTxApproval, initiator TxApproval, Enc_Boomlet_i(PSBT)
+note over Niso #Pink
+  Prevalidate visible signer membership, matching withdrawal_id, freshness, milestone eligibility,
+  schema, bounds, and transaction-independent properties under G-NONINITIATOR-OFFER.
+end note
+Niso -> Boomlet: WN-OFFER-3  proposal and current local block height
+note over Boomlet #Pink
+  Revalidate under G-NONINITIATOR-OFFER.
+  Decrypt PSBT; recompute withdrawal_id from active setup, tx_id, initiator identity, and approval nonce.
+  IDLE -> REVIEWING_TX
+end note
+Boomlet --> Niso: WN-OFFER-4  decrypted PSBT
+note over Niso #Pink: Validate PSBT and reconstructed withdrawal_id before presentation
+Niso -> User: WN-OFFER-5  PSBT and initiator identity
+User -> Niso: WN-OFFER-6  approve transaction contents
+Niso -> Boomlet: WN-REVIEW-1  begin trusted tx_id review
+Boomlet -> ST: WN-REVIEW-2  Enc_ST(TxReview{tx_id, nonce}) via Niso
+ST -> User: WN-REVIEW-3  trusted display of tx_id
+User -> ST: WN-REVIEW-4  approve exact intended tx_id
+ST -> Boomlet: WN-REVIEW-5  Enc_Boomlet(Sig_ST(exact TxReview)) via Niso
+note over Boomlet #Pink: Accept under G-TX-REVIEW-APPROVAL; REVIEWING_TX -> APPROVED
+Boomlet -> WT: WN-APPROVE-1  withdrawal_id and Enc_WT(Sig_Boomlet_i(TxApproval_i)) via Niso
+Other_Peers -> WT: WN-APPROVE-2  corresponding TxApproval_j from other non-initiators
+note over WT #Pink: Accept under G-TX-APPROVAL-COLLECTION; canonicalize in setup peer order
+WT -> Niso: WN-APPROVE-3  four non-initiator approvals
+note over Niso #Pink: Reconstruct full set with stored initiator approval; prevalidate under G-APPROVAL-SET-AT-PEER
+Niso -> Boomlet: WN-APPROVE-4  four non-initiator approvals and current local block height
+note over Boomlet #Pink
+  Reconstruct and revalidate the exact ordered five-approval set under G-APPROVAL-SET-AT-PEER.
+  approved_withdrawal_id := H(withdrawal_id, exact ordered five-approval set).
+end note
+end
+
+group Attestation and ordered commitment
+ref over User, ST, Boomlet
+  W-DURESS-CHECK
+  Prepare a fresh phase-bound placeholder; commitment remains gated on the initiator acknowledgment.
+end ref
+note over Boomlet #Lavender
+  Compute ApprovalSetAttestation from the ordered five approvals and WtTxApproval.
+  The attestation proves receipt, verification, and agreement on approved_withdrawal_id.
+end note
+Boomlet -> WT: WN-COMMIT-1  Sig_Boomlet_i(ApprovalSetAttestation) via Niso
+Other_Peers -> WT: WN-COMMIT-2  matching attestation_j x3
+Initiator -> WT: WN-COMMIT-3  staged initiator TxCommit_0 and Placeholder_0
+note over WT #Pink
+  G-APPROVAL-ATTESTATIONS opens only with all four matching non-initiator attestations.
+  The open gate permits initiator placeholder relay and initiator commit acknowledgment.
+end note
+WT -> SARs: WN-COMMIT-4  initiator Placeholder_0 to the initiator's setup-bound SAR
+SARs --> WT: WN-COMMIT-5  exact initiator SAR acknowledgment
+WT -> Niso: WN-COMMIT-6  Sig_WT(Sig_Boomlet_0(TxCommit_0))
+note over Niso #Pink: Prevalidate under G-INITIATOR-COMMIT-AT-NONINITIATOR
+Niso -> Boomlet: WN-COMMIT-7  acknowledged initiator commit and current local block height
+note over Boomlet #Pink
+  Revalidate under G-INITIATOR-COMMIT-AT-NONINITIATOR.
+  Only this accepted event authorizes creation of TxCommit_i.
+end note
+Boomlet -> WT: WN-COMMIT-8  Enc_WT(Sig_Boomlet_i(TxCommit_i + Placeholder_i)) via Niso
+note over Boomlet #Lavender: APPROVED -> COMMITTED
+WT -> SARs: WN-COMMIT-9  Placeholder_i to peer i's setup-bound SAR
+note over SARs #Pink: Accept and durably process under G-SAR-PLACEHOLDER; release at the fixed observable deadline
+SARs --> WT: WN-COMMIT-10  Enc_Boomlet_i(Sig_SAR_i(exact Placeholder_i))
+note over WT #Pink: Accept commit and SAR acknowledgment under G-TX-COMMIT-AT-WT
+WT -> Niso: WN-COMMIT-11  complete WT-signed TxCommit set and acknowledgment_i
+note over Niso #Pink: Prevalidate under G-COMMIT-COLLECTION
+Niso -> Boomlet: WN-COMMIT-12  complete set, acknowledgment_i, current local block height
+note over Boomlet #Pink
+  Revalidate complete set and exact own acknowledgment under G-COMMIT-COLLECTION.
+  COMMITTED -> DIGGING.
+  Draw one fresh private mystery only on DIGGING entry and initialize digging state.
+end note
+end
+
+ref over User, SARs
+  Continue with the common digging, reached-collection, signing, export, and reset sequence
+  in the WI-DIG, WI-FINAL, WI-SIGN, and WI-RELAY groups of
+  initiator_withdrawal_protocol_development.puml.
+  Apply the same peer-local guards with peer i as the recipient.
+end ref
+
+note over User, SARs #LightYellow
+  Invalid identity, signature, envelope, nonce, ceremony binding, sequence, block-height relation,
+  collection, transaction, or state transition stalls the active ceremony.
+end note
+
+@enduml

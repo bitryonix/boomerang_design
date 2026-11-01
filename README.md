@@ -8,9 +8,8 @@
 > **Cooperation is not completion.** Boomerang's design goal is to prevent
 > forced human cooperation from reliably producing a prompt, verifiable payout.
 
-Boomerang is a Bitcoin cold-storage protocol design for one specific threat:
-an attacker who shows up in person and forces the people who control the keys
-to cooperate.
+Boomerang is a Bitcoin cold-storage protocol design for an attacker who shows
+up in person and forces the people who control the keys to cooperate.
 
 Five people, called custodians, protect the funds, and the earliest way to spend
 requires all five to participate. Each custodian has a trusted signing device
@@ -102,27 +101,26 @@ traffic can start a prepared response before signing becomes available.
 ## A concrete coercion scenario
 
 Suppose five custodians protect a high-value treasury in a Taproot output. The
-output's earliest script branch is the five-of-five Boomerang branch: Bitcoin
+output's earliest script branch is the five-of-five Boomerang branch. Bitcoin
 consensus makes it available no earlier than block height `milestone_block_0`,
 and satisfying it requires a signature under every custodian's Boomerang
 public key. Each of those signatures is produced jointly by the custodian's
 recoverable normal key and a share held in a small trusted device called a
-Boomlet—and a Boomlet will not use its share until the withdrawal procedure
+Boomlet. A Boomlet will not use its share until the withdrawal procedure
 specified by the protocol has run to completion. An attacker identifies every
 custodian, controls them and their equipment, dictates a destination, and
 forces everyone through every step for the same attacker-chosen unsigned
 transaction. No one is withholding a password or pretending to cooperate.
 
 In a conventional five-of-five ceremony, that much cooperation may be enough
-to produce Bitcoin transaction signatures. In Boomerang, transaction review
-happens before final Bitcoin signing. During this withdrawal—not during
-setup—each user independently confirms the identifier (`tx_id`) of the exact
-unsigned transaction on an air-gapped display-and-input device called the
-Secure Terminal. That confirmation tells the user's Boomlet which transaction
-is meant. The Boomlet then signs a protocol message called `TxApproval`, which
-authorizes progress for this withdrawal and is bound to its `withdrawal_id`.
-Bitcoin transaction signing becomes available only after the later
-device-enforced progress requirements have been met.
+to produce Bitcoin transaction signatures. In Boomerang, each user
+independently confirms the identifier (`tx_id`) of the exact unsigned
+transaction on an air-gapped display-and-input device called the Secure
+Terminal during the withdrawal. That confirmation tells the user's Boomlet
+which transaction is meant. The Boomlet then signs a protocol message called
+`TxApproval`, which authorizes progress for this withdrawal and is bound to its
+`withdrawal_id`. Bitcoin transaction signing becomes available only after the
+later device-enforced progress requirements have been met.
 
 A coordination service called the Watchtower collects one valid `TxApproval`
 from each of the five Boomlets. Every Boomlet verifies the ordered set of
@@ -157,15 +155,14 @@ in
 withdrawal state called `DIGGING` only after it verifies the complete signed
 `TxCommit` collection and its own exact SAR acknowledgment.
 
-Entering `DIGGING` is the only moment a Boomlet draws its `mystery`: a fresh
-private threshold, sampled from bounds fixed by the protocol profile, that
+Entering `DIGGING` is the only moment a Boomlet draws its `mystery`. This fresh
+private threshold is sampled from bounds fixed by the protocol profile and
 sets how many successful local `counter` increments this device requires before
-it will sign. The users cannot read the thresholds before they are reached,
-did not choose them during setup, cannot lower them, and cannot make the
-`counter` values advance early. An increment requires a valid `pong` tied to
-the active withdrawal, advancing local chain progress, and fresh-enough current
-messages from the other peers; an otherwise valid catch-up round does not
-increment.
+it will sign. The users cannot read or lower the thresholds before they are
+reached and cannot make the `counter` values advance early. An increment
+requires a valid `pong` tied to the active withdrawal, advancing local chain
+progress, and fresh-enough current messages from the other peers; an otherwise
+valid catch-up round does not increment.
 Signing begins only after every Boomlet reports that its threshold has been
 reached.
 
@@ -179,8 +176,8 @@ The attacker still needs signing, a verifiable payout, exfiltration, and a
 safe escape. A primary-branch withdrawal makes signing wait on acknowledged
 duress traffic and five private thresholds, while a duress answer from any
 user starts a response on a parallel track. The high-level map shows those
-tracks. The expandable map beneath it follows one case—coercion that begins
-before the withdrawal does—and exposes more of the protocol ordering.
+tracks. The expandable map beneath it follows coercion that begins before the
+withdrawal and shows more of the protocol ordering.
 
 ```mermaid
 flowchart TB
@@ -202,7 +199,7 @@ flowchart TB
 
     subgraph RES["RESPONSE — proceeds asynchronously"]
         direction LR
-        R1["Duress answer<br/>durably activates response"] --> R2["Prepared responder<br/>assesses and acts"]
+        R1["Duress answer<br/>activates duress response"] --> R2["Prepared responder<br/>assesses and acts"]
     end
 
     A2 -. "forces" .-> B1
@@ -244,12 +241,12 @@ flowchart TD
     D --> N["Each non-initiator verifies that signed commit,<br/>then sends its TxCommit and placeholder"]
     N --> K["Each remaining SAR durably processes, then<br/>acknowledges, its peer's exact placeholder"]
     K --> C["Each Boomlet verifies the complete TxCommit<br/>collection and its own exact SAR acknowledgment"]
-    C --> M["Only now: each Boomlet enters DIGGING<br/>and draws a fresh private mystery"]
-    M --> R["Progress rounds: each Boomlet's signed ping<br/>carries a newly encrypted placeholder"]
+    C --> M["Each Boomlet enters DIGGING here<br/>and draws a fresh private mystery"]
+    M --> R["Each progress-round ping<br/>carries a newly encrypted placeholder"]
     R --> P["SAR must acknowledge each placeholder<br/>before its ping can enter a pong reply"]
     P --> Q{"All five thresholds reached?"}
     Q -- "No" --> R
-    Q -- "Yes" --> S["Signing can begin:<br/>all five peers must sign"]
+    Q -- "Yes" --> S["Signing can begin<br/>All five peers must sign"]
     S --> V["Attacker must still verify payout,<br/>exfiltrate, and escape"]
 
     I0 -. "if the initiator<br/>signaled duress" .-> X["The prepared response starts on its own track<br/>while the ceremony continues"]
@@ -280,16 +277,16 @@ flowchart TD
 
 > [!NOTE]
 > **A SAR acknowledgment is not a rescue guarantee.** It proves exact protocol
-> delivery and durable activation when duress was signaled—not timely, lawful,
-> effective, correctly directed, or safe intervention. The responder may act
-> while the attacker is still waiting, but the protocol cannot guarantee the
-> result.
+> delivery and durable activation when duress was signaled. It does not prove
+> timely, lawful, effective, correctly directed, or safe intervention. The
+> responder may act while the attacker is still waiting, but the protocol
+> cannot guarantee the result.
 
 > [!NOTE]
 > **Boomerang defines no special cancellation path.** In a withdrawal approved
 > in good faith, the peers might discover during `DIGGING` that the destination
 > is controlled by an attacker. The practical opportunity is simply that the
-> transaction remains unsigned and unbroadcast: any required peer can stop
+> transaction remains unsigned and unbroadcast. Any required peer can stop
 > participating or explicitly abandon the ceremony, after which the group can
 > start a fresh withdrawal to a correct destination. This cannot reverse a
 > transaction that has already been signed and broadcast.
@@ -297,10 +294,11 @@ flowchart TD
 ## One coupled mechanism
 
 > [!IMPORTANT]
-> **Progress dependency:** initial placeholder → exact SAR acknowledgment →
-> `DIGGING`; then signed `ping` + freshly encrypted placeholder → exact SAR
-> acknowledgment → eligibility for `pong` → possible local `counter` increment.
-> Removing the duress-delivery path also removes required withdrawal progress.
+> **Required progress dependency.** Initial placeholder → exact SAR
+> acknowledgment → `DIGGING`; then signed `ping` + freshly encrypted placeholder
+> → exact SAR acknowledgment → eligibility for `pong` → possible local `counter`
+> increment. Removing the duress-delivery path also removes required withdrawal
+> progress.
 
 A delay alone merely tells an attacker how long to wait. A silent alarm alone
 may be left out of the very path the attacker needs. Boomerang couples them so
@@ -329,12 +327,10 @@ observation of the user and compromised equipment are separate threats.
 
 ### Evidence and its limits
 
-Physical attacks on bitcoin holders are documented, not hypothetical. A
+Physical attacks on bitcoin holders are documented. A
 [2024 peer-reviewed AFT study](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.AFT.2024.24)
-retained 105 news-reported incidents from 2014 through October 2023. Sixty-six
-recorded demands were for cryptocurrency transfers, including 26 specifically
-for Bitcoin, 30 were for keys or devices, and nine were unspecified. Seventy
-attacks were reported successful, 29 failed, and six had no stated outcome.
+provides the selected, underreported media sample used below. Its missing
+custody and response details limit what can be inferred about Boomerang.
 
 The diagram separates reported observations, the inference they support, and
 the case-level facts the reports do not provide.
@@ -382,9 +378,9 @@ effects.
 | Outcome unstated | **6** |
 
 > [!NOTE]
-> **Evidence boundary:** these are counts in a selected, underreported media
-> sample—not population rates, an estimate of personal victimization risk, or
-> a Boomerang effectiveness rate.
+> **Evidence boundary:** These are counts in a selected, underreported media
+> sample. They are not population rates, an estimate of personal victimization
+> risk, or a Boomerang effectiveness rate.
 
 A later
 [2026 TRM Labs/Metropolitan Police review](https://www.trmlabs.com/reports-and-whitepapers/wrench-attacks-crypto-enabled-violent-targeting)
@@ -423,18 +419,18 @@ and each device maintains its own `counter`.
 > [!IMPORTANT]
 > **How to read the readiness curve**
 >
-> - **Horizontal axis (`x`):** the percentage of one Boomlet's allowed
+> - **Horizontal axis (`x`).** It shows the percentage of one Boomlet's allowed
 >   `mystery` values at or below hypothetical local `counter` value `k`.
-> - **Vertical axis:** the probability that all five independently drawn
->   thresholds have been reached in the special slice where all five local
->   `counter` values equal `k`.
-> - **Not shown:** elapsed time, percent of the withdrawal completed, or a claim
->   that real `counter` values remain synchronized.
+> - **Vertical axis.** It shows the probability that all five independently
+>   drawn thresholds have been reached in the special slice where all five
+>   local `counter` values equal `k`.
+> - **Excluded meanings.** The chart does not show elapsed time, percent of the
+>   withdrawal completed, or synchronized real `counter` values.
 
 ```mermaid
 xychart-beta
     title "All-five readiness in the synchronized slice k1 = ... = k5 = k"
-    x-axis "x: one Boomlet's allowed mystery values at or below k (%)" 0 --> 100
+    x-axis "One Boomlet's allowed mystery values at or below k, x (%)" 0 --> 100
     y-axis "Probability all five thresholds are reached (%)" 0 --> 100
     line [0, 0.00003, 0.001, 0.0076, 0.032, 0.0977, 0.243, 0.5252, 1.024, 1.8453, 3.125, 5.0328, 7.776, 11.6029, 16.807, 23.7305, 32.768, 44.3705, 59.049, 77.3781, 100]
 ```
@@ -449,15 +445,13 @@ xychart-beta
 | 95% | 95% | 77.38% |
 | 100% | 100% | 100% |
 
-When `x = 50%`, half of one Boomlet's allowed threshold values are at or below
-its `counter` value `k`. That Boomlet is 50% likely to be ready, but all five
-are ready with probability `0.5^5 = 3.125%`, about 1 in 32. The smooth line is
-a normalized guide sampled every five percentage points; a concrete profile
-has integer thresholds and therefore a discrete staircase. When actual local
+At `x = 50%`, one Boomlet has a 50% readiness probability, while all five are
+ready with probability `0.5^5 = 3.125%`, about 1 in 32. The smooth line is a
+normalized guide sampled every five percentage points; a concrete profile has
+integer thresholds and therefore a discrete staircase. When actual local
 `counter` values differ, all-five readiness is the product of the five
-cumulative probabilities at their respective `counter` values. Neither axis
-is elapsed time or percent complete. The formal definition, derivation, and
-caveats are in
+cumulative probabilities at their respective `counter` values. The formal
+definition, derivation, and caveats are in
 [DESIGN §12](DESIGN.md#12-attack-economics-and-security-argument) and
 [coercion economics §4](security_models/coercion_economics.md#4-protocol-derived-completion-distribution).
 
@@ -466,11 +460,11 @@ caveats are in
 Expected payout must exceed the cost of sustained control plus the expected
 loss from disruption. Boomerang pushes completion toward the far end of the
 range and makes required progress carry a response opportunity. After every
-incomplete round, the attacker decides whether to continue:
+incomplete round, the attacker decides whether to continue.
 
 ```mermaid
 flowchart LR
-    I["Round ends:<br/>not all five are ready"] --> Q{"Continue coercion?"}
+    I["Incomplete round<br/>Not all five are ready"] --> Q{"Continue coercion?"}
     Q -- "No" --> A["Abandon<br/>Sunk costs remain"]
     Q -- "Yes" --> C["Pay more control cost<br/>Bear more response exposure"]
     C --> R{"All five thresholds<br/>reached?"}
@@ -495,12 +489,12 @@ losses. The formulas, observed data, and sensitivity boundaries are in the
 
 ## Spending paths
 
-The current profile has exactly five peers and two on-chain regimes (the full
-construction is in [DESIGN §8](DESIGN.md#8-on-chain-construction)):
+The current profile has exactly five peers and two on-chain regimes. The full
+construction is in [DESIGN §8](DESIGN.md#8-on-chain-construction).
 
 - The primary five-of-five Boomerang branch becomes available at
-  `milestone_block_0`. "Primary" describes branch order—this is the earliest
-  branch in the script tree—not a preference among paths. Each peer's signing
+  `milestone_block_0`. "Primary" identifies the earliest branch in the script
+  tree. It does not indicate a preference among paths. Each peer's signing
   key combines a recoverable normal key with a Boomlet-held share. The
   Boomlet's material is host-inaccessible, although the authorized setup flow
   can export it in an authenticated, target-bound envelope to a designated
@@ -577,24 +571,26 @@ services, jurisdiction-specific response planning, and independent review.
 Quick answers for a first read.
 
 <details>
-<summary><strong>Protocol mechanics</strong> — attacker objective, duress delivery, and SAR acknowledgment</summary>
+<summary><strong>Protocol mechanics</strong> (attacker objective, duress delivery, and SAR acknowledgment)</summary>
 
 **What must a payout-seeking attacker actually complete?**
-A valid, verifiable transfer plus a viable exit: compel every user through
-transaction review and the pre-signing protocol steps, keep the withdrawal
-ceremony progressing to completion, obtain the final Bitcoin signatures,
-verify the payment, move the bitcoin beyond recovery, and escape. Learning a
-seed phrase alone does not finish the job against the primary branch.
+The attacker needs a valid, verifiable transfer plus a viable exit. This
+requires compelling every user through transaction review and the pre-signing
+protocol steps, keeping the withdrawal ceremony progressing to completion,
+obtaining the final Bitcoin signatures, verifying the payment, moving the
+bitcoin beyond recovery, and escaping. Learning a seed phrase alone does not
+finish the job against the primary branch.
 
 **How do the required withdrawal messages carry duress state?**
 Each peer's signed `TxCommit` travels with an encrypted placeholder produced
 from that user's duress answer, and every later `ping` carries a freshly
 encrypted placeholder. SAR must acknowledge each peer's initial placeholder
 before that peer's Boomlet may enter `DIGGING`, and must acknowledge every
-`ping`'s placeholder before that `ping` may be used in a `pong`—so the alarm
-channel cannot be dropped without halting required progress.
+`ping`'s placeholder before that `ping` may be used in a `pong`. This coupling
+prevents the alarm channel from being dropped without halting required
+progress.
 
-**What does a SAR acknowledgment prove—and not prove?**
+**What does a SAR acknowledgment prove, and what remains unproven?**
 It proves exact delivery and durable processing of the placeholder, including
 durable activation of response state when duress is signaled. It does
 not prove timely, lawful, effective, correctly directed, or safe
@@ -603,7 +599,7 @@ intervention.
 </details>
 
 <details>
-<summary><strong>Economics and spending paths</strong> — attacker cost, graph axes, protocol stages, and fallback</summary>
+<summary><strong>Economics and spending paths</strong> (attacker cost, graph axes, protocol stages, and fallback)</summary>
 
 **Why can uncertainty raise the attacker's cost and exposure?**
 The attacker must decide, round after round, whether to keep paying for
@@ -639,9 +635,9 @@ or percent complete. The formal definition and derivation are in
 **Can a subset of peers take the funds?**
 Not through the primary Boomerang branch, which requires signatures under all
 five Boomerang keys. The fallback branches change the required set on the
-agreed schedule: five normal keys from `milestone_block_1`, four from
-`milestone_block_2`, and so on down to one from `milestone_block_5`. Once a
-fallback height passes, that branch needs only its stated number of normal
+agreed schedule. They require five normal keys from `milestone_block_1`, four
+from `milestone_block_2`, and so on down to one from `milestone_block_5`. Once
+a fallback block height passes, that branch needs only its stated number of normal
 keys. This is the recoverability trade the design makes, and it is why
 operators are expected to roll funds into a fresh setup before fallback
 becomes an attractive predictable target; see the
@@ -650,7 +646,7 @@ becomes an attractive predictable target; see the
 </details>
 
 <details>
-<summary><strong>Limits and deployment</strong> — excluded attackers, failure boundaries, SAR reality, and design status</summary>
+<summary><strong>Limits and deployment</strong> (excluded attackers, failure boundaries, SAR reality, and design status)</summary>
 
 **Does the argument cover state-level or harm-motivated attackers?**
 No. Boomerang targets a cost-sensitive, payout-seeking attacker who needs a
@@ -661,13 +657,13 @@ indefinitely patient attackers fall outside the deterrence claim.
 **What are the main technical and human-safety limits?**
 Five-of-five prevents a bypassing subset but lets any one peer or required
 dependency stall the primary ceremony, and WT or SAR unavailability stalls it
-too—failure does not authorize fallback early. A compromised Boomlet can
+too. Failure does not authorize fallback early. A compromised Boomlet can
 defeat that device's off-chain enforcement. A compromised Secure Terminal can
 misdisplay a transaction identifier or alter duress input, but cannot by itself
-advance a Boomlet `counter` or create the Boomlet signing share. The deniability
-claim covers protocol traffic only, not physical observation,
-learned consent responses, or a responder revealing the signal. Longer
-coercion can increase human harm; time has value only when a credible,
+advance a Boomlet `counter` or create the Boomlet signing share. Protocol
+traffic conceals the safe or duress classification. Physical observation,
+learned consent responses, or a responder revealing the signal can expose it.
+Longer coercion can increase human harm; time has value only when a credible,
 prepared response can use it. The full boundary catalog is in
 [DESIGN §14](DESIGN.md#14-failure-and-human-safety-boundaries).
 
@@ -675,8 +671,8 @@ prepared response can use it. The full boundary catalog is in
 Not as an established service category. The specification defines the message
 contract a SAR must satisfy and deliberately does not define its legal
 authority or physical-response procedures. Whether a real institution can
-operate the role—lawfully, competently, and per jurisdiction—is an open
-deployment question;
+operate the role lawfully, competently, and in each jurisdiction is an open
+deployment question.
 [coercion economics §7](security_models/coercion_economics.md#7-calibration-and-evaluation-requirements)
 lists the response-exercise evidence a deployment would need.
 
@@ -697,7 +693,7 @@ verification path.
 > [`GLOSSARY.md`](GLOSSARY.md) first; these documents assume its protocol
 > vocabulary.
 
-| Document | Use it for |
+| Resource | Use it for |
 | --- | --- |
 | [`GLOSSARY.md`](GLOSSARY.md) | Concise lookup index for actors, keys, states, and protocol terms |
 | [`DESIGN.md`](DESIGN.md) | The complete conceptual, economic, and security argument |
@@ -705,11 +701,13 @@ verification path.
 | [`security_models/`](security_models/README.md) | Threat model, assumptions, attack trees, risks, and unresolved gaps |
 | [`security_models/coercion_economics.md`](security_models/coercion_economics.md) | Detailed quantitative model, observed evidence, and calibration boundaries |
 | [`adr/`](adr/README.md) | Accepted design decisions and their rationale |
+| [Setup procedure](diagrams/setup/README.md) and [setup sequence SVG](diagrams/setup/setup_diagram.svg) | Setup ceremony and its message sequence |
+| [Withdrawal procedure](diagrams/withdrawal/README.md), [initiator SVG](diagrams/withdrawal/initiator_withdrawal_diagram.svg), and [non-initiator SVG](diagrams/withdrawal/non_initiator_withdrawal_diagram.svg) | Withdrawal steps and role-specific message sequences |
+| [Duress protocol](spec/SPEC.md#16-duress-protocol) | Consent enrollment and duress signaling |
+| [Secure Terminal](<operational notes/secure_terminal/README.md>) | Trusted display, input, QR transport, and hardware expectations |
 
-Subsystem material covers [setup](setup/README.md),
-[withdrawal](withdrawal/README.md), [duress protection](duress_protection/README.md),
-and the [Secure Terminal](secure_terminal/README.md). The specification controls
-where explanatory documents differ.
+The subsystem documents and listed SVGs are explanatory. The specification
+controls where they differ.
 
 ### Suggested reading paths
 
@@ -718,4 +716,5 @@ where explanatory documents differ.
 | **Orientation · 20–25 minutes** | Read this README through [Boomerang in 60 seconds](#boomerang-in-60-seconds), then read [`GLOSSARY.md`](GLOSSARY.md) in full; return to [A concrete coercion scenario](#a-concrete-coercion-scenario) and continue through the README |
 | **Technical overview · about 1 hour** | [`DESIGN.md`](DESIGN.md) end to end, then the specification's protocol profile, goals and non-goals, architecture, descriptor, withdrawal protocol, and failure-behavior sections |
 | **Deep review** | [`spec/SPEC.md`](spec/SPEC.md) in full, then the [threat model](security_models/README.md), [assumption register](security_models/assumption_register.md), [forced-determinism analysis](security_models/forced_determinism.md), [coercion economics](security_models/coercion_economics.md), and the [ADRs](adr/README.md) |
-| **By contribution angle** | Protocol reviewers: [`spec/SPEC.md`](spec/SPEC.md). Threat modelers: [`security_models/`](security_models/README.md). Hardware reviewers: [Secure Terminal](secure_terminal/README.md), [duress protection](duress_protection/README.md), and the specification's Boomlet sections. Usability reviewers: [setup](setup/README.md) and [withdrawal](withdrawal/README.md) ceremonies |
+| **Visual protocol review** | Compare the setup and withdrawal-role SVGs in the resource table with their subsystem procedures; resolve discrepancies against the specification |
+| **By contribution angle** | Protocol review uses [`spec/SPEC.md`](spec/SPEC.md). Threat modeling uses [`security_models/`](security_models/README.md). Hardware review uses [Secure Terminal](<operational notes/secure_terminal/README.md>), the [duress protocol](spec/SPEC.md#16-duress-protocol), and the specification's Boomlet sections. Usability review uses the [setup](diagrams/setup/README.md) and [withdrawal](diagrams/withdrawal/README.md) ceremonies. |

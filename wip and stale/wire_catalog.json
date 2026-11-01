@@ -1,0 +1,626 @@
+{
+  "catalog_format_version": 1,
+  "catalog_status": "structural_contexts_incomplete",
+  "authority_for": "canonical_wire_catalog",
+  "normative_spec": "spec/SPEC.md",
+  "protocol_version_symbol": "PROTOCOL_VERSION",
+  "transport_scope": "canonical_protocol_objects_only",
+  "profile_constants": {
+    "peer_count": 5,
+    "duress_vocabulary_size": 193,
+    "duress_selection_count": 5
+  },
+  "invariants": {
+    "byte_order": "big_endian",
+    "schema_version_zero": "reserved",
+    "unsupported_schema_version": "reject",
+    "field_id_zero": "reserved",
+    "field_order": "ascending_id",
+    "version_1_fields": "all_required",
+    "null_tag": "reserved",
+    "trailing_bytes": "reject",
+    "dynamic_value_requires_exact_context": true
+  },
+  "unresolved": {
+    "text_encoder_non_nfc_input": [
+      "normalize_before_encoding",
+      "reject_before_encoding"
+    ],
+    "text_field_profiles": "null text_profile entries",
+    "context_types": "context rules without enumerated variants"
+  },
+  "reserved_tags": [
+    "0x00"
+  ],
+  "header_scalars": [
+    {
+      "name": "u16_raw",
+      "encoded_size": 2,
+      "byte_order": "big_endian",
+      "tagged": false
+    },
+    {
+      "name": "u32_raw",
+      "encoded_size": 4,
+      "byte_order": "big_endian",
+      "tagged": false
+    }
+  ],
+  "primitives": [
+    {
+      "name": "bool",
+      "encodings": {
+        "false": "0x01",
+        "true": "0x02"
+      },
+      "encoded_size": 1
+    },
+    {
+      "name": "u8",
+      "tag": "0x10",
+      "payload_bytes": 1,
+      "encoded_size": 2
+    },
+    {
+      "name": "u16",
+      "tag": "0x11",
+      "payload_bytes": 2,
+      "encoded_size": 3
+    },
+    {
+      "name": "u32",
+      "tag": "0x12",
+      "payload_bytes": 4,
+      "encoded_size": 5
+    },
+    {
+      "name": "u64",
+      "tag": "0x13",
+      "payload_bytes": 8,
+      "encoded_size": 9
+    },
+    {
+      "name": "bytes",
+      "tag": "0x20",
+      "length_type": "u32_raw",
+      "header_bytes": 5,
+      "encoded_size_formula": "5 + payload_bytes"
+    },
+    {
+      "name": "text",
+      "tag": "0x21",
+      "length_type": "u32_raw",
+      "header_bytes": 5,
+      "encoding": "UTF-8",
+      "wire_normalization": "NFC",
+      "decoder_non_nfc_input": "reject",
+      "boomlet_parsed_profile": "ASCII",
+      "encoded_size_formula": "5 + utf8_payload_bytes"
+    },
+    {
+      "name": "bytes16",
+      "tag": "0x22",
+      "payload_bytes": 16,
+      "encoded_size": 17
+    },
+    {
+      "name": "bytes32",
+      "tag": "0x23",
+      "payload_bytes": 32,
+      "encoded_size": 33
+    },
+    {
+      "name": "bytes33",
+      "tag": "0x24",
+      "payload_bytes": 33,
+      "encoded_size": 34
+    },
+    {
+      "name": "bytes64",
+      "tag": "0x25",
+      "payload_bytes": 64,
+      "encoded_size": 65
+    }
+  ],
+  "containers": [
+    {
+      "name": "list",
+      "tag": "0x30",
+      "count_type": "u32_raw",
+      "header_bytes": 5,
+      "ordering": "preserved"
+    },
+    {
+      "name": "tuple",
+      "tag": "0x31",
+      "count_type": "u16_raw",
+      "header_bytes": 3,
+      "count_rule": "exact_expected_type_count"
+    },
+    {
+      "name": "struct",
+      "tag": "0x40",
+      "schema_id_type": "u16_raw",
+      "schema_version_type": "u16_raw",
+      "field_count_type": "u16_raw",
+      "header_bytes": 7,
+      "field_id_type": "u16_raw",
+      "field_header_bytes": 2
+    }
+  ],
+  "tuple_constraints": [
+    {
+      "type": "tuple<SignedMessage<MessageWithNonce<u64>>, Collection<u16>, bool>",
+      "element": 1,
+      "exact_items": {
+        "constant": "duress_selection_count"
+      }
+    }
+  ],
+  "context_rules": {
+    "ordered_tuple_content": {
+      "selector": "enclosing_protocol_context",
+      "variants": {
+        "ConsentRotationChallenge": "tuple<MessageWithNonce<u64>, DuressCheckSpace>",
+        "ConsentRotationAnswer": "tuple<SignedMessage<MessageWithNonce<u64>>, DuressSignalIndex>",
+        "ConsentSetChange": "tuple<SignedMessage<MessageWithNonce<u64>>, Collection<u16>, bool>",
+        "ConsentReset": "tuple<u64, bytes32, CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>>",
+        "RotationStatus": "tuple<u8, DuressCheckSpace>"
+      },
+      "context_wrong_value": "reject"
+    },
+    "signed_message_content": {
+      "selector": [
+        "SignedMessage.domain",
+        "caller_expected_type"
+      ],
+      "variants": {
+        "Boomerang/consent_rotation/v1/st_review": "MessageWithNonce<u64>",
+        "Boomerang/consent_rotation/v1/consent_set": "tuple<SignedMessage<MessageWithNonce<u64>>, Collection<u16>, bool>",
+        "Boomerang/consent_rotation/v1/reset": "tuple<u64, bytes32, CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>>",
+        "Boomerang/consent_rotation/v1/consent_set_received": "bytes32",
+        "Boomerang/consent_rotation/v1/reset_ack": "bytes32",
+        "Boomerang/setup/peer_setup_record": "PeerSetupRecord",
+        "Boomerang/setup/params_review_approval": "MessageWithNonce<bytes32>",
+        "Boomerang/setup/agreement": "bytes32",
+        "Boomerang/setup/wt_receipt": "WtSetupReceipt",
+        "Boomerang/setup/phase_checkpoint": "bytes32",
+        "Boomerang/setup/sar_id": "tuple<bytes32, SarId>",
+        "Boomerang/setup/sar_response": "SarSetupResponse",
+        "Boomerang/setup/wt_sar_response": "WtSarSetupResponse",
+        "Boomerang/setup/sar_dynamic_receipt": "DynamicRescueReceipt",
+        "Boomerang/setup/backup_request": "BoomletBackupRequest",
+        "Boomerang/setup/backup_done": "BackupDone",
+        "Boomerang/withdrawal/tx_review_approval": "MessageWithNonce<bytes32>",
+        "Boomerang/withdrawal/tx_approval": "TxApproval",
+        "Boomerang/withdrawal/wt_tx_approval": "WtTxApproval",
+        "Boomerang/withdrawal/approval_set_attestation": "bytes32",
+        "Boomerang/withdrawal/tx_commit": "TxCommit",
+        "Boomerang/withdrawal/tx_commit_envelope": "PaddedMessage<SignedMessage<TxCommit>, CbcCmacEnvelope<bytes32>>",
+        "Boomerang/withdrawal/wt_tx_commit_ack": "SignedMessage<TxCommit>",
+        "Boomerang/withdrawal/sar_placeholder_response": "CbcCmacEnvelope<bytes32>",
+        "Boomerang/withdrawal/ping": "Ping",
+        "Boomerang/withdrawal/ping_envelope": "PaddedMessage<SignedMessage<Ping>, CbcCmacEnvelope<bytes32>>",
+        "Boomerang/withdrawal/pong": "Pong"
+      },
+      "context_wrong_value": "reject"
+    },
+    "message_with_nonce_content": {
+      "selector": "enclosing_protocol_context",
+      "variants": {
+        "consent_rotation/request": "u64",
+        "consent_rotation/new_set_query": "DuressCheckSpace",
+        "consent_rotation/new_set_answer": "DuressSignalIndex",
+        "consent_rotation/cancel": "u8",
+        "consent_rotation/ui_status": "bytes32",
+        "consent_rotation/ui_status_response": "tuple<u8, DuressCheckSpace>",
+        "setup/duress_challenge": "DuressCheckSpace",
+        "setup/duress_response": "DuressSignalIndex",
+        "setup/params_review": "bytes32",
+        "withdrawal/tx_review": "bytes32",
+        "withdrawal/duress_challenge": "DuressCheckSpace",
+        "withdrawal/duress_response": "DuressSignalIndex"
+      },
+      "context_wrong_value": "reject"
+    },
+    "padded_message_content": {
+      "selector": "enclosing_signature_domain",
+      "variants": {
+        "Boomerang/withdrawal/tx_commit_envelope": "SignedMessage<TxCommit>",
+        "Boomerang/withdrawal/ping_envelope": "SignedMessage<Ping>"
+      },
+      "context_wrong_value": "reject"
+    },
+    "padded_message_padding": {
+      "selector": "enclosing_signature_domain",
+      "semantic_role": "duress_placeholder",
+      "variants": {
+        "Boomerang/withdrawal/tx_commit_envelope": "CbcCmacEnvelope<bytes32>",
+        "Boomerang/withdrawal/ping_envelope": "CbcCmacEnvelope<bytes32>"
+      },
+      "authenticated_as_received": true,
+      "context_wrong_value": "reject"
+    },
+    "dynamic_rescue_exchange": {
+      "selector": "phone_sar_payload_type",
+      "variants": {
+        "sar_dynamic_registration": "tuple<bytes32, DynamicRescueUpload>",
+        "sar_dynamic_upload": "DynamicRescueUpload",
+        "sar_dynamic_receipt": "SignedMessage<DynamicRescueReceipt>"
+      },
+      "context_wrong_value": "reject"
+    },
+    "boomlet_backup_replay_state": {
+      "selector": "active_protocol_state",
+      "require_exact_schema_or_primitive_tuple": true,
+      "context_wrong_value": "reject"
+    }
+  },
+  "encryption_contexts": {
+    "selector": "cbc_cmac_context",
+    "contexts_complete": true,
+    "variants": {
+        "consent_rotation_consent_set": {"type": "SignedMessage<tuple<SignedMessage<MessageWithNonce<u64>>, Collection<u16>, bool>>", "signature_domain": "Boomerang/consent_rotation/v1/consent_set"},
+        "consent_rotation_consent_set_received": {"type": "SignedMessage<bytes32>", "signature_domain": "Boomerang/consent_rotation/v1/consent_set_received"},
+        "consent_rotation_reset": {"type": "SignedMessage<tuple<u64, bytes32, CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>>>", "signature_domain": "Boomerang/consent_rotation/v1/reset"},
+        "consent_rotation_reset_ack": {"type": "SignedMessage<bytes32>", "signature_domain": "Boomerang/consent_rotation/v1/reset_ack"},
+        "consent_rotation_current_set_challenge": {"type": "tuple<MessageWithNonce<u64>, DuressCheckSpace>"},
+        "consent_rotation_current_set_answer": {"type": "tuple<SignedMessage<MessageWithNonce<u64>>, DuressSignalIndex>"},
+        "consent_rotation_new_set_query": {"type": "MessageWithNonce<DuressCheckSpace>"},
+        "consent_rotation_new_set_answer": {"type": "MessageWithNonce<DuressSignalIndex>"},
+        "consent_rotation_cancel": {"type": "MessageWithNonce<u8>"},
+        "consent_rotation_completed": {"type": "bytes32"},
+        "consent_rotation_cancelled": {"type": "bytes32"},
+        "consent_rotation_ui_status": {"type": "MessageWithNonce<bytes32>"},
+        "consent_rotation_ui_status_response": {"type": "MessageWithNonce<tuple<u8, DuressCheckSpace>>"},
+      "backup_state": { "type": "BoomletBackupState" },
+      "duress_challenge": { "type": "MessageWithNonce<DuressCheckSpace>" },
+      "duress_response": { "type": "MessageWithNonce<DuressSignalIndex>" },
+      "params_review": { "type": "MessageWithNonce<bytes32>" },
+      "params_review_approval": { "type": "SignedMessage<MessageWithNonce<bytes32>>", "signature_domain": "Boomerang/setup/params_review_approval" },
+      "sar_dynamic_data": { "type": "bytes" },
+      "sar_id": { "type": "SignedMessage<tuple<bytes32, SarId>>", "signature_domain": "Boomerang/setup/sar_id" },
+      "sar_identifier": { "type": "tuple<bytes32, bytes32>" },
+      "sar_response": { "type": "SignedMessage<SarSetupResponse>", "signature_domain": "Boomerang/setup/sar_response" },
+      "sar_static_data": { "type": "StaticDoxingData" },
+      "withdrawal_duress_challenge": { "type": "MessageWithNonce<DuressCheckSpace>" },
+      "withdrawal_duress_placeholder": { "type": "bytes32" },
+      "withdrawal_duress_response": { "type": "MessageWithNonce<DuressSignalIndex>" },
+      "withdrawal_ping": { "type": "SignedMessage<PaddedMessage<SignedMessage<Ping>, CbcCmacEnvelope<bytes32>>>", "signature_domain": "Boomerang/withdrawal/ping_envelope" },
+      "withdrawal_pong": { "type": "SignedMessage<Pong>", "signature_domain": "Boomerang/withdrawal/pong" },
+      "withdrawal_psbt": { "type": "bytes" },
+      "withdrawal_sar_placeholder_response": { "type": "SignedMessage<CbcCmacEnvelope<bytes32>>", "signature_domain": "Boomerang/withdrawal/sar_placeholder_response" },
+      "withdrawal_tx_approval": { "type": "SignedMessage<TxApproval>", "signature_domain": "Boomerang/withdrawal/tx_approval" },
+      "withdrawal_tx_commit": { "type": "SignedMessage<PaddedMessage<SignedMessage<TxCommit>, CbcCmacEnvelope<bytes32>>>", "signature_domain": "Boomerang/withdrawal/tx_commit_envelope" },
+      "withdrawal_tx_review": { "type": "MessageWithNonce<bytes32>" },
+      "withdrawal_tx_review_approval": { "type": "SignedMessage<MessageWithNonce<bytes32>>", "signature_domain": "Boomerang/withdrawal/tx_review_approval" }
+    }
+  },
+  "schemas": [
+    {
+      "id": 1,
+      "name": "CbcCmacEnvelope",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "version", "type": "u8", "required": true },
+        { "id": 2, "name": "iv", "type": "bytes16", "required": true },
+        { "id": 3, "name": "ciphertext", "type": "bytes", "required": true },
+        { "id": 4, "name": "tag", "type": "bytes16", "required": true }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "SignedMessage",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "signer_identity_pubkey", "type": "bytes33", "required": true },
+        { "id": 2, "name": "domain", "type": "text", "required": true, "text_profile": "ASCII_registered_signature_domain" },
+        { "id": 3, "name": "content", "type": "value", "required": true, "context_rule": "signed_message_content" },
+        { "id": 4, "name": "signature", "type": "bytes64", "required": true }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "MessageWithNonce",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "content", "type": "value", "required": true, "context_rule": "message_with_nonce_content" },
+        { "id": 2, "name": "nonce", "type": "bytes32", "required": true }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "PaddedMessage",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "content", "type": "value", "required": true, "context_rule": "padded_message_content" },
+        { "id": 2, "name": "padding", "type": "value", "required": true, "context_rule": "padded_message_padding" }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "SarServiceFeePaymentInfo",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "service_fee_invoice", "type": "text", "required": true, "text_profile": null },
+        { "id": 2, "name": "payment_deadline", "type": "u64", "required": true },
+        { "id": 3, "name": "sar_id", "type": "SarId", "required": true }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "WtServiceFeePaymentInfo",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "setup_instance_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "service_fee_invoice", "type": "text", "required": true, "text_profile": null },
+        { "id": 3, "name": "payment_deadline", "type": "u64", "required": true },
+        { "id": 4, "name": "wt_id", "type": "WtId", "required": true }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "DuressCheckSpace",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "space", "type": "Collection<u16>", "required": true, "exact_items": { "constant": "duress_vocabulary_size" } }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "WtId",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "wt_tor_address", "type": "text", "required": true, "text_profile": null },
+        { "id": 2, "name": "wt_pubkey", "type": "bytes33", "required": true }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "SarId",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "sar_tor_address", "type": "text", "required": true, "text_profile": null },
+        { "id": 2, "name": "sar_pubkey", "type": "bytes33", "required": true }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "StaticDoxingData",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "name", "type": "text", "required": true, "text_profile": null },
+        { "id": 2, "name": "national_id", "type": "text", "required": true, "text_profile": null },
+        { "id": 3, "name": "address_home", "type": "text", "required": true, "text_profile": null },
+        { "id": 4, "name": "address_work", "type": "text", "required": true, "text_profile": null },
+        { "id": 5, "name": "phone_number_mobile", "type": "text", "required": true, "text_profile": null },
+        { "id": 6, "name": "phone_number_home", "type": "text", "required": true, "text_profile": null },
+        { "id": 7, "name": "phone_number_work", "type": "text", "required": true, "text_profile": null },
+        { "id": 8, "name": "trusted_person_name", "type": "text", "required": true, "text_profile": null },
+        { "id": 9, "name": "trusted_person_address", "type": "text", "required": true, "text_profile": null },
+        { "id": 10, "name": "trusted_person_phone_number", "type": "text", "required": true, "text_profile": null }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "DynamicRescueUpload",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "doxing_data_identifier", "type": "bytes32", "required": true },
+        { "id": 2, "name": "device_id", "type": "bytes32", "required": true },
+        { "id": 3, "name": "upload_id", "type": "bytes32", "required": true },
+        { "id": 4, "name": "upload_seq_num", "type": "u64", "required": true },
+        { "id": 5, "name": "dynamic_doxing_data_encrypted_by_device_data_key", "type": "CbcCmacEnvelope", "required": true },
+        { "id": 6, "name": "dynamic_upload_cmac", "type": "bytes16", "required": true }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "ServicePaymentReceipt",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "service_id", "type": "text", "required": true, "text_profile": null },
+        { "id": 2, "name": "invoice_reference", "type": "text", "required": true, "text_profile": null },
+        { "id": 3, "name": "payment_proof", "type": "bytes", "required": true }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "PeerId",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "boom_pubkey", "type": "bytes32", "required": true },
+        { "id": 2, "name": "normal_pubkey", "type": "bytes32", "required": true },
+        { "id": 3, "name": "boomlet_identity_pubkey", "type": "bytes33", "required": true }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "PeerSetupRecord",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "peer_id", "type": "PeerId", "required": true },
+        { "id": 2, "name": "peer_setup_nonce", "type": "bytes32", "required": true },
+        { "id": 3, "name": "tor_address", "type": "text", "required": true, "text_profile": null }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "MilestoneBlocks",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "milestone_block_0", "type": "u32", "required": true },
+        { "id": 2, "name": "milestone_block_1", "type": "u32", "required": true },
+        { "id": 3, "name": "milestone_block_2", "type": "u32", "required": true },
+        { "id": 4, "name": "milestone_block_3", "type": "u32", "required": true },
+        { "id": 5, "name": "milestone_block_4", "type": "u32", "required": true },
+        { "id": 6, "name": "milestone_block_5", "type": "u32", "required": true }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "BoomerangParamsSeed",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "ordered_peer_setup_records", "type": "Collection<SignedMessage<PeerSetupRecord>>", "required": true, "exact_items": { "constant": "peer_count" }, "ordering_rule": "boomlet_identity_pubkey_bytes" },
+        { "id": 2, "name": "wt_ids", "type": "Collection<WtId>", "required": true },
+        { "id": 3, "name": "milestone_blocks", "type": "MilestoneBlocks", "required": true }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "BoomerangParams",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "setup_instance_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "peer_ids", "type": "Collection<PeerId>", "required": true, "exact_items": { "constant": "peer_count" }, "ordering_rule": "corresponding_peer_setup_record_order" },
+        { "id": 3, "name": "wt_ids", "type": "Collection<WtId>", "required": true },
+        { "id": 4, "name": "milestone_blocks", "type": "MilestoneBlocks", "required": true },
+        { "id": 5, "name": "boomerang_descriptor", "type": "text", "required": true, "text_profile": null }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "WtSetupReceipt",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "setup_instance_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "boomerang_params_fingerprint", "type": "bytes32", "required": true }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "SarSetupResponse",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "setup_instance_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "doxing_data_identifier", "type": "bytes32", "required": true },
+        { "id": 3, "name": "fingerprint_of_static_doxing_data_encrypted_by_doxing_key_for_sar", "type": "bytes32", "required": true },
+        { "id": 4, "name": "iv_of_static_doxing_data_encrypted_by_doxing_key_for_sar", "type": "bytes16", "required": true }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "WtSarSetupResponse",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "setup_instance_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "content", "type": "CbcCmacEnvelope", "required": true },
+        { "id": 3, "name": "wt_suffix", "type": "text", "required": true, "text_profile": null }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "BoomletBackupRequest",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "backup_boomlet_pubkey", "type": "bytes33", "required": true },
+        { "id": 2, "name": "backup_normal_pubkey", "type": "bytes32", "required": true }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "BackupDone",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "setup_instance_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "backup_boomlet_pubkey", "type": "bytes33", "required": true },
+        { "id": 3, "name": "boomlet_pubkey", "type": "bytes33", "required": true }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "BoomletBackupState",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "setup_instance_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "boomlet_identity_private_key", "type": "bytes32", "required": true },
+        { "id": 3, "name": "boomlet_identity_public_key", "type": "bytes33", "required": true },
+        { "id": 4, "name": "boomlet_musig2_private_share", "type": "bytes32", "required": true },
+        { "id": 5, "name": "boomlet_musig2_public_share", "type": "bytes32", "required": true },
+        { "id": 6, "name": "normal_public_key", "type": "bytes32", "required": true },
+        { "id": 7, "name": "st_identity_public_key", "type": "bytes33", "required": true },
+        { "id": 8, "name": "tor_secret_key", "type": "bytes", "required": true },
+        { "id": 9, "name": "selected_sar_id", "type": "SarId", "required": true },
+        { "id": 10, "name": "doxing_key", "type": "bytes32", "required": true },
+        { "id": 11, "name": "duress_consent_set", "type": "Collection<u16>", "required": true, "exact_items": { "constant": "duress_selection_count" } },
+        { "id": 12, "name": "peer_setup_record_signed_by_boomlet", "type": "SignedMessage<PeerSetupRecord>", "required": true },
+        { "id": 13, "name": "boomerang_params", "type": "BoomerangParams", "required": true },
+        { "id": 14, "name": "setup_checkpoint", "type": "bytes32", "required": true },
+        { "id": 15, "name": "sar_setup_response_signed_by_sar", "type": "SignedMessage<SarSetupResponse>", "required": true },
+        { "id": 16, "name": "replay_state", "type": "value", "required": true, "context_rule": "boomlet_backup_replay_state" },
+        { "id": 17, "name": "consent_counter", "type": "u64", "required": true },
+        { "id": 18, "name": "under_duress", "type": "bool", "required": true }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "TxApproval",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "withdrawal_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "approval_nonce", "type": "bytes32", "required": true },
+        { "id": 3, "name": "event_block_height", "type": "u32", "required": true }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "WtTxApproval",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "withdrawal_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "event_block_height", "type": "u32", "required": true }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "TxCommit",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "approved_withdrawal_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "event_block_height", "type": "u32", "required": true }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Ping",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "approved_withdrawal_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "last_seen_block", "type": "u32", "required": true },
+        { "id": 3, "name": "ping_seq_num", "type": "u64", "required": true },
+        { "id": 4, "name": "reached_mystery_flag", "type": "bool", "required": true }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Pong",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "approved_withdrawal_id", "type": "bytes32", "required": true },
+        { "id": 2, "name": "event_block_height", "type": "u32", "required": true },
+        { "id": 3, "name": "prev_pings", "type": "Collection<SignedMessage<Ping>>", "required": true, "exact_items": { "constant": "peer_count", "offset": -1 } }
+      ]
+    },
+    {
+      "id": 29,
+      "name": "DuressSignalIndex",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "indices", "type": "Collection<u16>", "required": true, "exact_items": { "constant": "duress_selection_count" } }
+      ]
+    },
+    {
+      "id": 30,
+      "name": "DynamicRescueReceipt",
+      "version": 1,
+      "fields": [
+        { "id": 1, "name": "doxing_data_identifier", "type": "bytes32", "required": true },
+        { "id": 2, "name": "device_id", "type": "bytes32", "required": true },
+        { "id": 3, "name": "upload_id", "type": "bytes32", "required": true },
+        { "id": 4, "name": "upload_seq_num", "type": "u64", "required": true },
+        { "id": 5, "name": "hash_of_dynamic_doxing_data_encrypted_by_device_data_key", "type": "bytes32", "required": true }
+      ]
+    }
+  ]
+}

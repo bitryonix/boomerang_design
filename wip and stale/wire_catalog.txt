@@ -1,0 +1,935 @@
+Boomerang wire catalog
+
+Summary
+Catalog status structural_contexts_incomplete
+Schemas 30
+Fields 115
+
+Structural profile constants
+peer_count 5
+duress_vocabulary_size 193
+duress_selection_count 5
+
+Deterministic collection counts
+DuressCheckSpace.space 193 items, from duress_vocabulary_size
+BoomerangParamsSeed.ordered_peer_setup_records 5 items, from peer_count
+BoomerangParams.peer_ids 5 items, from peer_count
+BoomletBackupState.duress_consent_set 5 items, from duress_selection_count
+Pong.prev_pings 4 items, from peer_count -1
+DuressSignalIndex.indices 5 items, from duress_selection_count
+
+Exact structural list sizes
+DuressCheckSpace.space exactly 584 bytes
+BoomerangParams.peer_ids exactly 570 bytes
+BoomletBackupState.duress_consent_set exactly 20 bytes
+Pong.prev_pings exactly 833 bytes
+DuressSignalIndex.indices exactly 20 bytes
+
+Known deepest nesting path
+Depth counts open structs, lists, and tuples. Primitive values add no depth.
+Generic context-selected values can increase a path until they are enumerated.
+5 containers  SignedMessage -> content:Pong -> prev_pings:Collection<SignedMessage<Ping>> ->
+  SignedMessage -> content:Ping
+
+Schema nesting paths
+Each line gives the deepest path currently derivable from the catalog.
+CbcCmacEnvelope  1  CbcCmacEnvelope
+SignedMessage  5  SignedMessage -> content:Pong -> prev_pings:Collection<SignedMessage<Ping>> ->
+  SignedMessage -> content:Ping
+MessageWithNonce  4  MessageWithNonce -> content:tuple<u8, DuressCheckSpace> -> DuressCheckSpace
+  -> space:Collection<u16>
+PaddedMessage  3  PaddedMessage -> content:SignedMessage -> content:Ping
+SarServiceFeePaymentInfo  2  SarServiceFeePaymentInfo -> sar_id:SarId
+WtServiceFeePaymentInfo  2  WtServiceFeePaymentInfo -> wt_id:WtId
+DuressCheckSpace  2  DuressCheckSpace -> space:Collection<u16>
+WtId  1  WtId
+SarId  1  SarId
+StaticDoxingData  1  StaticDoxingData
+DynamicRescueUpload  2  DynamicRescueUpload ->
+  dynamic_doxing_data_encrypted_by_device_data_key:CbcCmacEnvelope
+ServicePaymentReceipt  1  ServicePaymentReceipt
+PeerId  1  PeerId
+PeerSetupRecord  2  PeerSetupRecord -> peer_id:PeerId
+MilestoneBlocks  1  MilestoneBlocks
+BoomerangParamsSeed  5  BoomerangParamsSeed ->
+  ordered_peer_setup_records:Collection<SignedMessage<PeerSetupRecord>> -> SignedMessage ->
+  content:PeerSetupRecord -> peer_id:PeerId
+BoomerangParams  3  BoomerangParams -> peer_ids:Collection<PeerId> -> PeerId
+WtSetupReceipt  1  WtSetupReceipt
+SarSetupResponse  1  SarSetupResponse
+WtSarSetupResponse  2  WtSarSetupResponse -> content:CbcCmacEnvelope
+BoomletBackupRequest  1  BoomletBackupRequest
+BackupDone  1  BackupDone
+BoomletBackupState  4  BoomletBackupState -> peer_setup_record_signed_by_boomlet:SignedMessage
+  -> content:PeerSetupRecord -> peer_id:PeerId  unresolved boomlet_backup_replay_state
+TxApproval  1  TxApproval
+WtTxApproval  1  WtTxApproval
+TxCommit  1  TxCommit
+Ping  1  Ping
+Pong  4  Pong -> prev_pings:Collection<SignedMessage<Ping>> -> SignedMessage -> content:Ping
+DuressSignalIndex  2  DuressSignalIndex -> indices:Collection<u16>
+DynamicRescueReceipt  1  DynamicRescueReceipt
+
+Exact schema sizes
+These values are fully determined by the catalog structure.
+MessageWithNonce exactly 642 bytes
+PaddedMessage exactly 322 bytes
+DuressCheckSpace exactly 593 bytes
+PeerId exactly 113 bytes
+MilestoneBlocks exactly 49 bytes
+WtSetupReceipt exactly 77 bytes
+SarSetupResponse exactly 131 bytes
+BoomletBackupRequest exactly 78 bytes
+BackupDone exactly 114 bytes
+TxApproval exactly 84 bytes
+WtTxApproval exactly 49 bytes
+TxCommit exactly 49 bytes
+Ping exactly 63 bytes
+Pong exactly 884 bytes
+DuressSignalIndex exactly 29 bytes
+DynamicRescueReceipt exactly 158 bytes
+
+Registered signature-domain metrics
+All signatures are fixed 64-byte Schnorr signatures encoded as bytes64 (65 bytes).
+Sizes include the complete SignedMessage struct and its exact ASCII domain.
+Boomerang/consent_rotation/v1/st_review => MessageWithNonce<u64>; content 53 bytes, signed 211
+  bytes; depth 2
+Boomerang/consent_rotation/v1/consent_set => tuple<SignedMessage<MessageWithNonce<u64>>,
+  Collection<u16>, bool>; content 235 bytes, signed 395 bytes; depth 4
+Boomerang/consent_rotation/v1/reset => tuple<u64, bytes32,
+  CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>>; content 373 bytes, signed 527
+  bytes; depth 3
+Boomerang/consent_rotation/v1/consent_set_received => bytes32; content 33 bytes, signed 202
+  bytes; depth 1
+Boomerang/consent_rotation/v1/reset_ack => bytes32; content 33 bytes, signed 191 bytes; depth 1
+Boomerang/setup/peer_setup_record => PeerSetupRecord; size OPEN; depth 3
+Boomerang/setup/params_review_approval => MessageWithNonce<bytes32>; content 77 bytes, signed
+  234 bytes; depth 2
+Boomerang/setup/agreement => bytes32; content 33 bytes, signed 177 bytes; depth 1
+Boomerang/setup/wt_receipt => WtSetupReceipt; content 77 bytes, signed 222 bytes; depth 2
+Boomerang/setup/phase_checkpoint => bytes32; content 33 bytes, signed 184 bytes; depth 1
+Boomerang/setup/sar_id => tuple<bytes32, SarId>; size OPEN; depth 3
+Boomerang/setup/sar_response => SarSetupResponse; content 131 bytes, signed 278 bytes; depth 2
+Boomerang/setup/wt_sar_response => WtSarSetupResponse; size OPEN; depth 3
+Boomerang/setup/sar_dynamic_receipt => DynamicRescueReceipt; content 158 bytes, signed 312
+  bytes; depth 2
+Boomerang/setup/backup_request => BoomletBackupRequest; content 78 bytes, signed 227 bytes;
+  depth 2
+Boomerang/setup/backup_done => BackupDone; content 114 bytes, signed 260 bytes; depth 2
+Boomerang/withdrawal/tx_review_approval => MessageWithNonce<bytes32>; content 77 bytes, signed
+  235 bytes; depth 2
+Boomerang/withdrawal/tx_approval => TxApproval; content 84 bytes, signed 235 bytes; depth 2
+Boomerang/withdrawal/wt_tx_approval => WtTxApproval; content 49 bytes, signed 203 bytes; depth 2
+Boomerang/withdrawal/approval_set_attestation => bytes32; content 33 bytes, signed 197 bytes;
+  depth 1
+Boomerang/withdrawal/tx_commit => TxCommit; content 49 bytes, signed 198 bytes; depth 2
+Boomerang/withdrawal/tx_commit_envelope => PaddedMessage<SignedMessage<TxCommit>,
+  CbcCmacEnvelope<bytes32>>; content 313 bytes, signed 471 bytes; depth 4
+Boomerang/withdrawal/wt_tx_commit_ack => SignedMessage<TxCommit>; content 198 bytes, signed 354
+  bytes; depth 3
+Boomerang/withdrawal/sar_placeholder_response => CbcCmacEnvelope<bytes32>; content 104 bytes,
+  signed 268 bytes; depth 2
+Boomerang/withdrawal/ping => Ping; content 63 bytes, signed 207 bytes; depth 2
+Boomerang/withdrawal/ping_envelope => PaddedMessage<SignedMessage<Ping>,
+  CbcCmacEnvelope<bytes32>>; content 322 bytes, signed 475 bytes; depth 4
+Boomerang/withdrawal/pong => Pong; content 884 bytes, signed 1028 bytes; depth 5
+
+Registered ordered tuple layouts
+ConsentRotationChallenge => tuple<MessageWithNonce<u64>, DuressCheckSpace>; exactly 649 bytes
+  element 0: MessageWithNonce<u64>
+  element 1: DuressCheckSpace
+ConsentRotationAnswer => tuple<SignedMessage<MessageWithNonce<u64>>, DuressSignalIndex>; exactly
+  243 bytes
+  element 0: SignedMessage<MessageWithNonce<u64>>
+  element 1: DuressSignalIndex
+ConsentSetChange => tuple<SignedMessage<MessageWithNonce<u64>>, Collection<u16>, bool>; exactly
+  235 bytes
+  element 0: SignedMessage<MessageWithNonce<u64>>
+  element 1: Collection<u16>; exactly 5 items
+  element 2: bool
+ConsentReset => tuple<u64, bytes32, CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>>;
+  exactly 373 bytes
+  element 0: u64
+  element 1: bytes32
+  element 2: CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>
+RotationStatus => tuple<u8, DuressCheckSpace>; exactly 598 bytes
+  element 0: u8
+  element 1: DuressCheckSpace
+
+Registered dynamic rescue payload types
+sar_dynamic_registration => tuple<bytes32, DynamicRescueUpload>
+sar_dynamic_upload => DynamicRescueUpload
+sar_dynamic_receipt => SignedMessage<DynamicRescueReceipt>
+
+Registered CBC-CMAC encryption-context metrics
+The registry is complete for canonical CBC-CMAC context labels in the protocol.
+Ciphertext includes mandatory PKCS#7 padding; envelope includes all wire fields.
+consent_rotation_consent_set => SignedMessage<tuple<SignedMessage<MessageWithNonce<u64>>,
+  Collection<u16>, bool>>; plaintext 395 bytes, ciphertext 400 bytes, envelope 456 bytes;
+  plaintext depth 4
+consent_rotation_consent_set_received => SignedMessage<bytes32>; plaintext 202 bytes, ciphertext
+  208 bytes, envelope 264 bytes; plaintext depth 1
+consent_rotation_reset => SignedMessage<tuple<u64, bytes32,
+  CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>>>; plaintext 527 bytes, ciphertext
+  528 bytes, envelope 584 bytes; plaintext depth 3
+consent_rotation_reset_ack => SignedMessage<bytes32>; plaintext 191 bytes, ciphertext 192 bytes,
+  envelope 248 bytes; plaintext depth 1
+consent_rotation_current_set_challenge => tuple<MessageWithNonce<u64>, DuressCheckSpace>;
+  plaintext 649 bytes, ciphertext 656 bytes, envelope 712 bytes; plaintext depth 3
+consent_rotation_current_set_answer => tuple<SignedMessage<MessageWithNonce<u64>>,
+  DuressSignalIndex>; plaintext 243 bytes, ciphertext 256 bytes, envelope 312 bytes; plaintext
+  depth 3
+consent_rotation_new_set_query => MessageWithNonce<DuressCheckSpace>; plaintext 637 bytes,
+  ciphertext 640 bytes, envelope 696 bytes; plaintext depth 3
+consent_rotation_new_set_answer => MessageWithNonce<DuressSignalIndex>; plaintext 73 bytes,
+  ciphertext 80 bytes, envelope 136 bytes; plaintext depth 3
+consent_rotation_cancel => MessageWithNonce<u8>; plaintext 46 bytes, ciphertext 48 bytes,
+  envelope 104 bytes; plaintext depth 1
+consent_rotation_completed => bytes32; plaintext 33 bytes, ciphertext 48 bytes, envelope 104
+  bytes; plaintext depth 0
+consent_rotation_cancelled => bytes32; plaintext 33 bytes, ciphertext 48 bytes, envelope 104
+  bytes; plaintext depth 0
+consent_rotation_ui_status => MessageWithNonce<bytes32>; plaintext 77 bytes, ciphertext 80
+  bytes, envelope 136 bytes; plaintext depth 1
+consent_rotation_ui_status_response => MessageWithNonce<tuple<u8, DuressCheckSpace>>; plaintext
+  642 bytes, ciphertext 656 bytes, envelope 712 bytes; plaintext depth 4
+backup_state => BoomletBackupState; size OPEN; plaintext depth 4
+duress_challenge => MessageWithNonce<DuressCheckSpace>; plaintext 637 bytes, ciphertext 640
+  bytes, envelope 696 bytes; plaintext depth 3
+duress_response => MessageWithNonce<DuressSignalIndex>; plaintext 73 bytes, ciphertext 80 bytes,
+  envelope 136 bytes; plaintext depth 3
+params_review => MessageWithNonce<bytes32>; plaintext 77 bytes, ciphertext 80 bytes, envelope
+  136 bytes; plaintext depth 1
+params_review_approval => SignedMessage<MessageWithNonce<bytes32>>; plaintext 234 bytes,
+  ciphertext 240 bytes, envelope 296 bytes; plaintext depth 2
+sar_dynamic_data => bytes; size OPEN; plaintext depth 0
+sar_id => SignedMessage<tuple<bytes32, SarId>>; size OPEN; plaintext depth 3
+sar_identifier => tuple<bytes32, bytes32>; plaintext 69 bytes, ciphertext 80 bytes, envelope 136
+  bytes; plaintext depth 1
+sar_response => SignedMessage<SarSetupResponse>; plaintext 278 bytes, ciphertext 288 bytes,
+  envelope 344 bytes; plaintext depth 2
+sar_static_data => StaticDoxingData; size OPEN; plaintext depth 1
+withdrawal_duress_challenge => MessageWithNonce<DuressCheckSpace>; plaintext 637 bytes,
+  ciphertext 640 bytes, envelope 696 bytes; plaintext depth 3
+withdrawal_duress_placeholder => bytes32; plaintext 33 bytes, ciphertext 48 bytes, envelope 104
+  bytes; plaintext depth 0
+withdrawal_duress_response => MessageWithNonce<DuressSignalIndex>; plaintext 73 bytes,
+  ciphertext 80 bytes, envelope 136 bytes; plaintext depth 3
+withdrawal_ping => SignedMessage<PaddedMessage<SignedMessage<Ping>, CbcCmacEnvelope<bytes32>>>;
+  plaintext 475 bytes, ciphertext 480 bytes, envelope 536 bytes; plaintext depth 4
+withdrawal_pong => SignedMessage<Pong>; plaintext 1028 bytes, ciphertext 1040 bytes, envelope
+  1096 bytes; plaintext depth 5
+withdrawal_psbt => bytes; size OPEN; plaintext depth 0
+withdrawal_sar_placeholder_response => SignedMessage<CbcCmacEnvelope<bytes32>>; plaintext 268
+  bytes, ciphertext 272 bytes, envelope 328 bytes; plaintext depth 2
+withdrawal_tx_approval => SignedMessage<TxApproval>; plaintext 235 bytes, ciphertext 240 bytes,
+  envelope 296 bytes; plaintext depth 2
+withdrawal_tx_commit => SignedMessage<PaddedMessage<SignedMessage<TxCommit>,
+  CbcCmacEnvelope<bytes32>>>; plaintext 471 bytes, ciphertext 480 bytes, envelope 536 bytes;
+  plaintext depth 4
+withdrawal_tx_review => MessageWithNonce<bytes32>; plaintext 77 bytes, ciphertext 80 bytes,
+  envelope 136 bytes; plaintext depth 1
+withdrawal_tx_review_approval => SignedMessage<MessageWithNonce<bytes32>>; plaintext 235 bytes,
+  ciphertext 240 bytes, envelope 296 bytes; plaintext depth 2
+
+Context-dependent paths without enumerated variants 1
+These generic value fields still need an exact type for every protocol context.
+BoomletBackupState.replay_state uses boomlet_backup_replay_state
+
+Unresolved text metadata 20
+Entries below are missing required text-profile metadata.
+text_encoder_non_nfc_input
+SarServiceFeePaymentInfo.service_fee_invoice.text_profile
+WtServiceFeePaymentInfo.service_fee_invoice.text_profile
+WtId.wt_tor_address.text_profile
+SarId.sar_tor_address.text_profile
+StaticDoxingData.name.text_profile
+StaticDoxingData.national_id.text_profile
+StaticDoxingData.address_home.text_profile
+StaticDoxingData.address_work.text_profile
+StaticDoxingData.phone_number_mobile.text_profile
+StaticDoxingData.phone_number_home.text_profile
+StaticDoxingData.phone_number_work.text_profile
+StaticDoxingData.trusted_person_name.text_profile
+StaticDoxingData.trusted_person_address.text_profile
+StaticDoxingData.trusted_person_phone_number.text_profile
+ServicePaymentReceipt.service_id.text_profile
+ServicePaymentReceipt.invoice_reference.text_profile
+PeerSetupRecord.tor_address.text_profile
+BoomerangParams.boomerang_descriptor.text_profile
+WtSarSetupResponse.wt_suffix.text_profile
+
+Primitive wire layouts
+Primitive totals include their canonical type tag.
+bool false [tag 0x01] 1 byte; true [tag 0x02] 1 byte
+u8 [tag 0x10: 1 byte] [payload: 1 byte] total 2 bytes
+u16 [tag 0x11: 1 byte] [payload: 2 bytes] total 3 bytes
+u32 [tag 0x12: 1 byte] [payload: 4 bytes] total 5 bytes
+u64 [tag 0x13: 1 byte] [payload: 8 bytes] total 9 bytes
+bytes [tag 0x20: 1 byte] [length: 4 bytes] [payload: variable] total 5 + payload bytes
+text [tag 0x21: 1 byte] [length: 4 bytes] [UTF-8 NFC payload: variable] total 5 + payload bytes
+bytes16 [tag 0x22: 1 byte] [payload: 16 bytes] total 17 bytes
+bytes32 [tag 0x23: 1 byte] [payload: 32 bytes] total 33 bytes
+bytes33 [tag 0x24: 1 byte] [payload: 33 bytes] total 34 bytes
+bytes64 [tag 0x25: 1 byte] [payload: 64 bytes] total 65 bytes
+
+Container wire layouts
+Container headers precede their recursively encoded contents.
+list [tag 0x30: 1 byte] [count: 4 bytes] [encoded items: variable]
+tuple [tag 0x31: 1 byte] [count: 2 bytes] [encoded items: variable]
+struct [tag 0x40: 1 byte] [schema ID: 2 bytes] [schema version: 2 bytes] [field count: 2 bytes]
+  [field ID: 2 bytes, encoded value] repeated
+
+Schema packet layouts
+Frames show exact wire order and byte counts; display widths are not proportional.
+Every field begins with its field ID. Field totals include that ID.
+
+Schema CbcCmacEnvelope  ID 1  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 1        | schema_version 1       | field_count 4        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | version: u8                                                      |
+| 2 bytes          | value 2 bytes; field total 4 bytes                               |
++------------------+------------------------------------------------------------------+
+| field_id 2       | iv: bytes16                                                      |
+| 2 bytes          | value 17 bytes; field total 19 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | ciphertext: bytes                                                |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 4       | tag: bytes16                                                     |
+| 2 bytes          | value 17 bytes; field total 19 bytes                             |
++------------------+------------------------------------------------------------------+
+Deepest structural path  1 containers  CbcCmacEnvelope
+
+Schema SignedMessage  ID 2  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 2        | schema_version 1       | field_count 4        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | signer_identity_pubkey: bytes33                                  |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | domain: text                                                     |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 3       | content: value                                                   |
+| 2 bytes          | context-selected encoded value                                   |
+|                  | context rule signed_message_content                              |
+|                  | Boomerang/consent_rotation/v1/st_review => MessageWithNonce<u64> |
+|                  | Boomerang/consent_rotation/v1/consent_set =>                     |
+|                  | tuple<SignedMessage<MessageWithNonce<u64>>, Collection<u16>,     |
+|                  | bool>                                                            |
+|                  | Boomerang/consent_rotation/v1/reset => tuple<u64, bytes32,       |
+|                  | CbcCmacEnvelope<SignedMessage<CbcCmacEnvelope<bytes32>>>>        |
+|                  | Boomerang/consent_rotation/v1/consent_set_received => bytes32    |
+|                  | Boomerang/consent_rotation/v1/reset_ack => bytes32               |
+|                  | Boomerang/setup/peer_setup_record => PeerSetupRecord             |
+|                  | Boomerang/setup/params_review_approval =>                        |
+|                  | MessageWithNonce<bytes32>                                        |
+|                  | Boomerang/setup/agreement => bytes32                             |
+|                  | Boomerang/setup/wt_receipt => WtSetupReceipt                     |
+|                  | Boomerang/setup/phase_checkpoint => bytes32                      |
+|                  | Boomerang/setup/sar_id => tuple<bytes32, SarId>                  |
+|                  | Boomerang/setup/sar_response => SarSetupResponse                 |
+|                  | Boomerang/setup/wt_sar_response => WtSarSetupResponse            |
+|                  | Boomerang/setup/sar_dynamic_receipt => DynamicRescueReceipt      |
+|                  | Boomerang/setup/backup_request => BoomletBackupRequest           |
+|                  | Boomerang/setup/backup_done => BackupDone                        |
+|                  | Boomerang/withdrawal/tx_review_approval =>                       |
+|                  | MessageWithNonce<bytes32>                                        |
+|                  | Boomerang/withdrawal/tx_approval => TxApproval                   |
+|                  | Boomerang/withdrawal/wt_tx_approval => WtTxApproval              |
+|                  | Boomerang/withdrawal/approval_set_attestation => bytes32         |
+|                  | Boomerang/withdrawal/tx_commit => TxCommit                       |
+|                  | Boomerang/withdrawal/tx_commit_envelope =>                       |
+|                  | PaddedMessage<SignedMessage<TxCommit>, CbcCmacEnvelope<bytes32>> |
+|                  | Boomerang/withdrawal/wt_tx_commit_ack => SignedMessage<TxCommit> |
+|                  | Boomerang/withdrawal/sar_placeholder_response =>                 |
+|                  | CbcCmacEnvelope<bytes32>                                         |
+|                  | Boomerang/withdrawal/ping => Ping                                |
+|                  | Boomerang/withdrawal/ping_envelope =>                            |
+|                  | PaddedMessage<SignedMessage<Ping>, CbcCmacEnvelope<bytes32>>     |
+|                  | Boomerang/withdrawal/pong => Pong                                |
++------------------+------------------------------------------------------------------+
+| field_id 4       | signature: bytes64                                               |
+| 2 bytes          | value 65 bytes; field total 67 bytes                             |
++------------------+------------------------------------------------------------------+
+Deepest structural path  5 containers  SignedMessage -> content:Pong ->
+  prev_pings:Collection<SignedMessage<Ping>> -> SignedMessage -> content:Ping
+
+Schema MessageWithNonce  ID 3  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 3        | schema_version 1       | field_count 2        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | content: value                                                   |
+| 2 bytes          | value 598 bytes; field total 600 bytes                           |
+|                  | context rule message_with_nonce_content                          |
+|                  | selected by enclosing_protocol_context                           |
+|                  | consent_rotation/request => u64                                  |
+|                  | consent_rotation/new_set_query => DuressCheckSpace               |
+|                  | consent_rotation/new_set_answer => DuressSignalIndex             |
+|                  | consent_rotation/cancel => u8                                    |
+|                  | consent_rotation/ui_status => bytes32                            |
+|                  | consent_rotation/ui_status_response => tuple<u8,                 |
+|                  | DuressCheckSpace>                                                |
+|                  | setup/duress_challenge => DuressCheckSpace                       |
+|                  | setup/duress_response => DuressSignalIndex                       |
+|                  | setup/params_review => bytes32                                   |
+|                  | withdrawal/tx_review => bytes32                                  |
+|                  | withdrawal/duress_challenge => DuressCheckSpace                  |
+|                  | withdrawal/duress_response => DuressSignalIndex                  |
++------------------+------------------------------------------------------------------+
+| field_id 2       | nonce: bytes32                                                   |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+Exact encoded size  642 bytes
+Deepest structural path  4 containers  MessageWithNonce -> content:tuple<u8, DuressCheckSpace>
+  -> DuressCheckSpace -> space:Collection<u16>
+
+Schema PaddedMessage  ID 4  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 4        | schema_version 1       | field_count 2        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | content: value                                                   |
+| 2 bytes          | value 207 bytes; field total 209 bytes                           |
+|                  | context rule padded_message_content                              |
+|                  | selected by enclosing_signature_domain                           |
+|                  | Boomerang/withdrawal/tx_commit_envelope =>                       |
+|                  | SignedMessage<TxCommit>                                          |
+|                  | Boomerang/withdrawal/ping_envelope => SignedMessage<Ping>        |
++------------------+------------------------------------------------------------------+
+| field_id 2       | padding: value                                                   |
+| 2 bytes          | value 104 bytes; field total 106 bytes                           |
+|                  | context rule padded_message_padding                              |
+|                  | selected by enclosing_signature_domain                           |
+|                  | semantic role duress_placeholder                                 |
+|                  | Boomerang/withdrawal/tx_commit_envelope =>                       |
+|                  | CbcCmacEnvelope<bytes32>                                         |
+|                  | Boomerang/withdrawal/ping_envelope => CbcCmacEnvelope<bytes32>   |
++------------------+------------------------------------------------------------------+
+Exact encoded size  322 bytes
+Deepest structural path  3 containers  PaddedMessage -> content:SignedMessage -> content:Ping
+
+Schema SarServiceFeePaymentInfo  ID 5  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 5        | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | service_fee_invoice: text                                        |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 2       | payment_deadline: u64                                            |
+| 2 bytes          | value 9 bytes; field total 11 bytes                              |
++------------------+------------------------------------------------------------------+
+| field_id 3       | sar_id: SarId                                                    |
+| 2 bytes          | variable-length nested value                                     |
++------------------+------------------------------------------------------------------+
+Deepest structural path  2 containers  SarServiceFeePaymentInfo -> sar_id:SarId
+
+Schema WtServiceFeePaymentInfo  ID 6  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 6        | schema_version 1       | field_count 4        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | setup_instance_id: bytes32                                       |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | service_fee_invoice: text                                        |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 3       | payment_deadline: u64                                            |
+| 2 bytes          | value 9 bytes; field total 11 bytes                              |
++------------------+------------------------------------------------------------------+
+| field_id 4       | wt_id: WtId                                                      |
+| 2 bytes          | variable-length nested value                                     |
++------------------+------------------------------------------------------------------+
+Deepest structural path  2 containers  WtServiceFeePaymentInfo -> wt_id:WtId
+
+Schema DuressCheckSpace  ID 7  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 7        | schema_version 1       | field_count 1        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | space: Collection<u16>                                           |
+| 2 bytes          | value 584 bytes; field total 586 bytes                           |
++------------------+------------------------------------------------------------------+
+Exact encoded size  593 bytes
+Deepest structural path  2 containers  DuressCheckSpace -> space:Collection<u16>
+
+Schema WtId  ID 8  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 8        | schema_version 1       | field_count 2        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | wt_tor_address: text                                             |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 2       | wt_pubkey: bytes33                                               |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+Deepest structural path  1 containers  WtId
+
+Schema SarId  ID 9  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 9        | schema_version 1       | field_count 2        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | sar_tor_address: text                                            |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 2       | sar_pubkey: bytes33                                              |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+Deepest structural path  1 containers  SarId
+
+Schema StaticDoxingData  ID 10  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 10       | schema_version 1       | field_count 10       |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | name: text                                                       |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 2       | national_id: text                                                |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 3       | address_home: text                                               |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 4       | address_work: text                                               |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 5       | phone_number_mobile: text                                        |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 6       | phone_number_home: text                                          |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 7       | phone_number_work: text                                          |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 8       | trusted_person_name: text                                        |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 9       | trusted_person_address: text                                     |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 10      | trusted_person_phone_number: text                                |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+Deepest structural path  1 containers  StaticDoxingData
+
+Schema DynamicRescueUpload  ID 11  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 11       | schema_version 1       | field_count 6        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | doxing_data_identifier: bytes32                                  |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | device_id: bytes32                                               |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | upload_id: bytes32                                               |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 4       | upload_seq_num: u64                                              |
+| 2 bytes          | value 9 bytes; field total 11 bytes                              |
++------------------+------------------------------------------------------------------+
+| field_id 5       | dynamic_doxing_data_encrypted_by_device_data_key:                |
+| 2 bytes          | CbcCmacEnvelope                                                  |
+|                  | variable-length nested value                                     |
++------------------+------------------------------------------------------------------+
+| field_id 6       | dynamic_upload_cmac: bytes16                                     |
+| 2 bytes          | value 17 bytes; field total 19 bytes                             |
++------------------+------------------------------------------------------------------+
+Deepest structural path  2 containers  DynamicRescueUpload ->
+  dynamic_doxing_data_encrypted_by_device_data_key:CbcCmacEnvelope
+
+Schema ServicePaymentReceipt  ID 12  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 12       | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | service_id: text                                                 |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 2       | invoice_reference: text                                          |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 3       | payment_proof: bytes                                             |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+Deepest structural path  1 containers  ServicePaymentReceipt
+
+Schema PeerId  ID 13  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 13       | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | boom_pubkey: bytes32                                             |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | normal_pubkey: bytes32                                           |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | boomlet_identity_pubkey: bytes33                                 |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+Exact encoded size  113 bytes
+Deepest structural path  1 containers  PeerId
+
+Schema PeerSetupRecord  ID 14  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 14       | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | peer_id: PeerId                                                  |
+| 2 bytes          | value 113 bytes; field total 115 bytes                           |
++------------------+------------------------------------------------------------------+
+| field_id 2       | peer_setup_nonce: bytes32                                        |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | tor_address: text                                                |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+Deepest structural path  2 containers  PeerSetupRecord -> peer_id:PeerId
+
+Schema MilestoneBlocks  ID 15  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 15       | schema_version 1       | field_count 6        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | milestone_block_0: u32                                           |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+| field_id 2       | milestone_block_1: u32                                           |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+| field_id 3       | milestone_block_2: u32                                           |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+| field_id 4       | milestone_block_3: u32                                           |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+| field_id 5       | milestone_block_4: u32                                           |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+| field_id 6       | milestone_block_5: u32                                           |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+Exact encoded size  49 bytes
+Deepest structural path  1 containers  MilestoneBlocks
+
+Schema BoomerangParamsSeed  ID 16  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 16       | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | ordered_peer_setup_records:                                      |
+| 2 bytes          | Collection<SignedMessage<PeerSetupRecord>>                       |
+|                  | variable-length list value                                       |
++------------------+------------------------------------------------------------------+
+| field_id 2       | wt_ids: Collection<WtId>                                         |
+| 2 bytes          | variable-length list value                                       |
++------------------+------------------------------------------------------------------+
+| field_id 3       | milestone_blocks: MilestoneBlocks                                |
+| 2 bytes          | value 49 bytes; field total 51 bytes                             |
++------------------+------------------------------------------------------------------+
+Deepest structural path  5 containers  BoomerangParamsSeed ->
+  ordered_peer_setup_records:Collection<SignedMessage<PeerSetupRecord>> -> SignedMessage ->
+  content:PeerSetupRecord -> peer_id:PeerId
+
+Schema BoomerangParams  ID 17  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 17       | schema_version 1       | field_count 5        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | setup_instance_id: bytes32                                       |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | peer_ids: Collection<PeerId>                                     |
+| 2 bytes          | value 570 bytes; field total 572 bytes                           |
++------------------+------------------------------------------------------------------+
+| field_id 3       | wt_ids: Collection<WtId>                                         |
+| 2 bytes          | variable-length list value                                       |
++------------------+------------------------------------------------------------------+
+| field_id 4       | milestone_blocks: MilestoneBlocks                                |
+| 2 bytes          | value 49 bytes; field total 51 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 5       | boomerang_descriptor: text                                       |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+Deepest structural path  3 containers  BoomerangParams -> peer_ids:Collection<PeerId> -> PeerId
+
+Schema WtSetupReceipt  ID 18  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 18       | schema_version 1       | field_count 2        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | setup_instance_id: bytes32                                       |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | boomerang_params_fingerprint: bytes32                            |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+Exact encoded size  77 bytes
+Deepest structural path  1 containers  WtSetupReceipt
+
+Schema SarSetupResponse  ID 19  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 19       | schema_version 1       | field_count 4        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | setup_instance_id: bytes32                                       |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | doxing_data_identifier: bytes32                                  |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | fingerprint_of_static_doxing_data_encrypted_by_doxing_key_for_sa |
+| 2 bytes          | r: bytes32                                                       |
+|                  | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 4       | iv_of_static_doxing_data_encrypted_by_doxing_key_for_sar:        |
+| 2 bytes          | bytes16                                                          |
+|                  | value 17 bytes; field total 19 bytes                             |
++------------------+------------------------------------------------------------------+
+Exact encoded size  131 bytes
+Deepest structural path  1 containers  SarSetupResponse
+
+Schema WtSarSetupResponse  ID 20  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 20       | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | setup_instance_id: bytes32                                       |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | content: CbcCmacEnvelope                                         |
+| 2 bytes          | variable-length nested value                                     |
++------------------+------------------------------------------------------------------+
+| field_id 3       | wt_suffix: text                                                  |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+Deepest structural path  2 containers  WtSarSetupResponse -> content:CbcCmacEnvelope
+
+Schema BoomletBackupRequest  ID 21  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 21       | schema_version 1       | field_count 2        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | backup_boomlet_pubkey: bytes33                                   |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | backup_normal_pubkey: bytes32                                    |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+Exact encoded size  78 bytes
+Deepest structural path  1 containers  BoomletBackupRequest
+
+Schema BackupDone  ID 22  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 22       | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | setup_instance_id: bytes32                                       |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | backup_boomlet_pubkey: bytes33                                   |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | boomlet_pubkey: bytes33                                          |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+Exact encoded size  114 bytes
+Deepest structural path  1 containers  BackupDone
+
+Schema BoomletBackupState  ID 23  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 23       | schema_version 1       | field_count 18       |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | setup_instance_id: bytes32                                       |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | boomlet_identity_private_key: bytes32                            |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | boomlet_identity_public_key: bytes33                             |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 4       | boomlet_musig2_private_share: bytes32                            |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 5       | boomlet_musig2_public_share: bytes32                             |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 6       | normal_public_key: bytes32                                       |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 7       | st_identity_public_key: bytes33                                  |
+| 2 bytes          | value 34 bytes; field total 36 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 8       | tor_secret_key: bytes                                            |
+| 2 bytes          | variable value; 5-byte value header plus payload                 |
++------------------+------------------------------------------------------------------+
+| field_id 9       | selected_sar_id: SarId                                           |
+| 2 bytes          | variable-length nested value                                     |
++------------------+------------------------------------------------------------------+
+| field_id 10      | doxing_key: bytes32                                              |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 11      | duress_consent_set: Collection<u16>                              |
+| 2 bytes          | value 20 bytes; field total 22 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 12      | peer_setup_record_signed_by_boomlet:                             |
+| 2 bytes          | SignedMessage<PeerSetupRecord>                                   |
+|                  | variable-length nested value                                     |
++------------------+------------------------------------------------------------------+
+| field_id 13      | boomerang_params: BoomerangParams                                |
+| 2 bytes          | variable-length nested value                                     |
++------------------+------------------------------------------------------------------+
+| field_id 14      | setup_checkpoint: bytes32                                        |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 15      | sar_setup_response_signed_by_sar:                                |
+| 2 bytes          | SignedMessage<SarSetupResponse>                                  |
+|                  | value 278 bytes; field total 280 bytes                           |
++------------------+------------------------------------------------------------------+
+| field_id 16      | replay_state: value                                              |
+| 2 bytes          | context-selected encoded value                                   |
+|                  | context rule boomlet_backup_replay_state                         |
+|                  | selected by active_protocol_state                                |
++------------------+------------------------------------------------------------------+
+| field_id 17      | consent_counter: u64                                             |
+| 2 bytes          | value 9 bytes; field total 11 bytes                              |
++------------------+------------------------------------------------------------------+
+| field_id 18      | under_duress: bool                                               |
+| 2 bytes          | value 1 bytes; field total 3 bytes                               |
++------------------+------------------------------------------------------------------+
+Known nesting lower bound  4 containers  BoomletBackupState ->
+  peer_setup_record_signed_by_boomlet:SignedMessage -> content:PeerSetupRecord -> peer_id:PeerId
+Unresolved contexts boomlet_backup_replay_state
+
+Schema TxApproval  ID 24  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 24       | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | withdrawal_id: bytes32                                           |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | approval_nonce: bytes32                                          |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | event_block_height: u32                                          |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+Exact encoded size  84 bytes
+Deepest structural path  1 containers  TxApproval
+
+Schema WtTxApproval  ID 25  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 25       | schema_version 1       | field_count 2        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | withdrawal_id: bytes32                                           |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | event_block_height: u32                                          |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+Exact encoded size  49 bytes
+Deepest structural path  1 containers  WtTxApproval
+
+Schema TxCommit  ID 26  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 26       | schema_version 1       | field_count 2        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | approved_withdrawal_id: bytes32                                  |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | event_block_height: u32                                          |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+Exact encoded size  49 bytes
+Deepest structural path  1 containers  TxCommit
+
+Schema Ping  ID 27  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 27       | schema_version 1       | field_count 4        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | approved_withdrawal_id: bytes32                                  |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | last_seen_block: u32                                             |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+| field_id 3       | ping_seq_num: u64                                                |
+| 2 bytes          | value 9 bytes; field total 11 bytes                              |
++------------------+------------------------------------------------------------------+
+| field_id 4       | reached_mystery_flag: bool                                       |
+| 2 bytes          | value 1 bytes; field total 3 bytes                               |
++------------------+------------------------------------------------------------------+
+Exact encoded size  63 bytes
+Deepest structural path  1 containers  Ping
+
+Schema Pong  ID 28  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 28       | schema_version 1       | field_count 3        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | approved_withdrawal_id: bytes32                                  |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | event_block_height: u32                                          |
+| 2 bytes          | value 5 bytes; field total 7 bytes                               |
++------------------+------------------------------------------------------------------+
+| field_id 3       | prev_pings: Collection<SignedMessage<Ping>>                      |
+| 2 bytes          | value 833 bytes; field total 835 bytes                           |
++------------------+------------------------------------------------------------------+
+Exact encoded size  884 bytes
+Deepest structural path  4 containers  Pong -> prev_pings:Collection<SignedMessage<Ping>> ->
+  SignedMessage -> content:Ping
+
+Schema DuressSignalIndex  ID 29  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 29       | schema_version 1       | field_count 1        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | indices: Collection<u16>                                         |
+| 2 bytes          | value 20 bytes; field total 22 bytes                             |
++------------------+------------------------------------------------------------------+
+Exact encoded size  29 bytes
+Deepest structural path  2 containers  DuressSignalIndex -> indices:Collection<u16>
+
+Schema DynamicRescueReceipt  ID 30  version 1
++----------------+--------------------+------------------------+----------------------+
+| tag 0x40       | schema_id 30       | schema_version 1       | field_count 5        |
+| 1 byte         | 2 bytes            | 2 bytes                | 2 bytes              |
++----------------+--------------------+------------------------+----------------------+
+| field_id 1       | doxing_data_identifier: bytes32                                  |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 2       | device_id: bytes32                                               |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 3       | upload_id: bytes32                                               |
+| 2 bytes          | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+| field_id 4       | upload_seq_num: u64                                              |
+| 2 bytes          | value 9 bytes; field total 11 bytes                              |
++------------------+------------------------------------------------------------------+
+| field_id 5       | hash_of_dynamic_doxing_data_encrypted_by_device_data_key:        |
+| 2 bytes          | bytes32                                                          |
+|                  | value 33 bytes; field total 35 bytes                             |
++------------------+------------------------------------------------------------------+
+Exact encoded size  158 bytes
+Deepest structural path  1 containers  DynamicRescueReceipt

@@ -1,0 +1,59 @@
+@startuml boomletwo_checkpoint_recovery
+title Self-contained DIGGING checkpoint and guarded Boomletwo recovery
+hide footbox
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 75
+participant "Original Boomlet" as B
+participant Niso as N
+participant WT as W
+participant "Other peers" as P
+participant "Designated offline Boomletwo" as T
+actor "User with enrolled ST" as U
+
+note over B,T
+  Setup has authorized exactly this backup target.
+  Neither ST nor Boomletwo records each ordinary transition.
+  The checkpoint format below is a candidate extension.
+end note
+
+group Normal DIGGING
+  B -> B: Validate ordinary progress and preserve exact SAR duty
+  B -> B: Create target-encrypted checkpoint and exact placeholder
+  B -> B: Bind checkpoint digest in existing signed ping
+  B -> N: Signed ping bundle with detached encrypted checkpoint
+  N -> W: Ordinary authenticated submission with recovery bundle
+  W -> P: Retain checkpoint evidence under the candidate distribution policy
+  W -> W: Collect five pings and exact recipient SAR acknowledgments
+  W -> B: Candidate shared five-ping pong and own SAR acknowledgment
+  B -> B: Match own returned ping; verify the other four\nKeep ordinary counter and SAR guards
+end
+
+... Original Boomlet is lost; no further source interaction ...
+
+group Inspect a recovery checkpoint
+  U -> T: Start recovery using designated setup backup
+  N -> T: Retained ping bundle and required public evidence
+  P -> T: Existing WT activation record and available decision evidence
+  T -> T: Verify source signature and exact encrypted checkpoint\nBind setup, target, withdrawal, sequence and placeholder
+  T -> T: Identify WT at the checkpoint using retained head\nDo not treat peer claims as latest-state authority
+  note over N,T
+    A valid old ping can omit a later duress duty or WT vote.
+    Source loss claims do not prove that an isolated source cannot return.
+  end note
+end
+
+alt Complete activation safeguards have been established
+  T -> T: Bind checkpoint and attempt irreversibly\nGenerate and persist one independent draw R
+  T -> T: For unreached state use max(original mystery, R)\nor setup upper bound plus R
+  T -> T: Restore only authenticated progress and exact duties\nContinue ordinary gates under a defined exclusion mechanism
+else Exclusion or later security state is unresolved
+  T -> T: Do not enable signing, WT voting or new counter progress
+end
+
+note over B,T
+  No source retirement message or continuous ST service is assumed.
+  Historical pongs and ping counts cannot earn new counter increments.
+  This checkpoint mechanism alone is not a complete activation protocol.
+end note
+@enduml

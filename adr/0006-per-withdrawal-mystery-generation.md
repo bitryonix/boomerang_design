@@ -1,8 +1,7 @@
 # ADR 0006: Generate Mystery Per Withdrawal at Digging Entry
 
-Status: Accepted
-
-Date: 2026-07-11
+- **Status:** Accepted
+- **Recorded:** 2026-07-11
 
 ## Context
 

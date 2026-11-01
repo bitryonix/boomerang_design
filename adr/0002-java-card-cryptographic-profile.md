@@ -1,7 +1,7 @@
 # ADR 0002: Java Card Cryptographic Profile
 
 - **Status:** Accepted
-- **Date:** 2026-06-07
+- **Recorded:** 2026-06-07
 
 ## Context
 

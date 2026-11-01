@@ -1,8 +1,7 @@
 # ADR 0004: Use Per-Channel Directional Keys
 
-Status: Accepted
-
-Date: 2026-06-20
+- **Status:** Accepted
+- **Recorded:** 2026-06-20
 
 ## Context
 
