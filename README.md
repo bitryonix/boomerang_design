@@ -144,8 +144,8 @@ commit.
 
 At its prescribed point, each user selects five countries from independently
 shuffled columns derived from the protocol's fixed 193-entry consent
-vocabulary. The memorized five-country set means safe; any other valid
-selection means duress. Those physical selections are distinguishable to
+vocabulary. Boomlet classifies the memorized five-country set as safe and any
+other valid selection as duress. Those physical selections are distinguishable to
 someone watching the interaction. In either case, the required protocol
 messages carry the same kind of encrypted placeholder to the Search and Rescue
 service (`SAR`) that this user bound during setup. Each SAR must durably process

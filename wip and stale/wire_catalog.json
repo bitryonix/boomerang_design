@@ -191,6 +191,7 @@
         "Boomerang/setup/sar_dynamic_receipt": "DynamicRescueReceipt",
         "Boomerang/setup/backup_request": "BoomletBackupRequest",
         "Boomerang/setup/backup_done": "BackupDone",
+        "Boomerang/setup/backup_skip": "bytes32",
         "Boomerang/withdrawal/tx_review_approval": "MessageWithNonce<bytes32>",
         "Boomerang/withdrawal/tx_approval": "TxApproval",
         "Boomerang/withdrawal/wt_tx_approval": "WtTxApproval",

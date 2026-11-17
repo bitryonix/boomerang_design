@@ -116,6 +116,7 @@ Boomerang/setup/sar_dynamic_receipt => DynamicRescueReceipt; content 158 bytes, 
 Boomerang/setup/backup_request => BoomletBackupRequest; content 78 bytes, signed 227 bytes;
   depth 2
 Boomerang/setup/backup_done => BackupDone; content 114 bytes, signed 260 bytes; depth 2
+Boomerang/setup/backup_skip => bytes32; content 33 bytes, signed 179 bytes; depth 1
 Boomerang/withdrawal/tx_review_approval => MessageWithNonce<bytes32>; content 77 bytes, signed
   235 bytes; depth 2
 Boomerang/withdrawal/tx_approval => TxApproval; content 84 bytes, signed 235 bytes; depth 2
@@ -337,6 +338,7 @@ Schema SignedMessage  ID 2  version 1
 |                  | Boomerang/setup/sar_dynamic_receipt => DynamicRescueReceipt      |
 |                  | Boomerang/setup/backup_request => BoomletBackupRequest           |
 |                  | Boomerang/setup/backup_done => BackupDone                        |
+|                  | Boomerang/setup/backup_skip => bytes32                           |
 |                  | Boomerang/withdrawal/tx_review_approval =>                       |
 |                  | MessageWithNonce<bytes32>                                        |
 |                  | Boomerang/withdrawal/tx_approval => TxApproval                   |

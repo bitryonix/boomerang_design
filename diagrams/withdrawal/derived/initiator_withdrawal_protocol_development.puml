@@ -32,7 +32,7 @@ end note
 
 group Initiator review and approval
 User -> Niso: WI-REVIEW-1  candidate PSBT
-note over Niso #Pink: Accept under G-WITHDRAWAL-PRECONDITIONS and G-PSBT-PREVALIDATION
+note over Niso #Pink: Assert G-WITHDRAWAL-PRECONDITIONS \n Assert G-PSBT-PREVALIDATION
 Niso -> Boomlet: WI-REVIEW-2  PSBT and current local block height
 note over Boomlet #Pink
   Independently accept under G-WITHDRAWAL-PRECONDITIONS and G-PSBT-AUTHORIZATION.
@@ -53,7 +53,7 @@ WT -> Peers: WI-APPROVE-2  WtTxApproval, initiator TxApproval, recipient-encrypt
 Peers -> WT: WI-APPROVE-3  Enc_WT(Sig_Boomlet_i(TxApproval_i)) x4
 note over WT #Pink: Accept under G-TX-APPROVAL-COLLECTION; canonicalize in setup peer order
 WT -> Boomlet: WI-APPROVE-4  ordered five TxApprovals and WtTxApproval via Niso
-note over Niso #Pink: Prevalidate under G-APPROVAL-SET-AT-PEER
+note over Niso #Pink: Assert G-APPROVAL-SET-AT-PEER.visible
 note over Boomlet #Pink
   Revalidate under G-APPROVAL-SET-AT-PEER.
   approved_withdrawal_id := H(withdrawal_id, exact ordered five-approval set).
@@ -81,14 +81,14 @@ end note
 WT -> SARs: WI-COMMIT-3  Placeholder_0, Boomlet identity, approved_withdrawal_id
 note over SARs #Pink: Accept and durably process under G-SAR-PLACEHOLDER; release at the fixed observable deadline
 SARs --> WT: WI-COMMIT-4  Enc_Boomlet_0(Sig_SAR_0(exact Placeholder_0))
-note over WT #Pink: Accept initiator commit under G-TX-COMMIT-AT-WT
+note over WT #Pink: Assert G-TX-COMMIT-AT-WT
 WT -> Peers: WI-COMMIT-5  Sig_WT(Sig_Boomlet_0(TxCommit_0))
 Peers -> WT: WI-COMMIT-6  Enc_WT(Sig_Boomlet_i(TxCommit_i + Placeholder_i)) x4
 WT -> SARs: WI-COMMIT-7  each non-initiator Placeholder_i to its setup-bound SAR
 SARs --> WT: WI-COMMIT-8  exact encrypted acknowledgment_i x4
-note over WT #Pink: Accept every commit and SAR acknowledgment under G-TX-COMMIT-AT-WT
+note over WT #Pink: Assert G-TX-COMMIT-AT-WT
 WT -> Boomlet: WI-COMMIT-9  complete WT-signed TxCommit set and acknowledgment_0 via Niso
-note over Niso #Pink: Prevalidate under G-COMMIT-COLLECTION
+note over Niso #Pink: Assert G-COMMIT-COLLECTION.visible
 note over Boomlet #Pink
   Revalidate complete set and exact own acknowledgment under G-COMMIT-COLLECTION.
   COMMITTED -> DIGGING.
@@ -114,12 +114,16 @@ loop Until WT holds one current reached ping from every peer
   end note
   WT -> Boomlet: WI-DIG-5  Enc_Boomlet(Sig_WT(Pong_0)), acknowledgment_0 via Niso
   WT -> Peers: WI-DIG-6  recipient-specific Pong_i and acknowledgment_i
-  note over Niso #Pink: Prevalidate visible pong and collection properties under G-PONG-AT-BOOMLET
+  note over Niso #Pink: Assert G-PONG-AT-BOOMLET.visible
   note over Boomlet #Pink
-    Revalidate under G-PONG-AT-BOOMLET.
+    Assert G-PONG-AT-BOOMLET
   end note
-  note over Boomlet #Lavender: Boomlet performs any requested consent rotation.
-  opt After rotation or when selected by the profile cadence
+  note over Boomlet #Lavender
+    if new valid pong round:
+      duress_check_draw := random_integer(1, DURESS_CHECK_INTERVAL_IN_BLOCKS)
+  end note
+  ref over Boomlet: Consent rotation if requested (SPEC 16.7)
+  opt After rotation or when the recorded draw equals 1
     ref over User, ST, Boomlet
       W-DURESS-CHECK
       Consume one fresh phase-bound response and update placeholder plaintext.

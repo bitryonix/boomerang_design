@@ -15,12 +15,16 @@ participant SAR order 99 #Yellow
 actor Peers order 100
 
 legend left
-encrypt_for_<peer> and decrypt_from_<peer> use CBC-CMAC directional channels
-with the acting device's identity key and the named peer's public key.
-Decryption authenticates before returning content.
+encrypt_for_<peer>(context, content) returns a fresh CBC-CMAC envelope for the named peer.
+decrypt_from_<peer>(context, envelope) verifies CMAC before decrypting and decoding content from that peer.
+Both use channel_keys with the acting device's identity private key and the peer's public key.
+A peer index selects its identity; CMAC covers context, IV and ciphertext.
 endlegend
 
 autonumber "<b>[00]"
+/ note over WT:  **WT** \n <i>wt_privkey \n <i>wt_id: { \n <i>    wt_tor_address, \n <i>    wt_pubkey \n } \n <i>most_work_bitcoin_block_height
+/ note over SAR:  **SAR** \n <i>sar_privkey \n <i>sar_id: { \n <i>    sar_tor_address, \n <i>    sar_pubkey \n <i>} \n
+/ note over Phone:  **Phone** \n <i>dynamic_doxing_data
 note over User, SAR
 <b>PARAMETERS
 # #define PROTOCOL_VERSION
@@ -355,6 +359,10 @@ User o-> Iso:  <b>SetupIsoInput5 \n magic: "setup_user_is_asked_to_connect_booml
 ' Step 85
 Iso o-> Boomlet:  <b>SetupIsoBoomletMessage6 \n backup_done_signed_by_boomletwo
 hnote over Boomlet #Lavender:  backup_done := backup_done_signed_by_boomletwo.content
+
+else User skips backup
+ref over User, Iso, Boomlet: Skip backup through Iso
+end
 
 ' Step 86
 Boomlet o-> Iso:  <b>SetupBoomletIsoMessage6 \n magic: "setup_boomlet_backup_done"

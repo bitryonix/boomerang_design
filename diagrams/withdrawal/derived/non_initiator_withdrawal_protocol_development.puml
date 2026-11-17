@@ -84,7 +84,7 @@ end note
 WT -> SARs: WN-COMMIT-4  initiator Placeholder_0 to the initiator's setup-bound SAR
 SARs --> WT: WN-COMMIT-5  exact initiator SAR acknowledgment
 WT -> Niso: WN-COMMIT-6  Sig_WT(Sig_Boomlet_0(TxCommit_0))
-note over Niso #Pink: Prevalidate under G-INITIATOR-COMMIT-AT-NONINITIATOR
+note over Niso #Pink: Assert G-INITIATOR-COMMIT-AT-NONINITIATOR.visible
 Niso -> Boomlet: WN-COMMIT-7  acknowledged initiator commit and current local block height
 note over Boomlet #Pink
   Revalidate under G-INITIATOR-COMMIT-AT-NONINITIATOR.
@@ -95,9 +95,9 @@ note over Boomlet #Lavender: APPROVED -> COMMITTED
 WT -> SARs: WN-COMMIT-9  Placeholder_i to peer i's setup-bound SAR
 note over SARs #Pink: Accept and durably process under G-SAR-PLACEHOLDER; release at the fixed observable deadline
 SARs --> WT: WN-COMMIT-10  Enc_Boomlet_i(Sig_SAR_i(exact Placeholder_i))
-note over WT #Pink: Accept commit and SAR acknowledgment under G-TX-COMMIT-AT-WT
+note over WT #Pink: Assert G-TX-COMMIT-AT-WT
 WT -> Niso: WN-COMMIT-11  complete WT-signed TxCommit set and acknowledgment_i
-note over Niso #Pink: Prevalidate under G-COMMIT-COLLECTION
+note over Niso #Pink: Assert G-COMMIT-COLLECTION.visible
 Niso -> Boomlet: WN-COMMIT-12  complete set, acknowledgment_i, current local block height
 note over Boomlet #Pink
   Revalidate complete set and exact own acknowledgment under G-COMMIT-COLLECTION.

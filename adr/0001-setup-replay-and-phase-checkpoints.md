@@ -37,26 +37,20 @@ setup_instance_id =
 
 `wt_ids_collection` preserves the user-approved service preference order. The
 full structured context remains the preimage for `setup_instance_id`.
-Boomlet sends ST a nonce-bound encrypted compact commitment during setup review:
+Boomlet sends ST a nonce-bound encrypted setup ID during setup review:
 
 ```text
-boomerang_params_seed_fingerprint =
-  tagged_sha256(
-    "Boomerang/boomerang_params_seed",
-    canonical_encode(PROTOCOL_VERSION, boomerang_params_seed)
-  )
-
-params_seed_review_commitment =
-  ParamsSeedReviewCommitment {
-    setup_instance_id,
-    boomerang_params_seed_fingerprint
+setup_instance_id_with_nonce =
+  MessageWithNonce {
+    content: setup_instance_id,
+    nonce: random_bytes(32)
   }
 ```
 
 Niso forwards the ordered seed fields to ST beside the encrypted commitment.
-ST canonical-encodes those fields, checks the resulting setup ID and
-fingerprint against Boomlet's commitment, displays the matched ordered fields,
-and signs the exact nonce-bound commitment after User approval.
+ST reconstructs the canonical seed, checks its setup ID against the decrypted
+setup ID, displays the matched ordered fields, and signs the exact
+`setup_instance_id_with_nonce` after User approval.
 
 Setup parameter agreement uses one signed 32-byte fingerprint:
 
@@ -117,9 +111,9 @@ setup_checkpoint =
 ```
 
 A Boomlet signs `setup_checkpoint` only after successfully verifying its local
-prerequisite for that phase. WT, SAR, and backup receipts remain local evidence
-for signing. Boomlet persists `setup_checkpoint` as its local setup-completion
-state.
+prerequisite for that phase. WT and SAR receipts, and either a backup receipt
+or a signed request to skip backup, remain local evidence for signing.
+Boomlet persists `setup_checkpoint` as its local setup-completion state.
 
 Withdrawal binds the stored `setup_instance_id`; the final checkpoint is only
 a local precondition that setup completed.
@@ -138,8 +132,8 @@ the setup nonce there is redundant.
   inclusion, state, challenge, or replay-memory checks.
 - Peers cannot reorder or skip common setup phases without deriving a different
   checkpoint.
-- A checkpoint means every signer accepted its own prerequisite; it does not
-  prove that all peers received byte-identical service receipts.
+- Each checkpoint signer accepted its own prerequisite. Peer-local service
+  receipts may differ.
 - Receipt validity still depends on local signature, setup ID, the
   `boomerang_params_fingerprint`, and object-specific checks.
 

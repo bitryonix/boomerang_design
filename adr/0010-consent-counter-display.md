@@ -18,16 +18,16 @@ Omit the counter from Boomlet's current-set rotation query. During input, begin
 display only after ST authenticates the new-set query for its approved rotation,
 which Boomlet releases after accepting the first answer and recording any
 duress. Show the next counter as pending during selection and confirmation.
-Display it as applied with authenticated completion after Boomletwo's receipt,
-including identical countries and cancellation. Status and recovery follow the
-same restrictions.
+Display it as applied with authenticated completion, including identical
+countries and cancellation. Status and recovery follow the same restrictions.
 
 Display Boomletwo's stored counter with its first consent query during activation.
 Keep it visible through retries and recovery until that answer is
 accepted. Ordinary withdrawal and later backup consent queries omit it.
 
 Keep the counter inside authenticated rotation and reset messages. Transfer the
-new set and duress flag together and require Boomletwo's durable acknowledgment.
+new set and duress flag together and require Boomletwo's durable acknowledgment
+when a backup exists.
 
 ## Rationale
 
