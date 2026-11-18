@@ -31,7 +31,7 @@ apply. An invalid guard result stalls the setup attempt under SPEC Section 18.
 | `PARAMS_REVIEWED -> PARAMETERS_AGREED` | Boomlet verifies one identical signed `boomerang_params_fingerprint` from every peer. |
 | `PARAMETERS_AGREED -> WT_READY` | Boomlet verifies its local `WtSetupReceipt` and the five matching `wt_ready` checkpoint signatures. |
 | `WT_READY -> SAR_READY` | Boomlet verifies the WT wrapper, its own SAR response, and the five matching `sar_ready` checkpoint signatures. |
-| `SAR_READY -> BACKUP_READY` | Boomlet verifies `BackupDone`, the five matching `backup_ready` checkpoint signatures, and durably stores the final checkpoint. |
+| `SAR_READY -> BACKUP_READY` | Boomlet verifies `BackupDone` or a signed request to skip backup, verifies the five matching `backup_ready` checkpoint signatures, and durably stores the final checkpoint. |
 
 ## Semantic objects
 
@@ -64,7 +64,7 @@ apply. An invalid guard result stalls the setup attempt under SPEC Section 18.
 | Guard | Owner | Acceptance conditions |
 | --- | --- | --- |
 | `G-SETUP-SEED` | Niso and Boomlet | Exactly five valid signed peer records; exact local record occurs once; identities are unique and strictly ordered by canonical Boomlet identity bytes; WT preferences and milestones are canonical and valid; Boomlet recomputes the seed and setup ID. |
-| `G-PARAMS-REVIEW` | ST | Authenticated outer and decrypted setup IDs agree; nonce-bound commitment is valid; seed fields are canonical; recomputation matches the commitment; displayed peer order, WT preference order, milestones, and protocol version are the committed values. |
+| `G-PARAMS-REVIEW` | ST | Authenticated outer and decrypted setup IDs agree; nonce-bound commitment is valid; seed fields are canonical and identities are unique; recomputation matches the commitment; displayed peer order, WT preference order, milestones, and protocol version are the committed values. |
 | `G-PARAMS-REVIEW-APPROVAL` | Boomlet | ST signature is valid and covers the exact outstanding nonce-bound setup commitment under the expected setup ID and phase. |
 | `G-SETUP-AGREEMENT` | Niso and Boomlet | Exactly one signature from every active Boomlet; all signers are expected and unique; every signed fingerprint equals the locally computed fingerprint; peer order and descriptor are the committed values. |
 
@@ -77,7 +77,8 @@ apply. An invalid guard result stalls the setup attempt under SPEC Section 18.
 | `G-SETUP-CHECKPOINT` | Niso and Boomlet | Phase label and predecessor produce the locally expected checkpoint; exactly one valid signature from every active Boomlet; no missing or duplicate signer; all signed contents are identical. Boomlet revalidates independently before transition. |
 | `G-SAR-BINDING` | WT | Boomlet signature is valid; binding contains the active setup ID and the peer's selected `SarId`; the encrypted identifier payload is forwarded only to that identity. |
 | `G-SAR-SETUP-RESPONSE` | Niso and Boomlet | WT wrapper signature, setup ID, and status are exact; SAR response decrypts under the selected SAR channel; SAR signature, setup ID, doxing identifier, and local expected identifier all match. Boomlet revalidates independently. |
-| `G-BACKUP-REQUEST` | Boomlet | Normal-key signature verifies against stored `normal_pubkey`; request names the intended target key and same normal public key; no backup was completed for this active state; source state is eligible for backup. |
+| `G-BACKUP-REQUEST` | Boomlet | Normal-key signature verifies against stored `normal_pubkey`; request names the intended target key and same normal public key; `backup_complete` is false; source state is eligible for backup. |
+| `G-BACKUP-SKIP` | Boomlet | Signature verifies against stored `normal_pubkey` under `Boomerang/setup/backup_skip`; content equals the current setup ID; state is `SAR_READY` or `BACKUP_READY` and no backup key is retained; `backup_complete` is durable before output during setup; valid retries return the same status. |
 | `G-BACKUP-PACKAGE` | Iso | Supplied milestones equal `boomerang_params`; reconstructed descriptor and output key match; active Boomlet identity occurs exactly once; SAR signature and setup ID verify; derived doxing identifier and reconstructed static ciphertext commitment match the SAR response. |
 | `G-BACKUP-DONE` | Boomlet | Boomletwo signature is valid; setup ID equals the active setup; target key equals the authorized target; source key equals the active Boomlet; imported state was acknowledged once. |
 
@@ -116,6 +117,7 @@ apply. An invalid guard result stalls the setup attempt under SPEC Section 18.
 | `S-WT` | 48 through 60 | SPEC Section 13.8 |
 | `S-SAR-ACT` | 61 through 71 | SPEC Section 13.9 |
 | `S-BACKUP`, `S-DONE` | 72 through 94 | SPEC Sections 13.10 and 13.11 |
+| Skip backup through Iso | [Ancillary steps 72 through 74](../../ancillary/skip_backup_diagram.puml) | SPEC Section 13.10 |
 
 Pure host forwarding inside a named authenticated endpoint channel is collapsed
 into `via Niso` or `via Iso`. Message construction formulas, domain strings,

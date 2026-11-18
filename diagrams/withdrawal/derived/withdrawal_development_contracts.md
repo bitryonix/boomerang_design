@@ -15,6 +15,7 @@ Sections 14 through 18.
 | `via Niso` | Niso transports the object and performs every visible prevalidation available to it. Endpoint signatures and encryption remain authoritative. |
 | `x4` or `x5` | One object from each indicated active role, with membership, uniqueness, and canonical ordering enforced. |
 | `G-NAME` | The complete acceptance guard defined below. |
+| `G-NAME.visible` | Only the guard conditions checkable by Niso from visible fields. |
 | `W-DURESS-CHECK` | The reusable withdrawal duress fragment defined below. |
 
 Unless a guard says otherwise, it includes canonical schema and size bounds,
@@ -66,8 +67,8 @@ signing share.
 3. ST authenticates the challenge, maps it through the fixed vocabulary,
    creates five independent display shuffles, and retains the reverse maps.
 4. User selects one displayed entry from each column.
-5. ST returns exactly five original indices and the same nonce in an
-   authenticated envelope for Boomlet.
+5. ST returns `MessageWithNonce<DuressSignalIndex>` containing the five
+   original indices and the same nonce in an authenticated envelope for Boomlet.
 6. Boomlet requires one outstanding challenge in the current phase, exact
    nonce equality, exactly five distinct in-range indices,
    and successful authenticated decryption.

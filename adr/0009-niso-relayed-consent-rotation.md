@@ -5,7 +5,7 @@
 
 ## Context
 
-Boomlet and its designated inactive backup Boomletwo store the five-country
+Boomlet and any designated inactive backup Boomletwo store the five-country
 consent set. Their paired trusted ST device supplies user input and approval.
 Reconstructing the normal key for consent rotation adds a mnemonic-handling
 occasion and brings spending components together for maintenance. Iso receives
@@ -24,20 +24,19 @@ accidental retention, with consequences beyond consent maintenance.
 
 Use Niso as an untrusted relay and authorize rotation with explicit signed ST
 approval of the exact nonce-bound current consent freshness token. Rotation
-requires no mnemonic, passphrase, or normal private key.
+requires no mnemonic, passphrase, or normal private key. Backup is optional.
 
-Existing setup establishes the fixed pair through normal-key backup authorization,
+Setup establishes any backup pair through normal-key backup authorization,
 authenticated state transfer, and signed `BackupDone`
 ([SPEC §13.10](../spec/SPEC.md#1310-boomletwo-backup)). Devices retain the setup and
 paired identities. ST authenticates review through its existing paired Boomlet
 channel.
 
-Both devices independently verify the fixed pair and fresh ST approval.
-Niso transports encrypted messages.
+If a backup exists, both devices independently verify the fixed pair and fresh
+ST approval. Niso transports encrypted messages.
 
-ST approval permits consent rotation only within that fixed pair. Device
-replacement, rebinding, signing, and Boomletwo activation retain their separate
-requirements.
+Device replacement, rebinding, signing, and Boomletwo activation retain their
+separate requirements.
 
 ## Rationale
 
@@ -49,8 +48,8 @@ credentials.
 ## Consequences
 
 ST approval establishes trusted intent but provides less independent ownership
-authentication than possession of the normal key. Someone controlling the paired
-trusted devices and ST can perform unauthorized maintenance, including forcing
+authentication than possession of the normal key. Someone controlling Boomlet
+and ST can perform unauthorized maintenance, including forcing
 duress or blocking maintenance. Approval also cannot prove freedom from
 coercion.
 

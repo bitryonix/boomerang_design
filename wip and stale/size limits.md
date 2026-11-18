@@ -57,7 +57,7 @@ four-byte payload-length field.
 | --- | --- | ---: |
 | `CbcCmacEnvelope.ciphertext.max_payload_bytes` | Maximum ciphertext bytes accepted across all registered encryption contexts | `OPEN` |
 | `CbcCmacEnvelope.<context>.ciphertext.max_payload_bytes` | Maximum ciphertext payload bytes accepted for each registered encryption context | Per-context table below |
-| `SignedMessage.domain.max_payload_bytes` | Maximum ASCII bytes in a registered signature domain | 45 exact |
+| `SignedMessage.domain.max_payload_bytes` | Maximum ASCII bytes in a registered signature domain | 50 exact |
 | `SarServiceFeePaymentInfo.service_fee_invoice.max_payload_bytes` | Maximum UTF-8 bytes in a SAR service-fee invoice | `OPEN` |
 | `WtServiceFeePaymentInfo.service_fee_invoice.max_payload_bytes` | Maximum UTF-8 bytes in a WT service-fee invoice | `OPEN` |
 | `WtId.wt_tor_address.max_payload_bytes` | Maximum UTF-8 bytes in a canonical WT Tor address | `OPEN` |
@@ -183,6 +183,7 @@ content type, not by the signature representation.
 | `Boomerang/setup/wt_sar_response` | `WtSarSetupResponse` | `OPEN` | `OPEN` | 3 exact |
 | `Boomerang/setup/backup_request` | `BoomletBackupRequest` | 78 exact | 227 exact | 2 exact |
 | `Boomerang/setup/backup_done` | `BackupDone` | 114 exact | 260 exact | 2 exact |
+| `Boomerang/setup/backup_skip` | `bytes32` | 33 exact | 179 exact | 1 exact |
 | `Boomerang/withdrawal/tx_review_approval` | `MessageWithNonce<bytes32>` | 77 exact | 235 exact | 2 exact |
 | `Boomerang/withdrawal/tx_approval` | `TxApproval` | 84 exact | 235 exact | 2 exact |
 | `Boomerang/withdrawal/wt_tx_approval` | `WtTxApproval` | 49 exact | 203 exact | 2 exact |

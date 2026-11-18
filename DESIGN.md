@@ -730,9 +730,9 @@ decrypts the response, checks SAR's signature, and requires byte-for-byte
 equality with its sent envelope. Before releasing the acknowledgment, SAR has
 durably written the fixed-shape processing record; for a new valid duress tuple,
 that write commits
-rescue activation. Thus acknowledgment means exact delivery and durable
-activation where applicable. It says nothing about the quality or outcome of
-the later response.
+rescue activation. The acknowledgment confirms exact delivery and durable
+activation where applicable. Response quality and outcome remain outside the
+protocol guarantee.
 
 Protocol-traffic concealment does not protect against physical observation, a
 compromised ST or Boomlet, a consent set learned through prior observation or
@@ -965,7 +965,7 @@ lists the measurements required before quantitative evaluation.
 
 | Parameter | Effect |
 | --- | --- |
-| `MIN_TRIES_FOR_DIGGING_GAME_IN_BLOCKS` and `MAX_TRIES_FOR_DIGGING_GAME_IN_BLOCKS` (profile constants) | Set the support of every `mystery` draw. Translating both bounds upward by the same amount shifts required `counter` progress upward without changing its spread in `counter` units. Moving only one endpoint changes both support and shape; widening downward can lower the expected maximum, so no generic “wider means slower and more variable” rule is valid. The selected range also affects how early rollover must begin relative to the milestones. |
+| `MIN_TRIES_FOR_DIGGING_GAME_IN_BLOCKS` and `MAX_TRIES_FOR_DIGGING_GAME_IN_BLOCKS` (profile constants) | Set the support of every `mystery` draw. Translating both bounds upward by the same amount shifts required `counter` progress upward without changing its spread in `counter` units. Moving only one endpoint changes both support and shape; widening downward can lower the expected maximum. The selected range also affects how early rollover must begin relative to the milestones. |
 | `DURESS_CHECK_INTERVAL_IN_BLOCKS` (profile constant) | A shorter cadence creates more concealed signaling opportunities per ceremony at the cost of more user interaction and fatigue. |
 | Milestone schedule (the setup-time choice) | Fixes when deterministic fallback branches open, what a patient attacker can wait out, and when rollover discipline must act. |
 | Single active WT (profile configuration) | One coordination service can stall the ceremony or deny service. Redundancy and switching are unresolved ancillary work ([Section 15](#15-ancillary-procedures-and-open-protocol-work)). |
@@ -1117,34 +1117,30 @@ a credible and rehearsed response can use it without creating greater risk.
 The [risk register and design gaps](security_models/README.md), the adversary
 decompositions in the [attack trees](security_models/attack_trees.md), and the
 itemized [assumption register](security_models/assumption_register.md) analyze
-this catalog in greater depth. The assumption register also records unproven
-formal-analysis obligations.
+this catalog in greater depth. Protocol verification guidance is collected in
+the [audit mappings](security_models/audit_mappings.md#protocol-verification-guidance).
 
 ## 15. Ancillary procedures and open protocol work
 
-Several operational procedures are identified but not specified. Their
-absence is itself an open assumption. The security argument presumes they can
-be added without changing the security model, yet none of them is available
-today when the corresponding failure occurs.
+Several operational procedures remain unspecified. Service or device loss
+therefore leaves the documented stall or fallback behavior. Adding recovery
+procedures requires a separate security review.
 
 1. Switching from an unresponsive WT to a new one.
 2. Activating the Boomletwo backup, with revocation and proof that only one
    of Boomlet and Boomletwo is ever active.
-3. Replacing a Phone.
-4. Replacing a Niso.
-5. Replacing an ST.
-6. Handling prolonged unavailability of a setup-bound SAR.
-7. Handling timeouts caused by freshness checks.
-8. Handling prolonged peer non-response, including blame assignment and
+3. Replacing a Niso.
+4. Replacing an ST.
+5. Handling prolonged unavailability of a setup-bound SAR.
+6. Handling timeouts caused by freshness checks.
+7. Handling prolonged peer non-response, including blame assignment and
    notifying the other peers.
 
 Service failure meanwhile stalls the primary ceremony and does not authorize
 fallback early. The specification's open-issue list is
 [SPEC §22](spec/SPEC.md); design-gap status is tracked in the
-[security models](security_models/README.md), and the formal-analysis
-obligations in the
-[assumption register](security_models/assumption_register.md) remain
-unproven.
+[security models](security_models/README.md), and verification guidance is in
+the [audit mappings](security_models/audit_mappings.md#protocol-verification-guidance).
 
 ## 16. Design status and verification path
 

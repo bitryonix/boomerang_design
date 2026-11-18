@@ -33,9 +33,9 @@ the primary withdrawal ceremony progressing, obtain the later Bitcoin
 transaction signatures, verify the transfer, exfiltrate the funds, and escape.
 Boomerang changes only part of that sequence. Once each Boomlet has verified
 the complete signed `TxCommit` collection and its own exact SAR acknowledgment
-and has entered `DIGGING`, the participants cannot accelerate the five private
-device thresholds. The same required progress carries initial and repeated
-duress state to a setup-bound Search and Rescue service (`SAR`).
+and has entered `DIGGING`, each Boomlet retains its sampled threshold and
+advances under the pong-validation rules. The same required progress carries
+initial and repeated duress state to a setup-bound Search and Rescue service (`SAR`).
 
 This evaluation concerns high-value, low-velocity bitcoin protected by the
 five-of-five Boomerang branch and its device-enforced withdrawal protocol. It
@@ -236,8 +236,9 @@ P(K <= k | K > s)
     = (P(K <= k) - P(K <= s)) / (1 - P(K <= s))
 ```
 
-This is a real conditional update, but it does not reveal any individual
-mystery or let the coerced users accelerate the counters. The same `x^5`
+This conditions only on non-completion; individual reached flags provide
+additional information. Updating a belief changes neither the sampled thresholds
+nor the counter-advancement rules. The same `x^5`
 curve is shown in the [root README](../README.md#attack-economics) as the
 first-contact view, and
 [DESIGN §12](../DESIGN.md#12-attack-economics-and-security-argument) keeps
@@ -258,8 +259,8 @@ Let:
 
 - `T` be the time at which the attacker obtains a verifiable payout and can
   exfiltrate it;
-- `A` be the time SAR durably activates the relevant duress state;
-- `R` be the time from activation to an effective external intervention; and
+- `A` be the time SAR durably records the relevant duress event;
+- `R` be the time from that event to an effective external intervention; and
 - `E` be the event that the intervention is correctly directed, lawful,
   operationally effective, and does not make the situation worse.
 
@@ -269,16 +270,18 @@ The narrow response event is:
 effective interruption = E and (A + R < T)
 ```
 
-If duress is entered during the initial challenge, exact SAR acknowledgment
-and durable activation precede entry to `DIGGING`, so the entire digging period
+If duress is entered during the initial challenge, SAR durably records the duress event
+and acknowledges the exact placeholder before entry to `DIGGING`, so the entire digging period
 is potentially available to the responder. Repeated checks provide later
 opportunities if the initial response was safe or a new duress condition
-arises. Safe and duress handling must remain protocol-indistinguishable on the
+arises. Counter progress, including thresholds already reached for the same approved
+transaction, can leave little or no digging delay when SAR records later duress.
+Safe and duress handling must remain protocol-indistinguishable on the
 specified observability surface.
 
 Neither the protocol nor the attack datasets provide the distribution of `R`
 or the probability of `E`. SAR acknowledgment proves exact delivery and durable
-activation where applicable. It does not prove that intervention occurs before
+activation for duress. It does not prove that intervention occurs before
 `T`, reaches the right people, complies with law, succeeds, avoids retaliation,
 or rescues anyone.
 

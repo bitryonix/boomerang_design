@@ -1,0 +1,32 @@
+@startuml skip_backup_diagram
+skinparam sequenceMessageAlign left
+title Skip Backup Through Iso
+
+box "User Side" #AliceBlue
+actor User order 1 #LightCyan
+participant Iso order 2 #LightBlue
+participant Boomlet order 3 #LightPink
+end box
+
+hnote over User #LavenderBlush: Alternative at setup step 72 when User skips backup. User connects Boomlet to Iso.
+
+autonumber 72 "<b>[00]"
+
+' Step 72
+User o-> Iso:  <b>SetupIsoInput5 \n magic: "skip_backup" \n mnemonic \n passphrase \n network \n account \n key_index
+hnote over Iso #LavenderBlush:  Iso receives {magic: "skip_backup", mnemonic, passphrase, network, account, key_index} \n from User and prepares to sign Boomlet's current setup ID with the normal key.
+
+' Step 73
+Boomlet o-> Iso:  <b>SetupBoomletIsoMessage7 \n setup_instance_id
+hnote over Iso #LavenderBlush:  Iso receives setup_instance_id from Boomlet, derives the normal key from the \n supplied recovery inputs, and signs setup_instance_id under domain "Boomerang/setup/backup_skip".
+hnote over Iso #Lavender:  coin_type := 0 if network is mainnet else 1 \n master_xpriv_0 := derive_master_xpriv(mnemonic, passphrase) \n purpose_xpriv_0 := derive_child_xpriv(master_xpriv_0, 52102, hardened: true) \n coin_xpriv_0 := derive_child_xpriv(purpose_xpriv_0, coin_type, hardened: true) \n account_xpriv_0 := derive_child_xpriv(coin_xpriv_0, account, hardened: true) \n external_xpriv_0 := derive_child_xpriv(account_xpriv_0, 0, hardened: false) \n normal_privkey_0 := derive_child_xpriv(external_xpriv_0, key_index, hardened: false) \n backup_skip_signed_by_normal_0 := sign_message(normal_privkey_0, \n "Boomerang/setup/backup_skip", setup_instance_id)
+
+' Step 74
+Iso o-> Boomlet:  <b>SetupIsoBoomletMessage7 \n backup_skip_signed_by_normal_0
+hnote over Boomlet #LavenderBlush:  Boomlet receives backup_skip_signed_by_normal_0 from Iso, verifies the \n normal-key signature and current setup ID, requires no stored backup key, and records backup completion. \n Valid retries return the same status.
+hnote over Boomlet #Pink:  Assert verify_signature(normal_pubkey_0, "Boomerang/setup/backup_skip", backup_skip_signed_by_normal_0) == True \n Assert backup_skip_signed_by_normal_0.content == setup_instance_id \n Assert setup_state in {SAR_READY, BACKUP_READY} \n Assert boomletwo_Identity_pubkey == Null
+hnote over Boomlet #Lavender:  If setup_state == SAR_READY && backup_complete == False: \n backup_complete := True \n save(backup_complete)
+
+ref over User, Iso, Boomlet: Continue setup at step 86
+
+@enduml
