@@ -1,8 +1,7 @@
 # ADR 0005: Use a User-Chosen Doxing Password
 
-Status: Accepted
-
-Date: 2026-07-09
+- **Status:** Accepted
+- **Recorded:** 2026-07-09
 
 ## Context
 

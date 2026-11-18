@@ -1,0 +1,70 @@
+@startuml wt_predigging_failover
+title WT failover before DIGGING
+hide footbox
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 75
+actor "Five users with STs" as U
+participant "Five Boomlets" as B
+participant "Nisos" as N
+participant "Candidate WT" as C
+participant "Bound SARs" as S
+
+note over B
+  Local phases may include transaction review, approval collection,
+  complete approvals, or commit collection.
+  Unresolved manifests stop the common exchange before PREPARE.
+end note
+
+ref over U,C
+  02_common_switch.puml
+  Each reviewed intent commits its local phase and initialized flag.
+  The five frozen manifests determine closure or preservation.
+  Before initial PREPARE, discharge every exact committed placeholder.
+  Closure requires all five initialized flags false and reviewed abandonment IDs.
+  PREPARE itself is each peer's signed discharge attestation.
+end ref
+
+alt Final ABORT
+  B -> B: Persist cancellation; retain original ceremony and obligations
+else Final ACTIVATE and all five establish DIGGING never initialized
+  B -> B: Install head, tombstone old IDs,\nretire pending reviews and old authorization state
+  N -> B: Propose transaction for a new withdrawal
+  B -> U: Fresh nonce-bound transaction review for initiator
+  U -> B: Initiator ST signature over reviewed transaction identity
+  B -> B: Initiator creates fresh approval nonce and withdrawal_id
+  B -> C: Initiator signed TxApproval and recipient PSBT envelopes
+  C -> B: Head-scoped WT approval, initiator approval and recipient PSBTs
+  B -> B: Each non-initiator verifies transaction and withdrawal binding
+  B -> U: Fresh nonce-bound transaction review for each non-initiator
+  U -> B: Four ST signatures over reviewed transaction identity
+  B -> C: Four fresh non-initiator TxApprovals
+  C -> B: Ordered complete approval set
+  B -> B: Verify all approvals and derive approved_withdrawal_id
+  B -> C: Four non-initiator approval-set attestations
+  B -> U: Initiator initial duress challenge
+  U -> B: Nonce-bound responses
+  B -> C: Initiator signed padded TxCommit
+  C -> C: Verify four-attestation gate
+  C -> S: Initiator exact placeholder
+  S -> C: Encrypted exact acknowledgment
+  C -> B: Head-scoped initiator commit acknowledgment
+  B -> U: Non-initiator challenges after verifying acknowledgment
+  U -> B: Nonce-bound non-initiator responses
+  B -> C: Non-initiator signed padded commits after acknowledgment checks
+  C -> S: Each exact non-initiator placeholder
+  S -> C: Encrypted exact acknowledgments
+  C -> B: Complete commit set and each peer's own acknowledgment
+  B -> B: Verify local entry gates; initialize DIGGING once
+else Final ACTIVATE and at least one peer initialized DIGGING
+  ref over B,S
+    05_mixed_digging_failover.puml
+    Preserve initialized peers and verify exact commit handoff for laggards.
+  end ref
+end
+
+note over B,S
+  Completed SAR rescue activation survives both ACTIVATE and ABORT.
+  Switch approval is separate from transaction approval.
+end note
+@enduml

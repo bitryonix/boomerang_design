@@ -1,0 +1,75 @@
+@startuml wt_signing_broadcast_failover
+title WT failover around signing and broadcast
+hide footbox
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 75
+participant "Niso i" as N
+participant "Boomlet i" as B
+participant "Iso i" as I
+participant "Other four peers" as P
+participant "Candidate WT" as C
+participant "Bitcoin network" as Chain
+
+alt A complete signed transaction is already retained
+  N -> N: Verify full transaction, descriptor and approved tx_id
+  N -> Chain: Broadcast or rebroadcast the exact transaction
+else Coordination is needed for signing or fragment collection
+  N -> B: Propose WT failover
+  opt A MuSig2 secret nonce is live
+    alt Exact signing session can finish
+      B -> I: Continue identical message, keys, tweaks and nonce context
+      I -> B: Local signing contribution
+      B -> B: Complete once, consume nonce and retain immutable fragment
+    else Session requires abort
+      B -> B: Erase unused nonce and record aborted session
+      B -> I: Coordinate erasure of unused session nonce
+      I -> I: Erase unused nonce; retain completed signing output
+    end
+  end
+
+  ref over B,C
+    02_common_switch.puml
+    Review, freeze and certify the candidate after live nonce resolution.
+    A signing or exported withdrawal retains its initialized status.
+  end ref
+
+  alt Final ABORT
+    B -> B: Resume matching local phase with retained signing disposition
+  else Final ACTIVATE
+    alt This peer still needs a signature
+      ref over B,C
+        06_digging_failover.puml
+        Use the obligation and recovery-ping portions\nto obtain five fresh reached pings under the installed head.
+      end ref
+      C -> B: Current-head reached collection
+      N -> B: Hydrated PSBT for the same approved transaction
+      B -> B: Verify reached evidence, descriptor, tx_id,\ntransaction semantics, sighash policy and milestones
+      B -> I: Validated signing package and fresh public nonce
+      I -> B: Matching local MuSig2 contribution
+      B -> B: Produce signature once and retain immutable fragment
+    else This peer already produced its fragment
+      B -> B: Retain exact fragment and required peer-continuation state
+    end
+    B -> N: Retained signed fragment and Boomlet-authenticated new-head envelope
+    N -> N: Persist fragment and required recovery evidence
+    N -> C: Forward Boomlet-authenticated fragment envelope
+    C -> C: Verify and durably retain exact fragment
+    C -> B: Head-bound FragmentReceipt over origin, approved ID and digest
+    B -> B: Record dissemination; retain own exact fragment
+    P -> C: Four retained signed fragments through authenticated paths
+    C -> C: Verify all five, descriptor, final transaction and approved tx_id
+    C -> Chain: Broadcast exact approved transaction
+    C -> N: Complete signed transaction and head-bound CompletionReceipt
+    N -> B: Exact complete transaction and receipt
+    B -> B: Verify complete transaction, all five fragments and own SAR duty
+    B -> B: Mark COMPLETED_RETAINED; retain own fragment and closed IDs
+    B -> B: Erase completed private delay state and consumed session secrets
+    note over N,C
+      An untrusted holder receipt cannot authorize fragment erasure.
+      Archive erasure requires permanent setup-identity retirement.
+      Consumed secret nonces are never used for another signing attempt.
+    end note
+  end
+end
+@enduml

@@ -1,8 +1,7 @@
 # ADR 0003: Use One SAR Per Peer
 
-Status: Accepted
-
-Date: 2026-06-16
+- **Status:** Accepted
+- **Recorded:** 2026-06-16
 
 ## Context
 
@@ -11,7 +10,7 @@ acknowledge duress placeholders during setup and withdrawal. Earlier setup
 text still described a collection of SAR identities and WT-side SAR selection,
 even though the security model already assumed exactly one SAR per peer.
 
-Multi-SAR setup leaves important policy undefined: selection, replacement,
+Multi-SAR setup leaves important policy undefined: selection, substitution,
 quorum, failover timing, and blame when one service is unavailable. Those
 choices affect user safety and physical-response modelling, not only message
 routing.
@@ -41,8 +40,9 @@ external rescue response.
 The decision avoids adding more single points of failure through multi-SAR
 policy. A protocol that requires selection, quorum, or failover can be blocked
 or confused by each additional required service or by disagreement about which
-service is authoritative. Treating SAR replacement as a future explicit
-procedure keeps that risk visible.
+service is authoritative. It also excludes in-place SAR replacement. A new SAR
+changes the key derivation, identifier, WT binding, and service receipts, so it
+requires a fresh setup.
 
 The decision also limits Boomlet load. Boomlet performs one SAR-key derivation,
 one identifier derivation, one SAR envelope construction, one WT-bound SAR
@@ -59,7 +59,7 @@ SAR selection policy is part of the active protocol.
 The stored value identifies the one SAR that can acknowledge safe or duress
 placeholders for that peer.
 
-Operational continuity is still open work. A production profile must define
-how a peer deliberately replaces a SAR after setup, and how users should react
-when the setup-bound SAR is unavailable, without allowing silent substitution
-inside an active ceremony.
+The SAR cannot be replaced within an existing setup. A peer that chooses a
+different SAR must complete a fresh setup and move the funds to it. SAR
+unavailability stalls the Boomerang path under the existing setup. Operator
+response and rollover timing for prolonged unavailability remain open work.

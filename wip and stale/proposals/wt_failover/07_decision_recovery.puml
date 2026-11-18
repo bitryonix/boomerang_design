@@ -1,0 +1,75 @@
+@startuml wt_decision_recovery
+title Recovery of an interrupted WT decision
+hide footbox
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 75
+participant "Boomlet A" as A
+participant "Other four Boomlets" as P
+participant "Candidate WT" as C
+
+note over A,P
+  The five reviewed intents identify one frozen switch.
+  A may have emitted PREPARE or COMMIT.
+  Trusted bounded admission permits recovery after timeout or cancellation.
+end note
+
+alt A complete final decision certificate is available
+  P -> A: Five matching COMMIT signatures and decision evidence
+  A -> A: Verify and learn completed decision, even below current promise
+  A -> P: Relay final certificate for convergence
+else No final certificate is available
+  A -> A: Admit next successor within trusted allowance
+  A -> A: Persist higher ballot and exact highest-certificate report
+  A -> P: RECOVER(target ballot, prepared certificate or NONE)
+  P -> P: Each peer persists its higher promise and exact report
+  P -> A: Four RECOVER reports with prepared certificates or NONE
+  A -> A: Verify all five reports, certificates, scope and own exact report
+  P -> P: Each independently verifies the five-report collection\nand its own exact stored report
+  note over A,P
+    A higher promise forbids creating lower-ballot votes.
+    Reports are immutable; delayed prepared proofs cannot reopen old ballots.
+  end note
+
+  alt At least one valid prepared certificate is reported
+    A -> A: Select the value of the highest-ballot certificate
+    P -> P: Independently compute the same selection
+  else Every report is NONE
+    A -> A: Select ABORT
+    P -> P: Independently select ABORT
+  end
+
+  A -> A: Persist PREPARE for selected value in target ballot
+  A -> P: PREPARE with verifiable recovery collection
+  P -> A: Four matching PREPARE votes
+  A -> A: Verify and durably retain complete PreparedCertificate
+  A -> A: Persist matching COMMIT
+  A -> P: COMMIT
+  P -> P: Each verifies five PREPARE votes, retains their certificate,\nand persists matching COMMIT before export
+  P -> A: Four matching COMMIT votes
+  A -> A: Verify final DecisionCertificate
+  A -> P: Complete DecisionCertificate
+end
+
+alt Final value is ABORT
+  A -> A: Persist tombstone; unlock only the matching predecessor operation
+  P -> P: Preserve local ceremony and all outstanding obligations
+else Final value is ACTIVATE
+  A -> A: Install certified candidate head from retained evidence
+  P -> P: Install the same certified head
+  A -> C: Final certificate when candidate is reachable
+  opt Candidate is unavailable
+    ref over A,C
+      Start a fresh reviewed switch from the installed head.
+      Choose another WT in the fixed roster.
+    end ref
+  end
+end
+
+note over A,C
+  Recovery requires five cooperating peers and retained evidence.
+  Prepared activation proves every honest signer discharged its frozen duty.
+  Finishing the decision requires no new candidate or SAR response.
+  A superseded recovery ballot retries at a higher ballot.
+end note
+@enduml

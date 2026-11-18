@@ -1,0 +1,81 @@
+@startuml wt_setup_changes
+title Setup with a fixed WT roster
+hide footbox
+autonumber
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 75
+actor "Users" as U
+participant "STs" as ST
+participant "Boomlets" as B
+participant "Nisos" as N
+participant "Initial WT" as W
+participant "Bound SARs" as S
+participant "Iso and designated Boomletwos" as Backup
+
+legend left
+Grouped lifelines represent five independent peers.
+Green notes identify setup additions for WT failover.
+endlegend
+
+group Roster and parameter agreement
+  N -> B: Ordered signed peer records, WT identities,\nmilestone blocks and descriptor parameters
+  B -> B: Admit protected keys, one setup backup and anti-rollback journal
+  B -> B: Verify five peer identities and matching parameters
+  B -> ST: Authenticated, nonce-bound setup review
+  ST -> U: Display ordered WT identities, setup parameters,\nand designated backup security requirements
+  U -> ST: Approve
+  ST -> B: Signed setup review
+  B -> B: Verify review and derive setup_instance_id
+  B -> N: Signed parameter fingerprint
+  N -> B: Five matching parameter signatures
+  B -> B: Complete PARAMETERS_AGREED
+  note over ST,B #E8F5E9
+    One to five distinct WT keys and identities.
+    Preserve the reviewed order and full addresses.
+    The setup ID commits the roster.
+  end note
+end
+
+group Initial WT authority
+  B -> B: Store active_wt_index = 0
+  B -> B: Store genesis head derived from version and setup ID
+  N -> W: Signed setup records and parameter agreement
+  W -> N: Registration invoices when payment is due
+  U -> N: Payment evidence
+  N -> W: Payment evidence
+  W -> B: Setup registration receipt through Niso
+  B -> B: Verify local receipt
+  B -> N: Signed WT-ready checkpoint
+  N -> B: Five matching checkpoint signatures
+  B -> B: Complete WT_READY
+  note over B,W #E8F5E9
+    Enroll the first roster WT for setup.
+    Dormant registration is optional.
+    State-advancing WT traffic authenticates the active head.
+  end note
+end
+
+group SAR finalization and backup
+  B -> W: Signed bound SAR identity and encrypted SAR setup request
+  W -> S: Forward to each exact bound SAR
+  S -> W: Signed finalization evidence encrypted to each Boomlet
+  W -> B: Authenticated local finalization evidence
+  B -> B: Verify own SAR and WT evidence
+  B -> N: Signed SAR-ready checkpoint
+  N -> B: Five matching checkpoint signatures
+  B -> B: Complete SAR_READY
+  ref over B,Backup
+    Base authorized Boomletwo backup ceremony.
+    Normal-key-signed request, target-bound encrypted setup state,
+    Iso descriptor and SAR checks, verified BackupDone.
+  end ref
+  B -> N: Signed backup-ready checkpoint after local receipt checks
+  N -> B: Five matching checkpoint signatures
+  B -> B: Complete BACKUP_READY
+  note over B,Backup #E8F5E9
+    The designated backup remains offline and inactive.
+    Recovery checkpoint candidates bind only that target.
+    Source-loss activation needs exclusion and complete security history.
+  end note
+end
+@enduml

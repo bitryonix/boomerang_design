@@ -9,14 +9,29 @@
 
 ## Diagrams
 
-The canonical annotated source is
+The main annotated source is
 [setup_diagram_without_states.puml](setup_diagram_without_states.puml), with
-[setup_diagram_without_states.svg](setup_diagram_without_states.svg) as its
+[setup_diagram.svg](setup_diagram.svg) as its
 generated graphical rendering.
 
-The annotated diagram and this README are explanatory implementation aids.
+The derived views are in [derived/](derived/).
+
+The [skip backup diagram](../ancillary/skip_backup_diagram.puml) details the
+alternative through Iso.
+
+The compact protocol-development source is
+[setup_protocol_development.puml](derived/setup_protocol_development.puml).
+It shows causal gates, trust-boundary crossings, checkpoint order, and Boomlet
+state transitions. Its named message and acceptance contracts are defined in
+[setup_development_contracts.md](derived/setup_development_contracts.md).
+
+The annotated sequence with prose and Pink notes removed is
+[setup_diagram_without_states_without_prose_comments.puml](derived/setup_diagram_without_states_without_prose_comments.puml).
+
+The development view, contract tables, annotated diagram, and this README are
+explanatory implementation aids.
 Normative protocol requirements are defined only by
-[SPEC.md](../spec/SPEC.md).
+[SPEC.md](../../spec/SPEC.md).
 
 ## Diagram Notation
 
@@ -25,6 +40,9 @@ Normative protocol requirements are defined only by
 | `canonical_encode(fields)` | Canonical typed tuple or object encoding; never raw concatenation. |
 | `utf8(text)` | NFC-normalize text and return its UTF-8 bytes. |
 | `canonical_public_key_bytes(public_key)` | Validate a public key and return its canonical encoded bytes. |
+| `public_key.x` | X-coordinate of a validated public key. |
+| `all_unique(values, key?)` | True when all values differ; `key` optionally selects the field to compare. |
+| `strictly_increasing(values, key?)` | True when values increase strictly in collection order; `key` optionally selects the field to compare. |
 | `sha256(bytes)` / `tagged_sha256(tag, bytes)` | SHA-256 or domain-separated tagged SHA-256. |
 | `random_bytes(n)` | `n` bytes from the approved cryptographic RNG. |
 | `random_integer(min, max)` | Uniform inclusive integer draw. |
@@ -41,6 +59,8 @@ Normative protocol requirements are defined only by
 | `select_one_from_each(columns)` / `map_to_original_indices(...)` | Capture one choice per column and recover the corresponding original-list indices. |
 | `derive_cbc_cmac_keys(material, context)` | Derive distinct AES-256 CBC and CMAC keys for non-channel material with SP 800-108 AES-CMAC. |
 | `channel_keys(private, local_entity_name, public, peer_entity_name, sender_public_key, receiver_public_key)` | Validate ECDH input and hardcoded entity names, derive the ordered four-key channel schedule, and select the directional CBC/CMAC keys. Message labels and scope IDs remain in the envelope context. |
+| `encrypt_for_<peer>(context, content)` | CBC-CMAC channel encryption using the acting device's identity key and the named peer's public key. |
+| `decrypt_from_<peer>(context, envelope)` | Authenticate and decrypt the corresponding directional channel envelope. |
 | `cbc_cmac_encrypt(keys, context, content)` | AES-256-CBC/PKCS#7 followed by full AES-CMAC over context, IV, and ciphertext. |
 | `cbc_cmac_decrypt(keys, context, envelope)` | Verify CMAC before CBC decryption, unpadding, and canonical decoding. |
 | `sign_message(private, domain, content)` | Domain-separated BIP340 signature over canonical content. |
@@ -58,100 +78,192 @@ and other timing constants. These values are local implementation-profile
 constants, not setup
 messages or `BoomerangParamsSeed` fields.
 
-<!-- BEGIN GENERATED SETUP PROCEDURE -->
 ## Procedure
 
-1. Phone receives {doxing_password, sar_id, static_doxing_data} from User. The single SarId contains the selected SAR's Tor address and public key. StaticDoxingData contains the user's name, national ID, home and work addresses, mobile, home, and work phone numbers, and a trusted person's name, address, and phone number. DynamicDoxingData contains a schema identifier, capture time, and payload such as location. Phone NFC-normalizes doxing_password and encodes it as UTF-8 bytes, then saves doxing_key as tagged_sha256("Boomerang/doxing_key", doxing_password_bytes). It takes sar_pubkey from sar_id, obtains its canonical public-key bytes, derives doxing_key_for_sar as tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes), and derives doxing_data_identifier as tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar). That SAR-specific key encrypts the user's static and dynamic doxing data, and the identifier initializes the SAR registration.
-2. SAR receives doxing_data_identifier from Phone, generates a service-fee invoice for this registration, sets its payment deadline, and creates SarServiceFeePaymentInfo containing that invoice, deadline, and the SAR's configured SarId. It retains the identifier as the lookup key for this pending registration and returns the payment information to Phone.
-3. Phone receives sar_service_fee_payment_info from SAR, checks that its SarId equals the selected sar_id, and forwards it to User.
-4. User receives sar_service_fee_payment_info from Phone, verifies its SAR identity, invoice, and deadline, and pays it. Each resulting ServicePaymentReceipt contains the service identifier, invoice reference, and payment proof. User inputs the SAR payment receipts back to Phone.
-5. Phone receives sar_service_fee_payment_receipts from User. For static and dynamic data it derives separate CBC and CMAC keys from doxing_key_for_sar with "Boomerang/sar_stored_data". It encrypts static_doxing_data with canonical context {"sar_static_data", doxing_data_identifier} and dynamic_doxing_data with context {"sar_dynamic_data", doxing_data_identifier}. cbc_cmac_encrypt produces a CbcCmacEnvelope containing version, IV, ciphertext, and authentication tag. Phone sends the static envelope once and sends updated dynamic envelopes at intervals, each accompanied by the unauthenticated doxing_data_identifier lookup key and the payment receipts.
-6. SAR receives {sar_service_fee_payment_receipts, static_doxing_data_encrypted_by_doxing_key_for_sar, doxing_data_identifier, dynamic_doxing_data_encrypted_by_doxing_key_for_sar} from Phone. It requires verify_payment to succeed and the identifier to equal the value received during initialization. It stores the encrypted static and dynamic data under that identifier and confirms synchronization. Phone continues sending newly captured encrypted DynamicDoxingData at intervals.
-7. Phone receives {magic: "setup_sar_setup_done_and_in_sync_with_phone"} from SAR and informs User that it's now in-sync with SAR.
+<!-- BEGIN GENERATED SETUP PROCEDURE -->
+
+1. Phone receives {doxing_password, sar_id, static_doxing_data} from User. sar_id contains the selected SAR's Tor address and sar_pubkey. static_doxing_data contains the user's name, national ID, home and work addresses, mobile, home, and work phone numbers, and a trusted person's name, address, and phone number. Phone NFC-normalizes doxing_password and encodes it as doxing_password_bytes, then derives doxing_key as tagged_sha256("Boomerang/doxing_key", doxing_password_bytes). Phone sets sar_pubkey to sar_id.sar_pubkey and sar_pubkey_bytes to canonical_public_key_bytes(sar_pubkey). Phone derives doxing_key_for_sar as tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes), and derives doxing_data_identifier as tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar). doxing_key_for_sar supplies static-data encryption keys, device-data encryption keys, and dynamic_update_auth_key. doxing_data_identifier initializes SAR registration.
+
+2. SAR receives doxing_data_identifier from Phone. SAR binds service_fee_invoice to doxing_data_identifier, sar_id, and PROTOCOL_VERSION, sets payment_deadline for service_fee_invoice, and creates sar_service_fee_payment_info containing service_fee_invoice, payment_deadline, and sar_id. SAR returns sar_service_fee_payment_info to Phone.
+
+3. Phone receives sar_service_fee_payment_info from SAR and checks that sar_service_fee_payment_info.sar_id is the same as the selected sar_id. Phone forwards sar_service_fee_payment_info to User.
+
+4. User receives sar_service_fee_payment_info from Phone. User verifies sar_service_fee_payment_info.sar_id, sar_service_fee_payment_info.service_fee_invoice, and sar_service_fee_payment_info.payment_deadline, then pays sar_service_fee_payment_info.service_fee_invoice. Each resulting ServicePaymentReceipt contains the service identifier, invoice reference, and payment proof. User inputs sar_service_fee_payment_receipts back to Phone.
+
+5. Phone receives sar_service_fee_payment_receipts from User. Phone derives static_doxing_data_cbc_cmac_keys from doxing_key_for_sar, then encrypts static_doxing_data with static_doxing_data_cbc_cmac_keys to produce static_doxing_data_encrypted_by_doxing_key_for_sar. Phone generates device_id and upload_id, sets upload_seq_num to zero, derives device_data_key and dynamic_update_auth_key, then derives dynamic_doxing_data_cbc_cmac_keys from device_data_key. Phone encrypts dynamic_doxing_data with dynamic_doxing_data_cbc_cmac_keys to produce dynamic_doxing_data_encrypted_by_device_data_key. Phone computes dynamic_upload_cmac over PROTOCOL_VERSION, doxing_data_identifier, device_id, upload_id, upload_seq_num, and dynamic_doxing_data_encrypted_by_device_data_key under dynamic_update_auth_key, then constructs first_dynamic_doxing_data_upload. Phone sends sar_service_fee_payment_receipts, doxing_data_identifier, static_doxing_data_encrypted_by_doxing_key_for_sar, dynamic_update_auth_key, and first_dynamic_doxing_data_upload in SetupPhoneSarMessage2 over a confidential exchange authenticated with sar_id.
+
+6. SAR receives {sar_service_fee_payment_receipts, doxing_data_identifier, static_doxing_data_encrypted_by_doxing_key_for_sar, dynamic_update_auth_key, first_dynamic_doxing_data_upload} from Phone. SAR verifies sar_service_fee_payment_receipts against the service_fee_invoice bound to doxing_data_identifier, sar_id, and PROTOCOL_VERSION. SAR requires first_dynamic_doxing_data_upload.doxing_data_identifier to match doxing_data_identifier and first_dynamic_doxing_data_upload.upload_seq_num to be zero. SAR validates first_dynamic_doxing_data_upload.dynamic_upload_cmac under dynamic_update_auth_key. SAR rejects an existing registration with a different dynamic_update_auth_key. For a new registration, SAR signs a DynamicRescueReceipt as dynamic_doxing_data_upload_receipt_signed_by_sar and commits static_doxing_data_encrypted_by_doxing_key_for_sar, PROTOCOL_VERSION, dynamic_update_auth_key, first_dynamic_doxing_data_upload, and dynamic_doxing_data_upload_receipt_signed_by_sar. SAR returns the original dynamic_doxing_data_upload_receipt_signed_by_sar for an identical first_dynamic_doxing_data_upload retry.
+
+7. Phone receives dynamic_doxing_data_upload_receipt_signed_by_sar from SAR. Phone verifies its signature under sar_id.sar_pubkey and registered PROTOCOL_VERSION, then checks the receipt's doxing_data_identifier, device_id, upload_id, upload_seq_num, and encrypted data hash against first_dynamic_doxing_data_upload. Phone completes SAR registration and continues uploading dynamic_doxing_data to SAR as new data arrives.
+
 8. User receives {magic: "setup_sar_registered_and_connected_to_phone"} from Phone and proceeds to setup Iso.
+
 9. Iso receives {network, account, key_index, entropy_bytes, passphrase, doxing_password, sar_id} from User. It creates mnemonic from entropy_bytes, derives master_xpriv_0, and derives normal_privkey_0 at m/52102'/coin_type'/account'/0/key_index. coin_type is 0 for mainnet and 1 for testnet, signet, and regtest; account and key_index default to 0. It derives normal_pubkey_0 from normal_privkey_0. Iso NFC-normalizes doxing_password and encodes it as UTF-8 bytes, then derives doxing_key as tagged_sha256("Boomerang/doxing_key", doxing_password_bytes) for installation into Boomlet. It retains mnemonic, passphrase, sar_id, and the derived normal-key material for the remainder of this Iso session.
+
 10. Boomlet receives {normal_pubkey_0, doxing_key, sar_id} from Iso during installation. It generates an identity private key and derives boomlet_0_identity_pubkey, generates a MuSig2 private share and derives its public share, and combines that public share with normal_pubkey_0 to derive boom_pubkey_0. Computing the aggregate key during installation validates the MuSig2 share and normal public key before setup continues. After successful installation on an empty smart card, Boomlet returns boomlet_0_identity_pubkey to Iso.
+
 11. Iso receives boomlet_0_identity_pubkey from Boomlet and forwards it to ST.
+
 12. ST receives boomlet_0_identity_pubkey from Iso, generates a new identity private key, derives st_0_identity_pubkey, retains the private key, and returns the public key.
+
 13. Iso receives st_0_identity_pubkey from ST and forwards it to Boomlet.
-14. Boomlet receives st_0_identity_pubkey from Iso. DuressCheckSpace contains one field, space, which Boomlet sets to a uniform random permutation of every integer from 1 through 193. MessageWithNonce contains content and nonce; Boomlet places the DuressCheckSpace in content and generates a fresh 32-byte nonce. It encrypts this value with the Boomlet-to-ST directional channel keys, using canonical context {"duress_challenge"}. The fresh nonce binds the eventual response to this exact challenge.
+
+14. Boomlet receives st_0_identity_pubkey from Iso. It creates DuressCheckSpace from a uniform random permutation of 1 through 193 and wraps it in MessageWithNonce with a fresh nonce. It encrypts this value for ST using context {"duress_challenge"}. The fresh nonce binds the eventual response to this exact challenge.
+
 15. Iso receives duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st from Boomlet and forwards it to ST.
-16. ST receives duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st from Iso and decrypts it with the Boomlet-to-ST directional channel keys, using canonical context {"duress_challenge"}. It takes DuressCheckSpace from the MessageWithNonce content, maps each integer through DURESS_DISPLAY_VOCABULARY, creates duress_display_columns as five independently shuffled display copies of that list, and retains the five corresponding display-to-original-index maps locally.
-17. User receives five independently shuffled columns of countries from ST and selects exactly one displayed country in each column with the joystick. This produces five displayed selections; ST will translate each one to an index in Boomlet's original list. User memorizes the five selected country names.
-18. ST receives user_selection, containing exactly one displayed choice for each of the five columns, from User. It maps each choice through the corresponding retained display map to create duress_signal_index in column order. It places those five original-list indices in the content of a MessageWithNonce, copies the outstanding challenge nonce into the nonce field, and encrypts the response with the ST-to-Boomlet directional channel keys, using canonical context {"duress_response"}. It sends the resulting envelope to Iso.
+
+16. ST receives duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st from Iso and decrypts it using context {"duress_challenge"}. It takes DuressCheckSpace from the MessageWithNonce content, maps each integer through DURESS_DISPLAY_VOCABULARY, creates duress_display_columns as five independently shuffled display copies of that list, and retains the five corresponding display-to-original-index maps locally.
+
+17. User receives five independently shuffled columns of countries from ST and selects exactly one displayed country in each column with the joystick. User memorizes the five selected country names.
+
+18. ST receives user_selection, containing exactly one displayed choice for each of the five columns, from User. It maps each choice through the corresponding retained display map to create duress_signal_index in column order. It wraps those five original-list indices in DuressSignalIndex and places it in the content of a MessageWithNonce, copies the outstanding challenge nonce into the nonce field, and encrypts the response for Boomlet using context {"duress_response"}. It sends the resulting envelope to Iso.
+
 19. Iso receives duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 from ST and forwards it to Boomlet.
-20. Boomlet receives duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 from Iso and decrypts it with the ST-to-Boomlet directional channel keys, using canonical context {"duress_response"}. It requires the returned nonce to equal the outstanding challenge nonce, takes the returned indices from content, resolves them against duress_check_space.space, and stores the resulting five integers as duress_consent_set. For confirmation it creates a new DuressCheckSpace from another permutation of 1 through 193, wraps it with a new random 32-byte nonce, and encrypts it with the Boomlet-to-ST directional channel keys, using canonical context {"duress_challenge"}.
+
+20. Boomlet receives duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 from Iso and decrypts it using context {"duress_response"}. It requires the returned nonce to equal the outstanding challenge nonce, takes the returned indices from content.indices, resolves them against duress_check_space.space, and stores the resulting five integers as duress_consent_set. For confirmation it creates a new DuressCheckSpace from another permutation of 1 through 193, wraps it with a new random 32-byte nonce, and encrypts it for ST using context {"duress_challenge"}.
+
 21. Iso receives duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st from Boomlet and forwards it to ST.
-22. ST receives duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st from Iso and decrypts it with the Boomlet-to-ST directional channel keys and canonical context {"duress_challenge"}. It extracts the new DuressCheckSpace and nonce, maps each integer through DURESS_DISPLAY_VOCABULARY, creates duress_display_columns as five independently shuffled display copies, and replaces retained_display_maps with their five display-to-original-index mappings for confirmation of duress_consent_set.
+
+22. ST receives duress_check_space_with_nonce_encrypted_by_boomlet_0_for_st from Iso and decrypts it using context {"duress_challenge"}. It extracts the new DuressCheckSpace and nonce, maps each integer through DURESS_DISPLAY_VOCABULARY, creates duress_display_columns as five independently shuffled display copies, and replaces retained_display_maps with their five display-to-original-index mappings for confirmation of duress_consent_set.
+
 23. User receives 5 independently shuffled columns from ST. He will select 1 country in each column to replicate the duress_consent_set and inputs it to ST.
-24. ST receives user_selection, containing one displayed choice for each new column, from User. It maps the five choices through retained_display_maps to create duress_signal_index in column order and places those indices in MessageWithNonce content with the fresh challenge nonce. It encrypts the response with the ST-to-Boomlet directional channel keys and canonical context {"duress_response"}, then sends it to Iso.
+
+24. ST receives user_selection, containing one displayed choice for each new column, from User. It maps the five choices through retained_display_maps to create duress_signal_index in column order and places DuressSignalIndex{indices: duress_signal_index} in MessageWithNonce content with the fresh challenge nonce. It encrypts the response for Boomlet using context {"duress_response"}, then sends it to Iso.
+
 25. Iso receives duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 from ST and forwards it to Boomlet.
-26. Boomlet receives duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 from Iso and decrypts it with the ST-to-Boomlet directional channel keys and canonical context {"duress_response"}. It requires the returned nonce to equal the fresh outstanding nonce, extracts the indices, resolves them against the new duress_check_space.space, and requires the resulting five-element set to equal the stored duress_consent_set.
+
+26. Boomlet receives duress_signal_index_with_nonce_encrypted_by_st_for_boomlet_0 from Iso and decrypts it using context {"duress_response"}. It requires the returned nonce to equal the fresh outstanding nonce, extracts the indices, resolves them against the new duress_check_space.space, and requires the resulting five-element set to equal the stored duress_consent_set. It initializes consent_counter to zero and under_duress to false.
+
 27. Iso receives {magic: "setup_duress_finished"} from Boomlet and knowing Boomlet can be disconnected, returns mnemonic to User.
+
 28. User receives mnemonic from Iso, saves it in a safe place and proceeds to shutdown Iso and connect Boomlet to Niso to continue setup.
+
 29. Niso receives {network, rpc_client_url, rpc_client_auth} from User during the installation. rpc_client_url and rpc_client_auth provide a direct view into the provided network. As Niso communicates through TOR, Niso asks for peer_0_tor_secret_key from Boomlet.
+
 30. Boomlet receives {magic: "setup_initialized"} from Niso, generates peer_0_tor_secret_key and a fresh 32-byte peer_0_setup_nonce, and derives peer_0_tor_address from the Tor secret key. It creates PeerId containing boom_pubkey_0, normal_pubkey_0, and boomlet_0_identity_pubkey. PeerSetupRecord contains peer_0_id, peer_0_setup_nonce, and peer_0_tor_address. Boomlet signs the record with boomlet_0_identity_privkey under domain "Boomerang/setup/peer_setup_record"; `PROTOCOL_VERSION` is bound by the signature context. sign_message produces a SignedMessage containing the signer identity public key, domain, content, and signature. Boomlet returns the signed record and Tor secret key to Niso. The authenticated record is the only transmitted carrier of peer_0_id and peer_0_setup_nonce.
+
 31. Niso receives {peer_0_tor_secret_key, peer_0_setup_identity_record_signed_by_boomlet_0} from Boomlet, extracts peer_0_id from the signed record, and verifies domain "Boomerang/setup/peer_setup_record" using the Boomlet identity public key inside that PeerId. It derives peer_0_tor_address from peer_0_tor_secret_key, requires it to equal the record's tor_address, and forwards only the signed record to ST.
+
 32. ST receives the signed setup identity record. Since ST already knows boomlet_0_identity_pubkey, it checks that the record contains the same identity pubkey.
+
 33. User receives the signed setup identity record and shares it with peers over the secure out-of-band channel.
+
 34. User receives peer_i_setup_identity_record_signed_by_boomlet_i for peer indices 1 through 4 from Peers while sending peer_0_setup_identity_record_signed_by_boomlet_0. User forms peer_setup_records_collection from exactly five signed PeerSetupRecord values, one for each peer indexed 0 through 4, and also supplies milestone_block_collection and the preference-ordered wt_ids_collection. Each WtId contains a WT Tor address and WT public key.
+
 35. Niso receives {peer_setup_records_collection, wt_ids_collection, milestone_block_collection} from User. The User-to-Niso peer-record collection may be unordered. For every peer index 0 through 4 it verifies domain "Boomerang/setup/peer_setup_record" using the Boomlet identity key inside the record, then connects to peers 1 through 4 at the Tor addresses authenticated by their records. It requires its own exact signed record to occur exactly once in the collection. Niso sorts the five records by encoded Boomlet identity public-key bytes into ordered_peer_setup_records. Niso selects the first WtId in the preference-ordered wt_ids_collection as active_wt_id and takes wt_pubkey from that WtId before forwarding ordered_peer_setup_records, WtIds, and milestones to Boomlet.
-36. Boomlet receives {ordered_peer_setup_records, wt_ids_collection, milestone_block_collection} from Niso. It verifies strictly increasing identity-key encodings, rejects duplicates, verifies domain "Boomerang/setup/peer_setup_record" using the identity key in each record and the protocol-version signature context, and requires its own exact signed record to occur once. It extracts peer_ids_collection and ordered Boomlet identity keys in that same order while constructing or incrementally hashing BoomerangParamsSeed. It selects the first WtId in preference order as active_wt_id and takes wt_pubkey from it. BoomerangParamsSeed contains the identity-key-ordered signed peer records, the preference-ordered WtIds, and milestone blocks accepted from Niso. Boomlet computes setup_instance_id as the tagged hash of `PROTOCOL_VERSION` and canonical BoomerangParamsSeed. It places setup_instance_id in MessageWithNonce content with a fresh 32-byte nonce, then encrypts it with the Boomlet-to-ST directional channel keys, using canonical context {"params_review", setup_instance_id}. It sends the outer setup ID and encrypted setup-ID envelope to Niso.
+
+36. Boomlet receives {ordered_peer_setup_records, wt_ids_collection, milestone_block_collection} from Niso. It verifies strictly increasing identity-key encodings, rejects duplicate identity keys, verifies domain "Boomerang/setup/peer_setup_record" using the identity key in each record and the protocol-version signature context, and requires its own exact signed record to occur once. It extracts peer_ids_collection and ordered Boomlet identity keys in that same order while constructing or incrementally hashing BoomerangParamsSeed. It selects the first WtId in preference order as active_wt_id and takes wt_pubkey from it. BoomerangParamsSeed contains the identity-key-ordered signed peer records, the preference-ordered WtIds, and milestone blocks accepted from Niso. Boomlet computes setup_instance_id as the tagged hash of `PROTOCOL_VERSION` and canonical BoomerangParamsSeed. It places setup_instance_id in MessageWithNonce content with a fresh 32-byte nonce, then encrypts it for ST using context {"params_review", setup_instance_id}. It sends the outer setup ID and encrypted setup-ID envelope to Niso.
+
 37. Niso receives setup_instance_id and setup_instance_id_with_nonce_encrypted_by_boomlet_0_for_st from Boomlet. It forwards both to ST together with the ordered seed fields it already sent to Boomlet. The setup ID is required to construct the encrypt-then-MAC context and is authenticated by the envelope CMAC.
-38. ST receives setup_instance_id, the encrypted nonce-bound setup ID, and ordered seed fields from Niso. It decrypts the setup ID with the Boomlet-to-ST directional channel keys, using canonical context {"params_review", setup_instance_id}. It constructs BoomerangParamsSeed from the ordered fields, rejects malformed encodings, duplicate or non-increasing identity-key order, and non-canonical seed fields before display. It recomputes setup_instance_id from the constructed seed and requires it to match the decrypted nonce-bound setup ID and outer setup ID. Only after that match does ST show the ordered fields to User while retaining the nonce-bound setup ID for approval.
+
+38. ST receives setup_instance_id, the encrypted nonce-bound setup ID, and ordered seed fields from Niso. It decrypts the setup ID using context {"params_review", setup_instance_id}. It constructs BoomerangParamsSeed from the ordered fields, rejects malformed encodings, duplicate identity keys, non-increasing identity-key order, and non-canonical seed fields before display. It recomputes setup_instance_id from the constructed seed and requires it to match the decrypted nonce-bound setup ID and outer setup ID. Only after that match does ST show the ordered fields to User while retaining the nonce-bound setup ID for approval.
+
 39. User receives the ordered seed fields from ST after ST has matched them against Boomlet's encrypted nonce-bound setup ID. User requires the ordered signed peer records to equal the expected sorted collection, the ordered WtIds to equal the selected WT preference order, and the milestones to equal milestone_block_collection. User approves only if every displayed field matches the values intended for BoomerangParams review.
-40. ST receives {magic: "setup_user_verified_peer_ids_and_wt_ids_received_with_those_registered_before"} from User and signs the exact retained setup_instance_id_with_nonce under domain "Boomerang/setup/params_review_approval". It encrypts that SignedMessage with the ST-to-Boomlet directional channel keys, using canonical context {"params_review_approval", setup_instance_id}, then sends the envelope to Niso.
+
+40. ST receives {magic: "setup_user_verified_peer_ids_and_wt_ids_received_with_those_registered_before"} from User and signs the exact retained setup_instance_id_with_nonce under domain "Boomerang/setup/params_review_approval". It encrypts that SignedMessage for Boomlet using context {"params_review_approval", setup_instance_id}, then sends the envelope to Niso.
+
 41. Niso receives setup_instance_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_0 from ST and forwards it to Boomlet.
-42. Boomlet receives setup_instance_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_0 from Niso and decrypts it with the ST-to-Boomlet directional channel keys, using canonical context {"params_review_approval", setup_instance_id}. It verifies ST's signature under that same domain and requires the signed MessageWithNonce, including nonce, to equal the outstanding setup_instance_id_with_nonce value. It constructs boomerang_descriptor from ordered peer_ids_collection and milestone_block_collection. BoomerangParams contains setup_instance_id, ordered peer IDs, ordered WtIds, milestone blocks, and boomerang_descriptor; the full BoomerangParamsSeed is not retained in it. Boomlet computes boomerang_params_fingerprint as tagged_sha256("Boomerang/boomerang_params", canonical BoomerangParams) and signs that 32-byte fingerprint with boomlet_0_identity_privkey under domain "Boomerang/setup/agreement".
+
+42. Boomlet receives setup_instance_id_with_nonce_signed_by_st_encrypted_by_st_for_boomlet_0 from Niso and decrypts it using context {"params_review_approval", setup_instance_id}. It verifies ST's signature under that same domain and requires the signed MessageWithNonce, including nonce, to equal the outstanding setup_instance_id_with_nonce value. It constructs boomerang_descriptor from ordered peer_ids_collection and milestone_block_collection. BoomerangParams contains setup_instance_id, ordered peer IDs, ordered WtIds, milestone blocks, and boomerang_descriptor; the full BoomerangParamsSeed is not retained in it. Boomlet computes boomerang_params_fingerprint as tagged_sha256("Boomerang/boomerang_params", canonical BoomerangParams) and signs that 32-byte fingerprint with boomlet_0_identity_privkey under domain "Boomerang/setup/agreement".
+
 43. Niso receives boomerang_params_fingerprint_signed_by_boomlet_0, retains it as the local signed fingerprint, and shares it with other peers' Nisos. Its signed content will be extracted before comparison with peer fingerprints.
+
 44. Niso receives one signed boomerang_params_fingerprint from every other peer, requires each content value to equal the local boomerang_params_fingerprint, and verifies each signature with that peer's Boomlet identity key under domain "Boomerang/setup/agreement". It forms boomerang_params_fingerprint_signed_by_all_peers from the four peer signatures for indices 1 through 4 and sends that collection to Boomlet.
+
 45. Boomlet receives boomerang_params_fingerprint_signed_by_all_peers, a collection of signed boomerang_params_fingerprint values for peer indices 1 through 4, from Niso. It verifies each peer signature under domain "Boomerang/setup/agreement" and requires every signed content value to equal its boomerang_params_fingerprint. It then fixes boomerang_params. The first setup_checkpoint is tagged_sha256("Boomerang/setup_phase_checkpoint", ...) over setup_instance_id, phase "parameters_agreed", and a 32-byte all-zero predecessor.
-48. Niso receives {magic: "setup_boomerang_params_fixed_register_with_wt"} from Boomlet and proceeds to WT registration using the setup ID, signed peer setup records, and signed boomerang_params_fingerprint values it already holds.
+
+48\. Niso receives {magic: "setup_boomerang_params_fixed_register_with_wt"} from Boomlet and proceeds to WT registration using the setup ID, signed peer setup records, and signed boomerang_params_fingerprint values it already holds.
+
 49. WT receives setup_instance_id plus a signed PeerSetupRecord and signed boomerang_params_fingerprint for each peer index 0 through 4. It verifies each record under "Boomerang/setup/peer_setup_record" and each fingerprint under "Boomerang/setup/agreement", both with the identity key inside that peer's record, and requires every fingerprint content value to be identical. WT takes the relayed setup_instance_id and takes wt_pubkey from its configured WtId. WT generates a peer-specific service-fee invoice bound to setup_instance_id and sets its payment deadline. WtServiceFeePaymentInfo contains that setup ID, invoice, deadline, and the configured WtId containing WT's Tor address and public key. WT sends the peer-specific payment information to each peer's Niso.
+
 50. Niso receives wt_service_fee_payment_info from WT and outputs it to User.
+
 51. User receives WtServiceFeePaymentInfo from Niso, verifies its setup_instance_id, service-fee invoice, payment deadline, and WtId, and pays the invoice. The resulting ServicePaymentReceipt contains the service identifier, invoice reference, and payment proof and is returned to Niso.
+
 52. Niso receives wt_service_fee_payment_receipt from User and forwards it to WT.
+
 53. WT receives wt_service_fee_payment_receipt from Niso and requires verify_payment to succeed before continuing. WtSetupReceipt contains setup_instance_id and the accepted boomerang_params_fingerprint. WT signs this receipt with wt_privkey under domain "Boomerang/setup/wt_receipt".
+
 54. Niso receives wt_setup_receipt_signed_by_wt from WT, verifies the WT signature under domain "Boomerang/setup/wt_receipt", requires the receipt's setup_instance_id to equal the active setup ID and its boomerang_params_fingerprint to equal the accepted boomerang_params_fingerprint, then forwards the signed receipt to Boomlet.
+
 55. Boomlet receives wt_setup_receipt_signed_by_wt from Niso, verifies the WT signature under domain "Boomerang/setup/wt_receipt", and requires the receipt's setup_instance_id and boomerang_params_fingerprint to equal its active values. It updates setup_checkpoint from setup_instance_id, phase "wt_ready", and previous setup_checkpoint, then signs it with boomlet_0_identity_privkey under domain "Boomerang/setup/phase_checkpoint". The peer-specific receipt is checked locally but is not hashed into the setup_checkpoint.
+
 56. Niso receives setup_checkpoint_signed_by_boomlet_0 and shares it with Peers.
+
 57. Niso receives setup_checkpoint_signed_by_boomlet_i for peer indices 1 through 4 from Peers while sharing its local signed checkpoint. It verifies every peer signature under domain "Boomerang/setup/phase_checkpoint", requires each signed content value to equal setup_checkpoint, and forms setup_checkpoint_signed_by_all_peers from those four peer values.
+
 58. Boomlet receives setup_checkpoint_signed_by_all_peers, a collection for peer indices 1 through 4, from Niso. It verifies each peer signature under domain "Boomerang/setup/phase_checkpoint" and requires every signed content value to equal setup_checkpoint. Only after all four peer checks succeed does it inform Niso that WT is ready for all peers.
+
 59. Niso receives {magic: "setup_wt_service_confirmed_by_peers"} from Boomlet and informs Boomlet to finalize SAR.
-60. Boomlet receives {magic: "setup_wt_service_confirmed_by_peers_sar_can_be_finalized"} from Niso. It takes sar_pubkey from the single setup-bound sar_id, obtains its canonical public-key bytes, and derives doxing_key_for_sar as tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes), followed by doxing_data_identifier as tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar). It encrypts {setup_instance_id, doxing_data_identifier} with the Boomlet-to-SAR directional channel keys, using canonical context {"sar_identifier", setup_instance_id}. Separately it signs {setup_instance_id, sar_id} under domain "Boomerang/setup/sar_id", then encrypts that SignedMessage with the Boomlet-to-WT directional channel keys, using canonical context {"sar_id", setup_instance_id}. It sends both encrypted envelopes to Niso.
+
+60. Boomlet receives {magic: "setup_wt_service_confirmed_by_peers_sar_can_be_finalized"} from Niso. It takes sar_pubkey from the single setup-bound sar_id, obtains its canonical public-key bytes, and derives doxing_key_for_sar as tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes), followed by doxing_data_identifier as tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar). It encrypts {setup_instance_id, doxing_data_identifier} for SAR using context {"sar_identifier", setup_instance_id}. Separately it signs {setup_instance_id, sar_id} under domain "Boomerang/setup/sar_id", then encrypts that SignedMessage for WT using context {"sar_id", setup_instance_id}. It sends both encrypted envelopes to Niso.
+
 61. Niso receives {sar_id_signed_by_boomlet_0_encrypted_by_boomlet_0_for_wt, doxing_data_identifier_encrypted_by_boomlet_0_for_sar} from Boomlet and forwards it to WT.
-62. WT receives {sar_id_signed_by_boomlet_0_encrypted_by_boomlet_0_for_wt, doxing_data_identifier_encrypted_by_boomlet_0_for_sar} from Niso. It decrypts the setup-bound SAR identity envelope with the Boomlet-to-WT directional channel keys, using canonical context {"sar_id", setup_instance_id}. It verifies the inner signature under domain "Boomerang/setup/sar_id", extracts the signed payload, requires its setup_instance_id to equal the active setup ID, and takes its sar_id as the only permitted SAR for this peer. It forwards the still-encrypted identifier envelope with boomlet_0_identity_pubkey and setup_instance_id to that SAR.
-63. SAR receives {doxing_data_identifier_encrypted_by_boomlet_0_for_sar, boomlet_0_identity_pubkey, setup_instance_id} from WT, takes sar_pubkey from its configured SarId, and decrypts the identifier envelope with the Boomlet-to-SAR directional channel keys, using canonical context {"sar_identifier", setup_instance_id}. It requires the payload's setup_instance_id to equal the relayed setup ID and its doxing_data_identifier to equal the identifier registered by Phone. SarSetupResponse contains setup_instance_id, doxing_data_identifier, sha256 of the stored static-data CbcCmacEnvelope, and that envelope's IV. SAR signs it under domain "Boomerang/setup/sar_response", then encrypts the SignedMessage with the SAR-to-Boomlet directional channel keys, using canonical context {"sar_response", setup_instance_id}. It returns the encrypted response through WT.
+
+62. WT receives {sar_id_signed_by_boomlet_0_encrypted_by_boomlet_0_for_wt, doxing_data_identifier_encrypted_by_boomlet_0_for_sar} from Niso. It decrypts the setup-bound SAR identity envelope using context {"sar_id", setup_instance_id}. It verifies the inner signature under domain "Boomerang/setup/sar_id", extracts the signed payload, requires its setup_instance_id to equal the active setup ID, and takes its sar_id as the only permitted SAR for this peer. It forwards the still-encrypted identifier envelope with boomlet_0_identity_pubkey and setup_instance_id to that SAR.
+
+63. SAR receives {doxing_data_identifier_encrypted_by_boomlet_0_for_sar, boomlet_0_identity_pubkey, setup_instance_id} from WT, takes sar_pubkey from its configured SarId, and decrypts the identifier envelope using context {"sar_identifier", setup_instance_id}. It requires the payload's setup_instance_id to equal the relayed setup ID and its doxing_data_identifier to equal the identifier registered by Phone. SarSetupResponse contains setup_instance_id, doxing_data_identifier, sha256 of the stored static-data CbcCmacEnvelope, and that envelope's IV. SAR signs it under domain "Boomerang/setup/sar_response", then encrypts the SignedMessage for Boomlet using context {"sar_response", setup_instance_id}. It returns the encrypted response through WT.
+
 64. WT receives the SAR-to-Boomlet encrypted response. WtSarSetupResponse contains setup_instance_id, the unchanged encrypted SAR response as content, and wt_suffix "setup_sar_acknowledgement_of_finalization_received". WT signs this wrapper with wt_privkey under domain "Boomerang/setup/wt_sar_response" and sends it to Niso.
+
 65. Niso receives sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt from WT and verifies wt_pubkey's signature under domain "Boomerang/setup/wt_sar_response". It requires the wrapper setup_instance_id to equal the active setup ID and wt_suffix to equal "setup_sar_acknowledgement_of_finalization_received", then forwards it to Boomlet.
-66. Boomlet receives sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt from Niso and verifies the WT wrapper under domain "Boomerang/setup/wt_sar_response". It extracts WtSarSetupResponse from the signed wrapper, requires its setup_instance_id to equal the active setup ID and its wt_suffix to equal "setup_sar_acknowledgement_of_finalization_received", and takes the unchanged encrypted SAR response from its content field. It decrypts that envelope with the SAR-to-Boomlet directional channel keys, using canonical context {"sar_response", setup_instance_id}. It verifies the SAR signature under domain "Boomerang/setup/sar_response" and requires the response setup ID and doxing identifier to equal its active values. It stores the signed SAR response for later Iso verification. It updates setup_checkpoint from setup_instance_id, phase "sar_ready", and previous setup_checkpoint and signs it under "Boomerang/setup/phase_checkpoint". The peer-specific SAR response is not hashed into setup_checkpoint.
+
+66. Boomlet receives sar_setup_response_signed_by_sar_encrypted_by_sar_for_boomlet_0_suffixed_by_wt_signed_by_wt from Niso and verifies the WT wrapper under domain "Boomerang/setup/wt_sar_response". It extracts WtSarSetupResponse from the signed wrapper, requires its setup_instance_id to equal the active setup ID and its wt_suffix to equal "setup_sar_acknowledgement_of_finalization_received", and takes the unchanged encrypted SAR response from its content field. It decrypts that envelope using context {"sar_response", setup_instance_id}. It verifies the SAR signature under domain "Boomerang/setup/sar_response" and requires the response setup ID and doxing identifier to equal its active values. It stores the signed SAR response for later Iso verification. It updates setup_checkpoint from setup_instance_id, phase "sar_ready", and previous setup_checkpoint and signs it under "Boomerang/setup/phase_checkpoint". The peer-specific SAR response is not hashed into setup_checkpoint.
+
 67. Niso receives setup_checkpoint_signed_by_boomlet_0 and shares it with Peers.
+
 68. Niso receives setup_checkpoint_signed_by_boomlet_i for peer indices 1 through 4 from Peers while sharing its local signed checkpoint. It verifies each peer signature under domain "Boomerang/setup/phase_checkpoint", requires each signed content value to equal setup_checkpoint, and forms setup_checkpoint_signed_by_all_peers from those four peer values.
+
 69. Boomlet receives setup_checkpoint_signed_by_all_peers, a collection for peer indices 1 through 4, from Niso. It verifies each peer signature under domain "Boomerang/setup/phase_checkpoint" and requires every signed content value to equal setup_checkpoint. Only after all four peer checks succeed does it inform Niso that SAR finalization is confirmed for all peers.
-70. Niso receives {magic: "setup_sar_acknowledgement_of_finalization_received"} from Boomlet and informs User to initialize backup.
-71. User receives {magic: "setup_sar_finalization_confirmed"} from Niso and connects the hardware for Boomletwo, the backup of Boomlet, to Iso. At this transition Niso deletes all retained WT payment information.
+
+70. Niso receives {magic: "setup_sar_acknowledgement_of_finalization_received"} from Boomlet and informs User to choose backup or skip it through Iso.
+
+71. User receives {magic: "setup_sar_finalization_confirmed"} from Niso and chooses whether to install Boomletwo or skip backup through Iso. At this transition Niso deletes all retained WT payment information.
+
 72. Iso receives {magic: "setup_user_is_informed_that_sar_is_set_and_can_install_boomlet_backup"} from User, enters backup mode, and installs Boomletwo_binary on the hardware.
+
 73. Boomletwo receives {magic: "setup_backup_started"} from Iso during installation. It generates boomletwo_Identity_privkey, derives boomletwo_Identity_pubkey, and returns the public key to Iso.
+
 74. Iso receives boomletwo_Identity_pubkey from Boomletwo and proceeds to inform User to connect Boomlet.
+
 75. User receives {magic: "setup_boomletwo_identity_pubkey_received_connect_boomlet_to_iso"} from Iso and proceeds to connect Boomlet to Iso and Input the values necessary for backup and for verification of the received doxing_data_fingerprint.
+
 76. Iso receives {milestone_block_collection, network, account, key_index, mnemonic, passphrase, static_doxing_data, doxing_password} from User. It derives normal_privkey_0 at m/52102'/coin_type'/account'/0/key_index using the same values as installation, then derives normal_pubkey_0. BoomletBackupRequest contains backup_boomlet_pubkey set to boomletwo_Identity_pubkey and backup_normal_pubkey set to normal_pubkey_0. Iso signs it with normal_privkey_0 under domain "Boomerang/setup/backup_request". The request omits setup_instance_id because Iso has not yet received authoritative setup state from Boomlet.
-77. Boomlet receives backup_request_signed_by_normal_0 from Iso and verifies normal_pubkey_0's signature under domain "Boomerang/setup/backup_request". It requires backup_normal_pubkey equal to normal_pubkey_0 and takes boomletwo_Identity_pubkey from backup_boomlet_pubkey. BoomletBackupState contains setup_instance_id, Boomlet identity private and public keys, MuSig2 private and public shares, normal public key, ST identity public key, Tor secret key, selected SarId, doxing_key, duress_consent_set, signed PeerSetupRecord, BoomerangParams, setup_checkpoint, signed SarSetupResponse, replay state, and backup_complete. Boomlet copies those fields from memory, and requires the copied setup_instance_id to equal the active setup ID. It encrypts the state with the Boomlet-to-Boomletwo directional channel keys, using canonical context {"backup_state"}. It sends the encrypted state, boomlet_0_identity_pubkey, boomerang_params, and the local signed SAR response to Iso. No final setup_checkpoint exists yet.
-78. Iso receives {boomlet_0_identity_pubkey, boomlet_0_backup_encrypted_by_boomlet_0_for_boomletwo, boomerang_params, sar_setup_response_signed_by_sar} from Boomlet. It requires boomerang_params.milestone_blocks to equal milestone_block_collection, reconstructs boomerang_descriptor from boomerang_params.peer_ids and boomerang_params.milestone_blocks, and requires equality with boomerang_params.boomerang_descriptor. It also requires boomlet_0_identity_pubkey to appear exactly once in boomerang_params.peer_ids. It uses local network configuration for network-specific display and validation. It NFC-normalizes doxing_password and encodes it as UTF-8 bytes, derives doxing_key as tagged_sha256("Boomerang/doxing_key", doxing_password_bytes), extracts sar_pubkey from the signed response's signer identity, obtains its canonical public-key bytes, derives doxing_key_for_sar as tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes), and derives doxing_data_identifier as tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar). It verifies the SAR signature under "Boomerang/setup/sar_response", requires the response setup_instance_id to equal boomerang_params.setup_instance_id and its identifier to equal the derived value. Using keys derived from doxing_key_for_sar and "Boomerang/sar_stored_data", context {"sar_static_data", doxing_data_identifier}, the user's static data, and the response IV, Iso recreates the static-data envelope and requires its sha256 to equal the response fingerprint.
+
+77. Boomlet receives backup_request_signed_by_normal_0 from Iso and verifies normal_pubkey_0's signature under domain "Boomerang/setup/backup_request". It requires backup_normal_pubkey equal to normal_pubkey_0 and takes boomletwo_Identity_pubkey from backup_request.backup_boomlet_pubkey. Boomlet constructs BoomletBackupState from memory and requires its setup_instance_id to equal the active setup ID. It encrypts the state for Boomletwo using context {"backup_state"}. It sends the encrypted state, boomlet_0_identity_pubkey, boomerang_params, and the local signed SAR response to Iso. No final setup_checkpoint exists yet.
+
+78. Iso receives {boomlet_0_identity_pubkey, boomlet_0_backup_encrypted_by_boomlet_0_for_boomletwo, boomerang_params, sar_setup_response_signed_by_sar} from Boomlet. It requires boomerang_params.milestone_blocks to equal milestone_block_collection, reconstructs boomerang_descriptor from boomerang_params.peer_ids and boomerang_params.milestone_blocks, and requires equality with boomerang_params.boomerang_descriptor. It also requires boomlet_0_identity_pubkey to appear exactly once in boomerang_params.peer_ids. It uses local network configuration for network-specific display and validation. It NFC-normalizes doxing_password and encodes it as UTF-8 bytes, derives doxing_key as tagged_sha256("Boomerang/doxing_key", doxing_password_bytes), extracts sar_pubkey from the signed response's signer identity, obtains its canonical public-key bytes, derives doxing_key_for_sar as tagged_sha256("Boomerang/doxing_key_for_sar", doxing_key || sar_pubkey_bytes), and derives doxing_data_identifier as tagged_sha256("Boomerang/doxing_data_identifier", doxing_key_for_sar). It verifies the SAR signature under "Boomerang/setup/sar_response", requires the response setup_instance_id to equal boomerang_params.setup_instance_id and its identifier to equal the derived value. Using keys derived from doxing_key_for_sar and "Boomerang/sar_stored_data", context canonical_encode("Boomerang", PROTOCOL_VERSION, "sar_static_data", doxing_data_identifier), the user's static data, and the response IV, Iso recreates the static-data envelope and requires its sha256 to equal the response fingerprint.
+
 79. User receives {magic: "setup_boomlet_backup_data_received_connect_boomletwo_to_iso"} from Iso. User then proceeds to connect Boomletwo to Iso.
+
 80. Iso receives {magic: "setup_user_is_asked_to_connect_boomletwo_to_iso_boomletwo_connected_to_iso"} from User and proceeds to give the backup file to Boomletwo.
-81. Boomletwo receives {boomlet_0_identity_pubkey, boomlet_0_backup_encrypted_by_boomlet_0_for_boomletwo} from Iso and first requires its memory to be empty. It decrypts BoomletBackupState with the Boomlet-to-Boomletwo directional channel keys, using canonical context {"backup_state"}. It takes setup_instance_id from the authenticated state and imports every state field. BackupDone contains the imported setup_instance_id, backup_boomlet_pubkey set to boomletwo_Identity_pubkey, and boomlet_pubkey set to boomlet_0_identity_pubkey. Boomletwo signs it with boomletwo_Identity_privkey under domain "Boomerang/setup/backup_done".
+
+81. Boomletwo receives {boomlet_0_identity_pubkey, boomlet_0_backup_encrypted_by_boomlet_0_for_boomletwo} from Iso and first requires that no BoomletBackupState has been imported. It decrypts BoomletBackupState using context {"backup_state"}. It takes setup_instance_id from the authenticated state and imports every state field. BackupDone contains the imported setup_instance_id, backup_boomlet_pubkey set to boomletwo_Identity_pubkey, and boomlet_pubkey set to boomlet_0_identity_pubkey. Boomletwo signs it with boomletwo_Identity_privkey under domain "Boomerang/setup/backup_done".
+
 82. Iso receives {backup_done_signed_by_boomletwo} from Boomletwo. Iso proceeds to inform User to connect Boomlet.
+
 83. User receives {magic: "setup_boomlet_backup_done_connect_boomlet_to_iso"} from Iso and connects Boomlet to Iso.
-84. Iso receives {magic: "setup_user_is_asked_to_connect_boomlet_to_iso_boomlet_connected_to_iso"} from User and proceeds to forward backup_done_signed_by_boomletwo to Boomlet.
+
+84. Iso receives {magic: "setup_user_is_asked_to_connect_boomlet_to_iso_boomlet_connected_to_iso"} from User and forwards backup_done_signed_by_boomletwo to Boomlet.
+
 85. Boomlet receives backup_done_signed_by_boomletwo from Iso and verifies boomletwo_Identity_pubkey's signature under domain "Boomerang/setup/backup_done". It extracts BackupDone and requires setup_instance_id equal to the active setup ID, backup_boomlet_pubkey equal to boomletwo_Identity_pubkey, and boomlet_pubkey equal to boomlet_0_identity_pubkey. Once accepted it marks backup complete and will not accept another backup request for this active state.
-86. Iso receives {magic: "setup_boomlet_backup_done"} from Boomlet and proceeds to inform User that the backup process has been completed.
+
+86. Iso receives {magic: "setup_boomlet_backup_done"} from Boomlet and informs User that the backup choice is complete.
+
 87. User receives {magic: "setup_boomlet_backup_completed_boomlet_closed_ready_to_finish_setup"} from Iso. User proceeds to connect Boomlet to Niso.
+
 88. Niso receives {magic: "setup_user_is_informed_that_boomlet_is_closed"} from User and proceeds to tell Boomlet to finish the setup procedure.
-89. Boomlet receives {magic: "setup_boomlet_closed_finish_setup"} from Niso. Because it already verified BackupDone locally, it updates setup_checkpoint from setup_instance_id, phase "backup_ready", and previous setup_checkpoint and signs it with boomlet_0_identity_privkey under domain "Boomerang/setup/phase_checkpoint". The peer-specific BackupDone receipt is not hashed into setup_checkpoint.
+
+89. Boomlet receives {magic: "setup_boomlet_closed_finish_setup"} from Niso. It updates setup_checkpoint from setup_instance_id, phase "backup_ready", and previous setup_checkpoint and signs it with boomlet_0_identity_privkey under domain "Boomerang/setup/phase_checkpoint". The peer-specific BackupDone receipt is not hashed into setup_checkpoint.
+
 90. Niso receives setup_checkpoint_signed_by_boomlet_0 and shares it with Peers.
+
 91. Niso receives setup_checkpoint_signed_by_boomlet_i for peer indices 1 through 4 from Peers while sharing its local signed checkpoint. It verifies each peer signature under domain "Boomerang/setup/phase_checkpoint", requires each signed content value to equal setup_checkpoint, and forms setup_checkpoint_signed_by_all_peers from those four peer values.
+
 92. Boomlet receives setup_checkpoint_signed_by_all_peers, a collection for peer indices 1 through 4, from Niso. It verifies each peer signature under domain "Boomerang/setup/phase_checkpoint" and requires every signed content value to equal setup_checkpoint. It persists setup_checkpoint as its local final setup_checkpoint and finishes setup only after all four peer checks succeed.
+
 93. Niso receives {magic: "setup_done"} from Boomlet and proceeds to inform User that setup is finished. setup_instance_id is already part of the agreed setup state, and the final `setup_checkpoint` remains local to Boomlet.
+
 94. User receives {magic: "setup_done"} from Niso.
 
 <!-- END GENERATED SETUP PROCEDURE -->
@@ -168,7 +280,8 @@ messages or `BoomerangParamsSeed` fields.
   `BoomerangParams` and prove all peers derived the same runtime projection.
 - `setup_checkpoint` is updated with phase labels `parameters_agreed`,
   `wt_ready`, `sar_ready`, and `backup_ready`.
-- WT, SAR, and backup receipts are verified locally before signing
-  `setup_checkpoint`, but are not hashed into it.
+- WT and SAR receipts, and either a backup receipt or normal-key-authorized
+  skip, are verified locally before signing `setup_checkpoint`, but are not
+  hashed into it.
 - The final `setup_checkpoint` is the local setup-completion checkpoint.
   Completion messages do not transmit it or duplicate `setup_instance_id`.
